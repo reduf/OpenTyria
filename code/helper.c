@@ -1,0 +1,65 @@
+#pragma once
+
+#define memcpy_literal(dst, src) memcpy(dst, src, sizeof(src) - 1)
+
+void memcpy_u16(uint16_t *dst, const uint16_t *src, size_t count)
+{
+    memcpy(dst, src, count * sizeof(uint16_t));
+}
+
+int memcmp_u16(const uint16_t *left, const uint16_t *right, size_t count)
+{
+    return memcmp(left, right, count * sizeof(uint16_t));
+}
+
+size_t size_t_max(size_t left, size_t right)
+{
+    return left < right ? right : left;
+}
+
+size_t size_t_min(size_t left, size_t right)
+{
+    return left < right ? left : right;
+}
+
+uint32_t uint32_t_max(uint32_t left, uint32_t right)
+{
+    return left < right ? right : left;
+}
+
+uint32_t uint32_t_min(uint32_t left, uint32_t right)
+{
+    return left < right ? left : right;
+}
+
+bool s16_from_ascii(uint16_t *dst, size_t size, const char *src)
+{
+    size_t len = strlen(src);
+    if (size <= len + 1) {
+        return false;
+    }
+    for (size_t idx = 0; idx < len; ++idx) {
+        if ((src[idx] & 0x80) != 0) {
+            return false;
+        }
+        dst[idx] = src[idx];
+    }
+    dst[len] = 0;
+    return true;
+}
+
+bool s16_to_ascii(char *dst, size_t size, const uint16_t *src, size_t srclen)
+{
+    if ((size + 1) < srclen) {
+        return false;
+    }
+
+    for (size_t idx = 0; idx < srclen; ++idx) {
+        if (0x7F < src[idx]) {
+            return false;
+        }
+        dst[idx] = (char)(src[idx] & 0x7F);
+    }
+    dst[srclen] = 0;
+    return true;
+}

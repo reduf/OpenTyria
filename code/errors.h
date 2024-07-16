@@ -1,0 +1,20 @@
+#pragma once
+
+enum
+{
+    ERR_OK           = 0,
+    ERR_UNSUCCESSFUL = 1,
+    ERR_OUT_OF_MEMORY,
+
+    ERR_SERVER_ERROR,
+    ERR_WOULDBLOCK,
+    ERR_TIMEOUT,
+    ERR_BAD_USER_DATA,
+    ERR_NOT_ENOUGH_DATA,
+};
+
+enum
+{
+    GAME_ERROR_NETWORK_ERROR = 2,
+    GAME_ERROR_AUTH_ERROR    = 11,
+};

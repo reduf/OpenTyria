@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\code\array.c" />
+    <ClCompile Include="..\code\build_open_tyria.c" />
+    <ClCompile Include="..\code\int.c" />
+    <ClCompile Include="..\code\logs.c" />
+    <ClCompile Include="..\code\main.c" />
+    <ClCompile Include="..\code\stream.c" />
+    <ClCompile Include="..\code\tests.c" />
+    <ClCompile Include="..\code\win32\iocp_win32.c" />
+    <ClCompile Include="..\code\win32\sys_win32.c" />
+    <ClCompile Include="..\code\arc4.c" />
+    <ClCompile Include="..\code\helper.c" />
+    <ClCompile Include="..\code\msgdefs.c" />
+    <ClCompile Include="..\code\msgpack.c" />
+    <ClCompile Include="..\code\sqlite3.c" />
+    <ClCompile Include="..\code\AuthDb.c" />
+    <ClCompile Include="..\code\random.c" />
+    <ClCompile Include="..\code\AuthSrv.c" />
+    <ClCompile Include="..\code\network.c" />
+    <ClCompile Include="..\code\GameSrv.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\code\array.h" />
+    <ClInclude Include="..\code\endian.h" />
+    <ClInclude Include="..\code\int.h" />
+    <ClInclude Include="..\code\iocp.h" />
+    <ClInclude Include="..\code\logs.h" />
+    <ClInclude Include="..\code\macros.h" />
+    <ClInclude Include="..\code\stb_sprintf.h" />
+    <ClInclude Include="..\code\stream.h" />
+    <ClInclude Include="..\code\sys.h" />
+    <ClInclude Include="..\code\stb_ds.h" />
+    <ClInclude Include="..\code\arc4.h" />
+    <ClInclude Include="..\code\errors.h" />
+    <ClInclude Include="..\code\msgdefs.h" />
+    <ClInclude Include="..\code\msgpack.h" />
+    <ClInclude Include="..\code\opcodes.h" />
+    <ClInclude Include="..\code\proto.h" />
+    <ClInclude Include="..\code\AuthDb.h" />
+    <ClInclude Include="..\code\GameSrv.h" />
+    <ClInclude Include="..\code\GmChar.h" />
+    <ClInclude Include="..\code\GmFriend.h" />
+    <ClInclude Include="..\code\GmMap.h" />
+    <ClInclude Include="..\code\random.h" />
+    <ClInclude Include="..\code\sqlite3.h" />
+    <ClInclude Include="..\code\uuid.h" />
+    <ClInclude Include="..\code\AuthMsg.h" />
+    <ClInclude Include="..\code\AuthSrv.h" />
+    <ClInclude Include="..\code\network.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\code\msgdefs.info" />
+  </ItemGroup>
+</Project>
