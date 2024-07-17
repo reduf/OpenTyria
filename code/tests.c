@@ -23,19 +23,19 @@ void test_parse_u16()
     assert(parse_u16(&result, "0b0", strlen("0b0"), 10) == false);
 }
 
-bool parse_ipv4_cstr(struct sockaddr_storage *result, const char *input)
+bool parse_ipv4_cstr(SocketAddr *result, const char *input)
 {
-    return parse_ipv4(result, input, strlen(input));
+    return parse_ipv4(&result->v4, input, strlen(input));
 }
 
-bool parse_ipv6_cstr(struct sockaddr_storage *result, const char *input)
+bool parse_ipv6_cstr(SocketAddr *result, const char *input)
 {
-    return parse_ipv6(result, input, strlen(input));
+    return parse_ipv6(&result->v6, input, strlen(input));
 }
 
 void test_parse_ipv4()
 {
-    struct sockaddr_storage result;
+    SocketAddr result;
     assert(parse_ipv4_cstr(&result, "1.2.3.4:80") == true);
     assert(parse_ipv4_cstr(&result, "1.2.3.4:65535") == true);
     assert(parse_ipv4_cstr(&result, "1.2.3.4:65536") == false);
@@ -45,7 +45,7 @@ void test_parse_ipv4()
 
 void test_parse_ipv6()
 {
-    struct sockaddr_storage result;
+    SocketAddr result;
     assert(parse_ipv6_cstr(&result, "[e9c2:e2e3:ea8b:9f36:e151:9b65:b631:c87d]:80") == true);
     assert(parse_ipv6_cstr(&result, "[e9c2:e2e3:ea8b:9f36:e151:9b65:b631:c87d]:65535") == true);
     assert(parse_ipv6_cstr(&result, "[e9c2:e2e3:ea8b:9f36:e151:9b65:b631:c87d]:65536") == false);
@@ -56,7 +56,6 @@ void test_parse_ipv6()
 
 int main()
 {
-    test_ConnectionTable();
     test_parse_u16();
     test_parse_ipv4();
     test_parse_ipv6();

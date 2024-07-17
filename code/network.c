@@ -23,9 +23,8 @@ bool parse_ipv4(SocketAddrV4 *result, const char *input, size_t len)
         return false;
     }
 
-    struct sockaddr_storage storage;
+    struct sockaddr_storage storage = {0};
     struct sockaddr_in *sockaddr = (struct sockaddr_in *)&storage;
-    memset(sockaddr, 0, sizeof(*sockaddr));
     sockaddr->sin_family = AF_INET;
 
     if (!parse_u16(&result->port, &buffer[port_idx], len - port_idx, 10)) {
@@ -74,9 +73,8 @@ bool parse_ipv6(SocketAddrV6 *result, const char *input, size_t len)
 
     buffer[--ip_len] = 0;
 
-    struct sockaddr_in6 *sockaddr = (struct sockaddr_in6 *) result;
-
-    memset(sockaddr, 0, sizeof(*sockaddr));
+    struct sockaddr_storage storage = {0};
+    struct sockaddr_in6 *sockaddr = (struct sockaddr_in6 *)&storage;
     sockaddr->sin6_family = AF_INET6;
 
     if (!parse_u16(&result->port, &buffer[port_idx], len - port_idx, 10)) {

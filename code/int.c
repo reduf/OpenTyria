@@ -70,7 +70,7 @@ bool parse_u16(uint16_t *result, const char *input, size_t len, uint8_t base)
             return false;
         }
 
-        if (((UINT64_MAX - digit) / base) < value) {
+        if (((UINT16_MAX - digit) / base) < value) {
             return false;
         }
 
