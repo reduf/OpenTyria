@@ -18,6 +18,7 @@ union {                         \
     };                          \
 }
 
+typedef array(char)      array_char_t;
 typedef array(uint8_t)   array_uint8_t;
 typedef array(uint16_t)  array_uint16_t;
 typedef array(uint32_t)  array_uint32_t;

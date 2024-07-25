@@ -32,6 +32,8 @@ uint32_t uint32_t_min(uint32_t left, uint32_t right)
     return left < right ? left : right;
 }
 
+#define s16(N) struct { size_t len; uint16_t buf[N]; }
+
 bool s16_from_ascii(uint16_t *dst, size_t size, const char *src)
 {
     size_t len = strlen(src);

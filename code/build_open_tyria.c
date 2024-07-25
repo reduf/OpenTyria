@@ -14,6 +14,7 @@
 
 #ifdef _WIN32
 # pragma warning(disable: 4201) // nonstandard extension used: nameless struct/union
+# pragma warning(disable: 4214) // nonstandard extension used: bit field types other than int
 # pragma comment(lib, "Ws2_32.lib")
 # include <Windows.h>
 # include <Winsock2.h>
@@ -69,12 +70,14 @@
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"
+#include "GmInventory.h"
 
 #include "opcodes.h"
 #include "msgdefs.h"
 #include "msgpack.h"
 #include "proto.h"
 
+#include "GameMsg.h"
 #include "GameSrv.h"
 
 #include "AuthMsg.h"

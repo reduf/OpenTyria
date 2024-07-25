@@ -6,7 +6,7 @@ mbedtls_mpi prime_modulus;
 mbedtls_mpi server_private;
 
 typedef struct RequestGameInstanceParams {
-    uint32_t         map_id;
+    uint16_t         map_id;
     MapType          map_type;
     DistrictRegion   region;
     DistrictLanguage language;
@@ -353,12 +353,30 @@ void AuthSrv_SendCharactersInfo(AuthConnection *conn, uint32_t req_id)
         msg->character_info.req_id = req_id;
         uuid_enc_le(msg->character_info.uuid, &ch->char_id);
         // msg.character_info.unk0 = ;
-        msg->character_info.n_name = (uint32_t)ch->n_char_name;
-        STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->char_name));
-        memcpy_u16(msg->character_info.name, ch->char_name, ch->n_char_name);
-        // msg.character_info.n_extended = 0;
-        // msg.character_info.extended = ;
+        msg->character_info.n_name = (uint32_t)ch->char_name.len;
+        STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->char_name.buf));
+        memcpy_u16(msg->character_info.name, ch->char_name.buf, ch->char_name.len);
 
+        CharacterSettings settings = {0};
+        settings.version = 6;
+        settings.last_outpost = ch->last_outpost;
+        settings.last_time_played = 0;
+        settings.sex = ch->sex;
+        settings.height = ch->height;
+        settings.skin_color = ch->skin;
+        settings.hair_color = ch->hair_color;
+        settings.face_style = ch->face;
+        settings.primary_profession = ch->primary_profession;
+        settings.hair_style = ch->hair_style;
+        settings.campaign1 = ch->campaign;
+        settings.campaign2 = ch->campaign;
+        settings.level = ch->level;
+        settings.secondary_profession = ch->secondary_profession;
+        settings.helm_status = HelmStatus_Hide;
+        settings.number_of_pieces = 5;
+
+        msg->character_info.n_extended = sizeof(settings);
+        memcpy(msg->character_info.extended, &settings, sizeof(settings));
         AuthConnection_SendMessage(conn, msg, sizeof(msg->character_info));
     }
 }
@@ -460,7 +478,7 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
 
     for (size_t idx = 0; idx < conn->characters.size; ++idx) {
         DbCharacter *ch = &conn->characters.data[idx];
-        if (uuid_equals(&ch->char_id, &conn->account.last_char_id)) {
+        if (uuid_equals(&ch->char_id, &conn->account.current_char_id)) {
             conn->selected_character_idx = idx;
             break;
         }
@@ -510,8 +528,8 @@ int AuthSrv_HandleChangePlayCharacter(AuthConnection *conn, AuthCliMsg *msg)
     DbCharacterArray characters = conn->characters;
     for (size_t idx = 0; characters.size; ++idx) {
         DbCharacter *ch = &characters.data[idx];
-        if (ch->n_char_name == msg->change_character.n_name &&
-            memcmp_u16(ch->char_name, msg->change_character.name, ch->n_char_name) == 0)
+        if (ch->char_name.len == msg->change_character.n_name &&
+            memcmp_u16(ch->char_name.buf, msg->change_character.name, ch->char_name.len) == 0)
         {
             AuthSrv_SendRequestResponse(conn, msg->change_character.req_id, 0);
             return ERR_OK;
@@ -527,7 +545,7 @@ int AuthSrv_FindCompatibleGameSrv(AuthSrv *srv, RequestGameInstanceParams params
     GameSrvArray game_servers = srv->game_servers;
     for (size_t idx = 0; idx < game_servers.size; ++idx) {
         GameSrv *gm = game_servers.data[idx];
-        if (gm->map_id == params.map_id && /* gm->map_type == params.map_type && */
+        if (gm->map_id == params.map_id && gm->map_type == params.map_type &&
             gm->region == params.region && gm->language == params.language &&
             (params.district_number == 0 || gm->district_number == params.district_number))
         {
@@ -556,6 +574,7 @@ int AuthSrv_AllocGameServer(AuthSrv *srv, RequestGameInstanceParams params, size
     gm->region = params.region;
     gm->language = params.language;
     gm->district_number = params.district_number;
+    gm->map_type = params.map_type;
 
     if ((err = GameSrv_Start(gm)) != 0) {
         log_error("Failed to start a game server");
@@ -887,6 +906,21 @@ void AuthSrv_DoPostHandshake(AuthSrv *srv, Connection *conn)
             return;
         }
 
+        GameSrv *gm = srv->game_servers.data[idx];
+        for (idx = 0; idx < gm->clients.size; ++idx) {
+            if (gm->clients.data[idx].player_token == conn->game_version.player_token) {
+                break;
+            }
+        }
+
+        if (idx == srv->game_servers.size) {
+            Connection_Free(conn);
+            stbds_hmdel(srv->objects, token);
+            return;
+        }
+
+        GameClient *cli = &gm->clients.data[idx];
+
         if ((err = iocp_deregister(&srv->iocp, &conn->source)) != 0) {
             log_error("Failed to de-register socket when transferring connection to a game server");
             Connection_Free(conn);
@@ -894,12 +928,13 @@ void AuthSrv_DoPostHandshake(AuthSrv *srv, Connection *conn)
             return;
         }
 
-        GameSrv *gm = srv->game_servers.data[idx];
         AdminMsg msg = {AdminCmd_TransferUser};
         msg.transfer_user.peer_addr = conn->peer_addr;
         msg.transfer_user.source = IoSource_take(&conn->source);
         msg.transfer_user.token = conn->token;
         arc4_hash(conn->master_secret, msg.transfer_user.cipher_init_key);
+        msg.transfer_user.account_id = cli->account_id;
+        msg.transfer_user.char_id = cli->char_id;
         GameSrv_SendAdminMsg(gm, &msg);
 
         stbds_hmdel(srv->objects, token);
@@ -1070,7 +1105,7 @@ void AuthSrv_ProcessAuthConnectionEvent(AuthSrv *srv, AuthConnection *conn, Even
             break;
         default:
             log_warn(
-                "Unhandle packet with header %" PRIu16 " (0x%" PRIX16 ")",
+                "Unhandled AuthSrv packet with header %" PRIu16 " (0x%" PRIX16 ")",
                 msg->header & ~AUTH_CMSG_MASK,
                 msg->header & ~AUTH_CMSG_MASK
             );

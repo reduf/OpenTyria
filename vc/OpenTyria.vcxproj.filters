@@ -49,6 +49,7 @@
     <ClInclude Include="..\code\AuthMsg.h" />
     <ClInclude Include="..\code\AuthSrv.h" />
     <ClInclude Include="..\code\network.h" />
+    <ClInclude Include="..\code\GameMsg.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />

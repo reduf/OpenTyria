@@ -35,3 +35,30 @@ bool read_array_u8_exact(const uint8_t *data, size_t size, uint8_t *buffer, size
     *consumed = idx + buffer_size;
     return true;
 }
+
+void appendv(array_char_t *buffer, const char *fmt, va_list args)
+{
+    va_list args_copy;
+    va_copy(args_copy, args);
+
+    int ret = vsnprintf(NULL, 0, fmt, args);
+    if (ret < 0) {
+        va_end(args_copy);
+        abort();
+    }
+
+    // We need to allocate one more bytes, because  of `vsnprintf`.
+    // We will pop this "\0" byte later.
+    uint8_t *write_ptr = array_push(buffer, (size_t)ret + 1);
+    vsnprintf((char *)write_ptr, (size_t)ret + 1, fmt, args_copy);
+    (void)array_pop(buffer);
+    va_end(args_copy);
+}
+
+void appendf(array_char_t *buffer, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    appendv(buffer, fmt, args);
+    va_end(args);
+}

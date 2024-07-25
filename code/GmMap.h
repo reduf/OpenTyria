@@ -102,6 +102,27 @@ int DistrictLanguage_FromInt(DistrictLanguage *result, int value)
     }
 }
 
+uint8_t DistrictLanguage_ToInt(DistrictLanguage language)
+{
+    switch (language) {
+    case DistrictLanguage_English:
+    case DistrictLanguage_Korean:
+    case DistrictLanguage_French:
+    case DistrictLanguage_German:
+    case DistrictLanguage_Italian:
+    case DistrictLanguage_Spanish:
+    case DistrictLanguage_TraditionalChinese:
+    case DistrictLanguage_Japanese:
+    case DistrictLanguage_Polish:
+    case DistrictLanguage_Russian:
+    case DistrictLanguage_BorkBrokBork:
+    case DistrictLanguage_Unknown:
+        return (uint8_t)language;
+    default:
+        abort();
+    }
+}
+
 typedef enum RegionType {
     RegionType_AllianceBattle,
     RegionType_Arena,

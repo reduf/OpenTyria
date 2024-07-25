@@ -7,11 +7,14 @@ typedef enum AdminCmd {
 } AdminCmd;
 
 typedef struct AdminMsg_TransferUser {
-    AdminCmd   cmd;
-    SocketAddr peer_addr;
-    IoSource   source;
-    uintptr_t  token;
-    uint8_t    cipher_init_key[20];
+    AdminCmd    cmd;
+    SocketAddr  peer_addr;
+    IoSource    source;
+    uintptr_t   token;
+    uint8_t     cipher_init_key[20];
+    bool        reconnection;
+    struct uuid account_id;
+    struct uuid char_id;
 } AdminMsg_TransferUser;
 
 typedef union AdminMsg {
@@ -38,6 +41,8 @@ typedef struct GameConnection {
     bool                  writable;
     arc4_context          cipher_enc;
     arc4_context          cipher_dec;
+    GameSrvMsg            srv_msg;
+    size_t                player_id;
 } GameConnection;
 
 typedef struct GameConnMap {
@@ -45,12 +50,27 @@ typedef struct GameConnMap {
     GameConnection value;
 } GameConnMap;
 
+typedef struct GamePlayer {
+    uint32_t    player_id;
+    uintptr_t   conn_token;
+    struct uuid account_id;
+    struct uuid char_id;
+} GamePlayer;
+typedef array(GamePlayer) GamePlayerArray;
+
+typedef struct GamePlayerMsg {
+    size_t     player_id;
+    GameCliMsg msg;
+} GamePlayerMsg;
+typedef array(GamePlayerMsg) GamePlayerMsgArray;
+
 typedef struct GameSrv {
     Thread             thread;
     uint32_t           map_token;
-    uint32_t           map_id;
+    uint16_t           map_id;
     DistrictRegion     region;
     DistrictLanguage   language;
+    MapType            map_type;
     uint32_t           district_number;
     Iocp               iocp;
     bool               quit_signaled;
@@ -61,6 +81,9 @@ typedef struct GameSrv {
     Mutex              mtx;
     AdminMsgArray      admin_messages;
     GameClientArray    clients;
+    GamePlayerArray    players;
+    size_t             player_count;
+    GamePlayerMsgArray player_messages;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 
