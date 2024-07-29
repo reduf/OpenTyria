@@ -913,7 +913,7 @@ void AuthSrv_DoPostHandshake(AuthSrv *srv, Connection *conn)
             }
         }
 
-        if (idx == srv->game_servers.size) {
+        if (idx == gm->clients.size) {
             Connection_Free(conn);
             stbds_hmdel(srv->objects, token);
             return;

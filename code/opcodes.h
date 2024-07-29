@@ -155,6 +155,10 @@
 #define GAME_SMSG_PING_REPLY                        (0x000D) // 13
 #define GAME_SMSG_FRIENDLIST_MESSAGE                (0x000E) // 14
 #define GAME_SMSG_ACCOUNT_CURRENCY                  (0x000F) // 15
+#define GAME_SMSG_UNLOCKED_PVP_HEROES               (0x0018) // 24
+#define GAME_SMSG_PVP_ITEM_ADD_UNLOCK               (0x001A) // 26
+#define GAME_SMSG_PVP_ITEM_END                      (0x001B) // 27
+#define GAME_SMSG_UNLOCKED_SKILLS                   (0x001D) // 29
 #define GAME_SMSG_AGENT_MOVEMENT_TICK               (0x001E) // 30
 #define GAME_SMSG_AGENT_INSTANCE_TIMER              (0x001F) // 31
 #define GAME_SMSG_AGENT_SPAWNED                     (0x0020) // 32
@@ -173,7 +177,7 @@
 #define GAME_SMSG_HERO_ACCOUNT_NAME                 (0x0031) // 49
 #define GAME_SMSG_MESSAGE_OF_THE_DAY                (0x0033) // 51
 #define GAME_SMSG_AGENT_PINGED                      (0x0034) // 52
-#define GAME_SMSG_AGENT_UPDATE_ATTRIBUTE            (0x003A) // 58
+#define GAME_SMSG_AGENT_UPDATE_ATTRIBUTE            (0x003B) // 59
 #define GAME_SMSG_AGENT_ALLY_DESTROY                (0x003D) // 61
 #define GAME_SMSG_EFFECT_UPKEEP_ADDED               (0x003E) // 62
 #define GAME_SMSG_EFFECT_UPKEEP_REMOVED             (0x003F) // 63
@@ -183,12 +187,13 @@
 #define GAME_SMSG_EFFECT_REMOVED                    (0x0043) // 67
 #define GAME_SMSG_SCREEN_SHAKE                      (0x0045) // 69
 #define GAME_SMSG_AGENT_DISPLAY_CAPE                (0x0047) // 71
-#define GAME_SMSG_QUEST_GENERAL_INFO                (0x0048) // 72
+#define GAME_SMSG_QUEST_ADD                         (0x0048) // 72
 #define GAME_SMSG_QUEST_DESCRIPTION                 (0x004B) // 75
-#define GAME_SMSG_QUEST_ADD                         (0x004F) // 79
+#define GAME_SMSG_QUEST_GENERAL_INFO                (0x004F) // 79
 #define GAME_SMSG_QUEST_UPDATE_MARKER               (0x0050) // 80
 #define GAME_SMSG_QUEST_REMOVE                      (0x0051) // 81
 #define GAME_SMSG_QUEST_ADD_MARKER                  (0x0052) // 82
+#define GAME_SMSG_QUEST_UPDATE_NAME                 (0x0053) // 83
 #define GAME_SMSG_NPC_UPDATE_PROPERTIES             (0x0055) // 85
 #define GAME_SMSG_NPC_UPDATE_MODEL                  (0x0056) // 86
 #define GAME_SMSG_AGENT_CREATE_PLAYER               (0x0058) // 88
@@ -263,6 +268,7 @@
 #define GAME_SMSG_INSTANCE_LOADED                   (0x00F1) // 241
 #define GAME_SMSG_TITLE_RANK_DATA                   (0x00F2) // 242
 #define GAME_SMSG_TITLE_RANK_DISPLAY                (0x00F3) // 243
+#define GAME_SMSG_TITLE_UPDATE                      (0x00F4) // 244
 #define GAME_SMSG_TITLE_TRACK_INFO                  (0x00F5) // 245
 #define GAME_SMSG_ITEM_PRICE_QUOTE                  (0x00F6) // 246
 #define GAME_SMSG_ITEM_PRICES                       (0x00F8) // 248
@@ -292,9 +298,10 @@
 #define GAME_SMSG_GUILD_CHANGE_PLAYER_CONTEXT       (0x012A) // 298
 #define GAME_SMSG_GUILD_CHANGE_PLAYER_STATUS        (0x012B) // 299
 #define GAME_SMSG_GUILD_CHANGE_PLAYER_TYPE          (0x012C) // 300
-#define GAME_SMSG_INVENTORY_ITEM_QUANTITY           (0x0138) // 312
+#define GAME_SMSG_ITEM_UPDATE_OWNER                 (0x0134) // 308
+#define GAME_SMSG_ITEM_UPDATE_QUANTITY              (0x0138) // 312
 #define GAME_SMSG_ITEM_UPDATE_NAME                  (0x0139) // 313
-#define GAME_SMSG_INVENTORY_ITEM_LOCATION           (0x013D) // 317
+#define GAME_SMSG_ITEM_MOVED_TO_LOCATION            (0x013D) // 317
 #define GAME_SMSG_INVENTORY_CREATE_BAG              (0x013E) // 318
 #define GAME_SMSG_GOLD_CHARACTER_ADD                (0x013F) // 319
 #define GAME_SMSG_GOLD_STORAGE_ADD                  (0x0140) // 320
@@ -307,7 +314,9 @@
 #define GAME_SMSG_GOLD_CHARACTER_REMOVE             (0x014E) // 334
 #define GAME_SMSG_GOLD_STORAGE_REMOVE               (0x014F) // 335
 #define GAME_SMSG_TOME_SHOW_SKILLS                  (0x0153) // 339
+#define GAME_SMSG_ITEM_SET_PROFESSION               (0x0159) // 345
 #define GAME_SMSG_ITEM_GENERAL_INFO                 (0x0160) // 352
+#define GAME_SMSG_ITEM_REUSE_ID                     (0x0161) // 353
 #define GAME_SMSG_ITEM_SALVAGE_SESSION_START        (0x0162) // 354
 #define GAME_SMSG_ITEM_SALVAGE_SESSION_CANCEL       (0x0163) // 355
 #define GAME_SMSG_ITEM_SALVAGE_SESSION_DONE         (0x0164) // 356
@@ -351,7 +360,6 @@
 #define GAME_SMSG_PARTY_MEMBER_STREAM_END           (0x01D2) // 466
 #define GAME_SMSG_PARTY_DEFEATED                    (0x01D7) // 471
 #define GAME_SMSG_PARTY_LOCK                        (0x01D8) // 472
-// 474 happend when you start & stop group teleportation)
 #define GAME_SMSG_PARTY_SEARCH_REQUEST_JOIN         (0x01DA) // 474
 #define GAME_SMSG_PARTY_SEARCH_REQUEST_DONE         (0x01DB) // 475
 #define GAME_SMSG_PARTY_SEARCH_ADVERTISEMENT        (0x01DC) // 476

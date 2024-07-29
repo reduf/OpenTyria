@@ -67,6 +67,9 @@ CREATE TABLE characters (
     height               INTEGER NOT NULL,
     sex                  INTEGER NOT NULL,
     skin                 INTEGER NOT NULL,
+    current_item_slot    INTEGER DEFAULT 0,
+    unlocked_skills      BLOB(128) DEFAULT '',
+    unlocked_professions INTEGER DEFAULT 0,
 
     PRIMARY KEY (char_id)
 );
@@ -83,28 +86,35 @@ CREATE TABLE friendships (
     PRIMARY KEY (account_id, friend_account_id)
 );
 
-DROP TABLE IF EXISTS inventories;
-CREATE TABLE inventories (
+DROP TABLE IF EXISTS pvp_items;
+CREATE TABLE pvp_items (
+    account_id        VARCHAR(36),
+
+    PRIMARY KEY (account_id)
+);
+
+DROP TABLE IF EXISTS items;
+CREATE TABLE items (
     char_id     VARCHAR(36),
+    bag_enum    INTEGER NOT NULL,
     slot        INTEGER NOT NULL,
-    bag_id      INTEGER NOT NULL,
     quantity    INTEGER NOT NULL,
     dye_color   INTEGER NOT NULL,
     model       INTEGER NOT NULL,
     file_id     INTEGER NOT NULL,
     flags       INTEGER NOT NULL,
 
-    PRIMARY KEY (char_id, slot)
+    PRIMARY KEY (char_id, bag_enum, slot)
 );
 
 DROP TABLE IF EXISTS bags;
 CREATE TABLE bags (
     char_id     VARCHAR(36),
-    bag_id      INTEGER NOT NULL,
+    bag_enum    INTEGER NOT NULL,
     bag_type    INTEGER NOT NULL,
     max_slots   INTEGER NOT NULL,
 
-    PRIMARY KEY (char_id, bag_id)
+    PRIMARY KEY (char_id, bag_enum)
 );
 
 INSERT INTO sessions (user_id, session_id, account_id) VALUES

@@ -1,10 +1,17 @@
 #pragma once
 
+#define static_array(T, N) struct { size_t len; T buf[N]; }
+
 #define memcpy_literal(dst, src) memcpy(dst, src, sizeof(src) - 1)
 
 void memcpy_u16(uint16_t *dst, const uint16_t *src, size_t count)
 {
     memcpy(dst, src, count * sizeof(uint16_t));
+}
+
+void memcpy_u32(uint32_t *dst, const uint32_t *src, size_t count)
+{
+    memcpy(dst, src, count * sizeof(uint32_t));
 }
 
 int memcmp_u16(const uint16_t *left, const uint16_t *right, size_t count)
@@ -31,8 +38,6 @@ uint32_t uint32_t_min(uint32_t left, uint32_t right)
 {
     return left < right ? left : right;
 }
-
-#define s16(N) struct { size_t len; uint16_t buf[N]; }
 
 bool s16_from_ascii(uint16_t *dst, size_t size, const char *src)
 {

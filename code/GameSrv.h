@@ -51,10 +51,11 @@ typedef struct GameConnMap {
 } GameConnMap;
 
 typedef struct GamePlayer {
-    uint32_t    player_id;
-    uintptr_t   conn_token;
-    struct uuid account_id;
-    struct uuid char_id;
+    uint32_t         player_id;
+    uintptr_t        conn_token;
+    struct uuid      account_id;
+    struct uuid      char_id;
+    DbCharacter      character;
 } GamePlayer;
 typedef array(GamePlayer) GamePlayerArray;
 

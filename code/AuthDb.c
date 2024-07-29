@@ -1,4 +1,3 @@
-const char *SQL_GET_SESSION    = "SELECT created_at, updated_at, account_id FROM sessions WHERE user_id = ? AND session_id = ?;";
 const char *SQL_GET_FRIENDS    = "SELECT * FROM friendships WHERE account_id = ?;";
 
 int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, struct uuid *result)
@@ -95,21 +94,29 @@ int AuthDb_Open(AuthDb *result, const char *path)
     }
 
     sqlite3 *conn = result->conn;
-    if ((err = sqlite3_prepare_v2(conn, SQL_GET_SESSION, -1, &result->stmt_get_session, 0)) != SQLITE_OK) {
-        log_error("Failed to create the 'SQL_GET_SESSION' prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_prepare_v2(conn, SQL_GET_FRIENDS, -1, &result->stmt_get_friendships, 0)) != SQLITE_OK) {
+        log_error("Failed to create the 'SQL_GET_FRIENDS' prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
     }
 
     array_char_t builder = {0};
+    appendf(&builder, "SELECT ");
+    append_fields(&builder, DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
+    appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
+    array_add(&builder, '\0');
+
+    if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_session, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
+    array_clear(&builder);
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, " FROM accounts WHERE account_id = ?;");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_account, 0)) != SQLITE_OK) {
-        log_error("Failed to create the prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
-        array_free(&builder);
-        return ERR_UNSUCCESSFUL;
+        goto exit_on_error;
     }
 
     array_clear(&builder);
@@ -119,18 +126,24 @@ int AuthDb_Open(AuthDb *result, const char *path)
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_characters, 0)) != SQLITE_OK) {
-        log_error("Failed to create the 'SQL_GET_CHARACTERS' prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
-        array_free(&builder);
-        return ERR_UNSUCCESSFUL;
+        goto exit_on_error;
     }
 
-    if ((err = sqlite3_prepare_v2(conn, SQL_GET_FRIENDS, -1, &result->stmt_get_friendships, 0)) != SQLITE_OK) {
-        log_error("Failed to create the 'SQL_GET_FRIENDS' prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
-        array_free(&builder);
-        return ERR_UNSUCCESSFUL;
+    array_clear(&builder);
+    appendf(&builder, "SELECT ");
+    append_fields(&builder, DbBagColsName, ARRAY_SIZE(DbBagColsName));
+    appendf(&builder, " FROM bags WHERE char_id = ?;");
+    array_add(&builder, '\0');
+
+    if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
+        goto exit_on_error;
     }
 
     return ERR_OK;
+exit_on_error:
+    log_error("Failed to create a prepared statement '%s', err: %d (%s)", builder.data, err, sqlite3_errstr(err));
+    array_free(&builder);
+    return ERR_UNSUCCESSFUL;
 }
 
 void AuthDb_Close(AuthDb *database)
@@ -151,6 +164,10 @@ void AuthDb_Close(AuthDb *database)
 
     if ((err = sqlite3_finalize(database->stmt_get_friendships)) != SQLITE_OK) {
         log_error("Failed to finalize 'stmt_get_friendships', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_get_character_bags)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_get_character_bags', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_close_v2(database->conn)) != SQLITE_OK) {
@@ -181,11 +198,18 @@ int AuthDb_GetSession(AuthDb *database, struct uuid user_id, struct uuid session
     }
 
     if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
-        result->user_id = user_id;
-        result->session_id = session_id;
-        err = sqlite3_column_uuid(stmt, 2, &result->account_id);
+        if (((err = sqlite3_column_uuid(stmt, DbSessionCols_user_id, &result->user_id)) != 0) ||
+            ((err = sqlite3_column_uuid(stmt, DbSessionCols_session_id, &result->session_id)) != 0) ||
+            ((err = sqlite3_column_i64(stmt, DbSessionCols_created_at, &result->created_at)) != 0) ||
+            ((err = sqlite3_column_i64(stmt, DbSessionCols_updated_at, &result->updated_at)) != 0) ||
+            ((err = sqlite3_column_uuid(stmt, DbSessionCols_account_id, &result->account_id)) != 0))
+        {
+            sqlite3_reset(stmt);
+            return ERR_UNSUCCESSFUL;
+        }
+
         sqlite3_reset(stmt);
-        return err;
+        return ERR_OK;
     } else if (err == SQLITE_DONE) {
         return ERR_UNSUCCESSFUL;
     } else {
@@ -232,8 +256,6 @@ int AuthDb_GetAccount(AuthDb *database, struct uuid account_id, DbAccount *resul
             return ERR_SERVER_ERROR;
         }
 
-        result->eula_accepted = sqlite3_column_int(stmt, 3) != 0;
-        result->current_territory = (uint16_t)(sqlite3_column_int(stmt, 5) & 0xFFFF);
         sqlite3_reset(stmt);
         return ERR_OK;
     } else if (err == SQLITE_DONE) {

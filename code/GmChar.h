@@ -22,7 +22,7 @@ typedef enum HelmStatus {
 #define HAIR_COLOR_BITS 5
 #define FACE_STYLE_BITS 5
 #define HAIR_STYLE_BITS 6
-#define LEVEL_BITS      6
+#define LEVEL_BITS      5
 
 #define HEIGHT_MAX     (1 << HEIGHT_BITS) - 1
 #define SKIN_COLOR_MAX (1 << SKIN_COLOR_BITS) - 1
@@ -61,8 +61,9 @@ typedef struct CharacterSettings {
     uint32_t     hair_style           : HAIR_STYLE_BITS;
     uint32_t     campaign1            : 2; // 0=prof, 1=faction, 2=nightfall
     uint8_t      guild_hall_id[16];
-    uint16_t     campaign2            : 4;
+    uint16_t     campaign2            : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
     uint16_t     level                : LEVEL_BITS;
+    uint16_t     is_pvp               : 1;
     uint16_t     secondary_profession : 4;
     uint16_t     helm_status          : 2;
     uint16_t     h001E;               // Seems to always be \xDD\xDD or \xAD\xBA aka BAAD (on purpose?)

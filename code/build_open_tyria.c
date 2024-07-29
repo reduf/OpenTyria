@@ -77,11 +77,12 @@
 #include "msgpack.h"
 #include "proto.h"
 
+#include "AuthDb.h"
+
 #include "GameMsg.h"
 #include "GameSrv.h"
 
 #include "AuthMsg.h"
-#include "AuthDb.h"
 #include "AuthSrv.h"
 
 #if !defined(COMPILE_TESTS)
