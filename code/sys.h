@@ -14,6 +14,7 @@ typedef struct UtcTime {
 } UtcTime;
 
 int sys_get_utc_time(UtcTime *time);
+uint64_t sys_get_monotonic_time_ms();
 
 int  sys_socket(uintptr_t *result, int af, int type, int protocol);
 void sys_closesocket(uintptr_t fd);

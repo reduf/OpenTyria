@@ -1,6 +1,11 @@
 #pragma once
 
 #pragma pack(push, 1)
+typedef struct GameSrv_PingReply {
+    uint16_t header;
+    uint32_t ping;
+} GameSrv_PingReply;
+
 typedef struct GameSrv_InstanceHead {
     uint16_t header;
     uint8_t  b1;
@@ -46,6 +51,14 @@ typedef struct GameSrv_UpdateGold {
     uint16_t stream;
     uint32_t gold;
 } GameSrv_UpdateGold;
+
+typedef struct GameSrv_WeaponSet {
+    uint16_t header;
+    uint16_t stream_id;
+    uint8_t  slot;
+    uint32_t leadhand;
+    uint32_t offhand;
+} GameSrv_WeaponSet;
 
 typedef struct GameSrv_LoadSpawnPoint {
     uint16_t header;
@@ -117,6 +130,83 @@ typedef struct GameSrv_PvpItemAddUnlock {
     uint32_t params[64];
 } GameSrv_PvpItemAddUnlock;
 
+typedef struct GameSrv_AccountFeature {
+    uint16_t header;
+    uint16_t feature_id;
+    uint16_t param1;
+    uint16_t param2;
+} GameSrv_AccountFeature;
+
+typedef struct GameSrv_KurzickMax {
+    uint16_t header;
+    uint32_t max_faction;
+} GameSrv_KurzickMax;
+
+typedef struct GameSrv_LuxonMax {
+    uint16_t header;
+    uint32_t max_faction;
+} GameSrv_LuxonMax;
+
+typedef struct GameSrv_BalthazarMax {
+    uint16_t header;
+    uint32_t max_faction;
+} GameSrv_BalthazarMax;
+
+typedef struct GameSrv_ImperialMax {
+    uint16_t header;
+    uint32_t max_faction;
+} GameSrv_ImperialMax;
+
+typedef struct GameSrv_AgentCreateAttribute {
+    uint16_t header;
+    uint32_t agent_id;
+    uint8_t  unk1;
+    uint8_t  unk2;
+} GameSrv_AgentCreateAttribute;
+
+typedef struct GameSrv_SkillbarUpdate {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t n_skills;
+    uint32_t skills[8];
+    uint32_t n_pvp_masks;
+    uint32_t pvp_masks[8];
+    uint8_t  unk1;
+} GameSrv_SkillbarUpdate;
+
+typedef struct GameSrv_AgentAttrUpdateInt {
+    uint16_t header;
+    uint32_t attr_id;
+    uint32_t agent_id;
+    uint32_t value;
+} GameSrv_AgentAttrUpdateInt;
+
+typedef struct GameSrv_AgentAttrUpdateFloat {
+    uint16_t header;
+    uint32_t attr_id;
+    uint32_t agent_id;
+    float    value;
+} GameSrv_AgentAttrUpdateFloat;
+
+typedef struct GameSrv_PlayerAttr {
+    uint16_t header;
+    uint32_t experience;
+    uint32_t current_kurzick;
+    uint32_t total_earned_kurzick;
+    uint32_t current_luxon;
+    uint32_t total_earned_luxon;
+    uint32_t current_imperial;
+    uint32_t total_earned_imperial;
+    uint32_t unk_faction4;
+    uint32_t unk_faction5;
+    uint32_t level;
+    uint32_t morale;
+    uint32_t current_balth;
+    uint32_t total_earned_balth;
+    uint32_t current_skill_points;
+    uint32_t total_earned_skill_points;
+} GameSrv_PlayerAttr;
+
 typedef union GameCliMsg {
     uint16_t                     header;
     uint8_t                      buffer[MSG_MAX_BUFFER_SIZE];
@@ -128,12 +218,14 @@ typedef union GameCliMsg {
 typedef union GameSrvMsg {
     uint16_t                     header;
     uint8_t                      buffer[MSG_MAX_BUFFER_SIZE];
+    GameSrv_PingReply            ping_reply;
     GameSrv_InstanceHead         instance_head;
     GameSrv_InstancePlayerName   instance_player_name;
     GameSrv_InstanceInfo         instance_info;
     GameSrv_ReadyForMapSpawn     ready_for_map_spawn;
     GameSrv_ItemStreamCreate     item_stream_create;
     GameSrv_UpdateGold           update_gold;
+    GameSrv_WeaponSet            weapon_set;
     GameSrv_LoadSpawnPoint       load_spawn_point;
     GameSrv_UpdateProfession     update_profession;
     GameSrv_UnlockedProfession   unlocked_profession;
@@ -142,5 +234,15 @@ typedef union GameSrvMsg {
     GameSrv_UnlockedSkills       unlocked_skills;
     GameSrv_UnlockedPvpHeroes    unlocked_pvp_heroes;
     GameSrv_PvpItemAddUnlock     pvp_item_add_unlock;
+    GameSrv_AccountFeature       account_feature;
+    GameSrv_KurzickMax           kurzick_max;
+    GameSrv_LuxonMax             luxon_max;
+    GameSrv_BalthazarMax         balthazar_max;
+    GameSrv_ImperialMax          imperial_max;
+    GameSrv_AgentCreateAttribute agent_create_attribute;
+    GameSrv_SkillbarUpdate       skillbar_update;
+    GameSrv_AgentAttrUpdateInt   agent_attr_update_int;
+    GameSrv_AgentAttrUpdateFloat agent_attr_update_float;
+    GameSrv_PlayerAttr           player_attr;
 } GameSrvMsg;
 #pragma pack(pop)

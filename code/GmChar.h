@@ -5,6 +5,21 @@ typedef enum Sex {
     Sex_Female,
 } Sex;
 
+typedef enum Profession {
+    Profession_None                 = 0,
+    Profession_Warrior              = 1,
+    Profession_Ranger               = 2,
+    Profession_Monk                 = 3,
+    Profession_Necromancer          = 4,
+    Profession_Mesmer               = 5,
+    Profession_Elementalist         = 6,
+    Profession_Assassin             = 7,
+    Profession_Ritualist            = 8,
+    Profession_Paragon              = 9,
+    Profession_Dervish              = 10,
+    Profession_Count
+} Profession;
+
 typedef enum Campaign {
     Campaign_Prophecies,
     Campaign_Faction,

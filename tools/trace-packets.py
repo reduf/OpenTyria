@@ -1,5 +1,6 @@
 import sys
 from process import *
+from datetime import datetime
 
 packet_names = {
     0x0000: 'GAME_SMSG_TRADE_REQUEST',
@@ -13,7 +14,7 @@ packet_names = {
     0x000C: 'GAME_SMSG_PING_REQUEST',
     0x000D: 'GAME_SMSG_PING_REPLY',
     0x000E: 'GAME_SMSG_FRIENDLIST_MESSAGE',
-    0x000F: 'GAME_SMSG_ACCOUNT_CURRENCY',
+    0x000F: 'GAME_SMSG_ACCOUNT_FEATURE',
     0x0018: 'GAME_SMSG_UNLOCKED_PVP_HEROES',
     0x001A: 'GAME_SMSG_PVP_ITEM_ADD_UNLOCK',
     0x001B: 'GAME_SMSG_PVP_ITEM_END',
@@ -36,8 +37,8 @@ packet_names = {
     0x0031: 'GAME_SMSG_HERO_ACCOUNT_NAME',
     0x0033: 'GAME_SMSG_MESSAGE_OF_THE_DAY',
     0x0034: 'GAME_SMSG_AGENT_PINGED',
+    0x0037: 'GAME_SMSG_AGENT_CREATE_ATTRIBUTES',
     0x003A: 'GAME_SMSG_AGENT_UPDATE_ATTRIBUTE',
-    0x003B: 'GAME_SMSG_AGENT_UPDATE_ATTRIBUTE',
     0x003D: 'GAME_SMSG_AGENT_ALLY_DESTROY',
     0x003E: 'GAME_SMSG_EFFECT_UPKEEP_ADDED',
     0x003F: 'GAME_SMSG_EFFECT_UPKEEP_REMOVED',
@@ -229,19 +230,134 @@ packet_names = {
     0x01E0: 'GAME_SMSG_PARTY_SEARCH_TYPE',
 }
 
+cmsg_names = {
+    0x0000: 'GAME_CMSG_TRADE_ACKNOWLEDGE',
+0x0001: 'GAME_CMSG_TRADE_CANCEL',
+0x0002: 'GAME_CMSG_TRADE_ADD_ITEM',
+0x0003: 'GAME_CMSG_TRADE_SEND_OFFER',
+0x0005: 'GAME_CMSG_TRADE_REMOVE_ITEM',
+0x0006: 'GAME_CMSG_TRADE_CANCEL_OFFER',
+0x0007: 'GAME_CMSG_TRADE_ACCEPT',
+0x0008: 'GAME_CMSG_DISCONNECT',
+0x0009: 'GAME_CMSG_PING_REPLY',
+0x000A: 'GAME_CMSG_HEARTBEAT',
+0x000B: 'GAME_CMSG_PING_REQUEST',
+0x000C: 'GAME_CMSG_ATTRIBUTE_DECREASE',
+0x000D: 'GAME_CMSG_ATTRIBUTE_INCREASE',
+0x000E: 'GAME_CMSG_ATTRIBUTE_LOAD',
+0x000F: 'GAME_CMSG_QUEST_ABANDON',
+0x0010: 'GAME_CMSG_QUEST_REQUEST_INFOS',
+0x0013: 'GAME_CMSG_HERO_BEHAVIOR',
+0x0014: 'GAME_CMSG_HERO_LOCK_TARGET',
+0x0017: 'GAME_CMSG_HERO_SKILL_TOGGLE',
+0x0018: 'GAME_CMSG_HERO_FLAG_SINGLE',
+0x0019: 'GAME_CMSG_HERO_FLAG_ALL',
+0x001A: 'GAME_CMSG_HERO_USE_SKILL',
+0x001C: 'GAME_CMSG_HERO_ADD',
+0x001D: 'GAME_CMSG_HERO_KICK',
+0x0021: 'GAME_CMSG_TARGET_CALL',
+0x0023: 'GAME_CMSG_PING_WEAPON_SET',
+0x0024: 'GAME_CMSG_ATTACK_AGENT',
+0x0026: 'GAME_CMSG_CANCEL_MOVEMENT',
+0x0027: 'GAME_CMSG_DROP_BUFF',
+0x0029: 'GAME_CMSG_DRAW_MAP',
+0x002A: 'GAME_CMSG_DROP_ITEM',
+0x002D: 'GAME_CMSG_DROP_GOLD',
+0x002E: 'GAME_CMSG_EQUIP_ITEM',
+0x0031: 'GAME_CMSG_INTERACT_PLAYER',
+0x0033: 'GAME_CMSG_DEPOSIT_FACTION',
+0x0037: 'GAME_CMSG_INTERACT_LIVING',
+0x0039: 'GAME_CMSG_SEND_DIALOG',
+0x003C: 'GAME_CMSG_MOVE_TO_COORD',
+0x003D: 'GAME_CMSG_INTERACT_ITEM',
+0x003E: 'GAME_CMSG_ROTATE_PLAYER',
+0x003F: 'GAME_CMSG_CHANGE_SECOND_PROFESSION',
+0x0044: 'GAME_CMSG_USE_SKILL',
+0x0047: 'GAME_CMSG_TRADE_INITIATE',
+0x0048: 'GAME_CMSG_BUY_MATERIALS',
+0x004A: 'GAME_CMSG_REQUEST_QUOTE',
+0x004B: 'GAME_CMSG_TRANSACT_ITEMS',
+0x004D: 'GAME_CMSG_UNEQUIP_ITEM',
+0x004F: 'GAME_CMSG_INTERACT_GADGET',
+0x0051: 'GAME_CMSG_OPEN_CHEST',
+0x0055: 'GAME_CMSG_EQUIP_VISIBILITY',
+0x0056: 'GAME_CMSG_TITLE_DISPLAY',
+0x0057: 'GAME_CMSG_TITLE_HIDE',
+0x005A: 'GAME_CMSG_SKILLBAR_SKILL_SET',
+0x005B: 'GAME_CMSG_SKILLBAR_LOAD',
+0x005C: 'GAME_CMSG_SKILLBAR_SKILL_REPLACE',
+0x0061: 'GAME_CMSG_SKIP_CINEMATIC',
+0x0062: 'GAME_CMSG_SEND_CHAT_MESSAGE',
+0x0067: 'GAME_CMSG_ITEM_DESTROY',
+0x006A: 'GAME_CMSG_ITEM_IDENTIFY',
+0x006B: 'GAME_CMSG_TOME_UNLOCK_SKILL',
+0x0070: 'GAME_CMSG_ITEM_MOVE',
+0x0071: 'GAME_CMSG_ITEM_ACCEPT_ALL',
+0x0073: 'GAME_CMSG_ITEM_SPLIT_STACK',
+0x0075: 'GAME_CMSG_ITEM_SALVAGE_SESSION_OPEN',
+0x0076: 'GAME_CMSG_ITEM_SALVAGE_SESSION_CANCEL',
+0x0077: 'GAME_CMSG_ITEM_SALVAGE_SESSION_DONE',
+0x0078: 'GAME_CMSG_ITEM_SALVAGE_MATERIALS',
+0x0079: 'GAME_CMSG_ITEM_SALVAGE_UPGRADE',
+0x007A: 'GAME_CMSG_ITEM_CHANGE_GOLD',
+0x007C: 'GAME_CMSG_ITEM_USE',
+0x0087: 'GAME_SMSG_INSTANCE_CHAR_CREATION_START_RECV',
+0x0088: 'GAME_SMSG_INSTANCE_CHAR_CREATION_READY_RECV',
+0x0086: 'GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN',
+0x008E: 'GAME_CMSG_INSTANCE_LOAD_REQUEST_PLAYERS',
+0x008F: 'GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS',
+0x0099: 'GAME_CMSG_PARTY_SET_DIFFICULTY',
+0x009A: 'GAME_CMSG_PARTY_ACCEPT_INVITE',
+0x009B: 'GAME_CMSG_PARTY_ACCEPT_CANCEL',
+0x009C: 'GAME_CMSG_PARTY_ACCEPT_REFUSE',
+0x009D: 'GAME_CMSG_PARTY_INVITE_NPC',
+0x009E: 'GAME_CMSG_PARTY_INVITE_PLAYER',
+0x009F: 'GAME_CMSG_PARTY_INVITE_PLAYER_NAME',
+0x00A0: 'GAME_CMSG_PARTY_LEAVE_GROUP',
+0x00A1: 'GAME_CMSG_PARTY_CANCEL_ENTER_CHALLENGE',
+0x00A3: 'GAME_CMSG_PARTY_ENTER_CHALLENGE',
+0x00A5: 'GAME_CMSG_PARTY_RETURN_TO_OUTPOST',
+0x00A6: 'GAME_CMSG_PARTY_KICK_NPC',
+0x00A7: 'GAME_CMSG_PARTY_KICK_PLAYER',
+0x00A8: 'GAME_CMSG_PARTY_SEARCH_SEEK',
+0x00A9: 'GAME_CMSG_PARTY_SEARCH_CANCEL',
+0x00AA: 'GAME_CMSG_PARTY_SEARCH_REQUEST_JOIN',
+0x00AB: 'GAME_CMSG_PARTY_SEARCH_REQUEST_REPLY',
+0x00AC: 'GAME_CMSG_PARTY_SEARCH_TYPE',
+0x00AD: 'GAME_CMSG_PARTY_READY_STATUS',
+0x00AE: 'GAME_CMSG_PARTY_ENTER_GUILD_HALL',
+0x00AF: 'GAME_CMSG_PARTY_TRAVEL',
+0x00B0: 'GAME_CMSG_PARTY_LEAVE_GUILD_HALL',
+}
+
 def main(args):
+    if (2 ** 32) < sys.maxsize:
+        print('Use a 32 bits version of Python')
+        sys.exit(1)
+
     # proc = Process(7208)
     proc, = GetProcesses('Gw.exe')
     scanner = ProcessScanner(proc)
-    addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
+    smsg_addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
+    cmsg_addr = scanner.find(b'\xC7\x47\x54\x01\x00\x00\x00\x1B\xC9\x81\xE1\x00\x80', -0xC5)
 
     running = True
     def signal_handler(sig, frame):
         global running
         running = False
 
+    @Hook.stdcall(LPVOID, DWORD, LPVOID)
+    def on_send_packet(ctx, size, packet):
+        header, = proc.read(packet, 'I')
+        if header in cmsg_names:
+            name = cmsg_names[header]
+        else:
+            name = "unknown"
+        # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f'SendPacket: {header}, 0x{header:X}, {name}')
+
     @Hook.rawcall
-    def on_packet(ctx):
+    def on_recv_packet(ctx):
         packet, = proc.read(ctx.Esp, 'I')
         header, = proc.read(packet, 'I')
         if header in packet_names:
@@ -249,15 +365,32 @@ def main(args):
         else:
             name = "unknown"
 
-        print(f'Header {header}, 0x{header:X}, {name}')
+        # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f'RecvPacket: {header}, 0x{header:X}, {name}')
 
-        if header == 26:
-            _, val, count, *values = proc.read(packet, 'III64I')
-            temp = ', '.join(f'{val:X}' for val in values[:count])
-            print(f'  {val}, {count}, {temp}')
+        # if header == 26:
+        #     _, val, count, *values = proc.read(packet, 'III64I')
+        #     temp = ', '.join(f'{val:X}' for val in values[:count])
+        #     print(f'  {val}, {count}, {temp}')
+        # if header == 0x000F:
+        #     _, val1, val2, val3 = proc.read(packet, 'IIII')
+        #     print(f'  {val1}, {val2}, {val3},')
+        # if name in ('GAME_SMSG_PLAYER_ATTR_MAX_KURZICK', 'GAME_SMSG_PLAYER_ATTR_MAX_LUXON', 'GAME_SMSG_PLAYER_ATTR_MAX_BALTHAZAR', 'GAME_SMSG_PLAYER_ATTR_MAX_IMPERIAL'):
+        #     value, = proc.read(packet + 4, 'I')
+        #     print(f'{name} -> {value}')
+        # if name == 'GAME_SMSG_PING_REPLY':
+        #     val = proc.read(packet + 4, 'I')
+        #     print(f'>> {val}')
+        # if name == 'GAME_SMSG_AGENT_ATTR_UPDATE_INT':
+        #     attr_id, agent_id, value = proc.read(packet + 4, 'III')
+        #     print(f'>>> (int) attr_id: {attr_id}, agent_id: {agent_id}, value: {value}')
+        # elif name == 'GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT':
+        #     attr_id, agent_id, value = proc.read(packet + 4, 'III')
+        #     print(f'>>> (float) attr_id: {attr_id}, agent_id: {agent_id}, value: {value}')
 
     with ProcessDebugger(proc) as dbg:
-        dbg.add_hook(addr, on_packet)
+        dbg.add_hook(smsg_addr, on_recv_packet)
+        dbg.add_hook(cmsg_addr, on_send_packet)
         print(f'Start debugging process {proc.name}, {proc.id}')
         while running:
             dbg.poll(32)

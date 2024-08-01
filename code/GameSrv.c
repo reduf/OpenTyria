@@ -1,6 +1,7 @@
 #pragma once
 
-#define GAME_READ_CHUNK_SIZE 4096
+#define GAME_SRV_READ_CHUNK_SIZE 4096
+#define GAME_SRV_TIME_BETWEEN_PING_MS 5000
 
 void GameConnection_Free(GameConnection *conn)
 {
@@ -99,6 +100,17 @@ GameSrvMsg* GameConnection_BuildMsg(GameConnection *conn, uint16_t header)
     memset(&conn->srv_msg, 0, sizeof(conn->srv_msg));
     conn->srv_msg.header = header;
     return &conn->srv_msg;
+}
+
+void GameSrv_SendPing(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PING_REQUEST);
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PING_REPLY);
+    GameSrv_PingReply *msg = &buffer->ping_reply;
+    msg->ping = 20;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendInstanceHead(GameConnection *conn)
@@ -566,6 +578,56 @@ void GameSrv_SendPvpItems(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
+void GameSrv_SendAccountFeatures(GameConnection *conn)
+{
+    uint16_t features[][3] = {
+        {1, 10, 0},
+        {99, 3, 0},
+        {100, 5, 0},
+        {101, 5, 5},
+        {102, 2, 2},
+        {111, 1, 0},
+        {124, 1, 0},
+        {125, 1, 0},
+        {131, 1, 0},
+    };
+
+    for (size_t idx = 0; idx < ARRAY_SIZE(features); ++idx) {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ACCOUNT_FEATURE);
+        GameSrv_AccountFeature *msg = &buffer->account_feature;
+        msg->feature_id = features[idx][0];
+        msg->param1 = features[idx][1];
+        msg->param2 = features[idx][2];
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+}
+
+void GameSrv_SendPlayerFactions(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_KURZICK);
+    buffer->kurzick_max.max_faction = 5000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->kurzick_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_LUXON);
+    buffer->luxon_max.max_faction = 5000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->luxon_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_BALTHAZAR);
+    buffer->balthazar_max.max_faction = 10000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->balthazar_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_IMPERIAL);
+    buffer->imperial_max.max_faction = 10000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->imperial_max));
+}
+
+void GameSrv_SendPlayerAgentAttributes(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
+    buffer->agent_create_attribute.agent_id = 42;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->agent_create_attribute));
+}
+
 void GameSrv_SendInstanceEarlyPacket(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_EARLY_PACKET);
@@ -585,7 +647,7 @@ void GameSrv_SendInstanceLoadInfo(GameSrv *srv, GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_INFO);
     GameSrv_InstanceInfo *msg = &buffer->instance_info;
-    msg->agent = 0; // Should be the agent id of the player
+    msg->agent = 42; // Should be the agent id of the player
     msg->map_id = srv->map_id;
     msg->is_explorable = 1; // what to put here?
     msg->district = srv->district_number;
@@ -616,9 +678,22 @@ void GameSrv_SendGoldStorageAdd(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_GOLD_STORAGE_ADD);
     GameSrv_UpdateGold *msg = &buffer->update_gold;
-    // uint16_t stream;
+    msg->stream = 1;
     // uint32_t gold;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendWeaponSlots(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_WEAPON_SET);
+    GameSrv_WeaponSet *msg = &buffer->weapon_set;
+    for (uint8_t slot = 0; slot < 4; ++slot) {
+        msg->stream_id = 1;
+        msg->slot = slot;
+        msg->leadhand = 0;
+        msg->offhand = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
 }
 
 void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
@@ -626,6 +701,84 @@ void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_READY_FOR_MAP_SPAWN);
     GameSrv_ReadyForMapSpawn *msg = &buffer->ready_for_map_spawn;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerProfession(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
+    GameSrv_UpdateProfession *msg = &buffer->update_profession;
+    msg->agent_id = 42;
+    msg->primary_profession = Profession_Warrior;
+    msg->is_pvp = 0;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendUnlockedProfession(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UNLOCKED_PROFESSION);
+    GameSrv_UnlockedProfession *msg = &buffer->unlocked_profession;
+    msg->agent_id = 42;
+    msg->unlocked = (1 << Profession_Count) - 1;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendSkillbarUpdate(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_SKILLBAR_UPDATE);
+    GameSrv_SkillbarUpdate *msg = &buffer->skillbar_update;
+    msg->agent_id = 42;
+    msg->n_skills = 8;
+    msg->n_pvp_masks = 8;
+    msg->unk1 = 1;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerAgentAttribute(GameConnection *conn)
+{
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_SET);
+        GameSrv_PlayerAttr *msg = &buffer->player_attr;
+        msg->experience = 10000;
+        msg->current_kurzick = 100;
+        msg->total_earned_kurzick = 100000;
+        msg->current_luxon = 100;
+        msg->total_earned_luxon = 100000;
+        msg->current_imperial = 500;
+        msg->total_earned_imperial = 15000;
+        msg->unk_faction4 = 0;
+        msg->unk_faction5 = 0;
+        msg->level = 0;
+        msg->morale = 0;
+        msg->current_balth = 200;
+        msg->total_earned_balth = 200000;
+        msg->current_skill_points = 0;
+        msg->total_earned_skill_points = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_INT);
+        GameSrv_AgentAttrUpdateInt *msg = &buffer->agent_attr_update_int;
+        msg->agent_id = 42;
+        msg->attr_id = 41;
+        msg->value = 20;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        msg->attr_id = 42;
+        msg->value = 100;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        msg->attr_id = 64;
+        msg->value = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT);
+        GameSrv_AgentAttrUpdateFloat *msg = &buffer->agent_attr_update_float;
+        msg->agent_id = 42;
+        msg->attr_id = 43;
+        msg->value = 0.033f;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
 }
 
 void GameSrv_GetMessages(GameSrv *srv, GameConnection *conn)
@@ -712,13 +865,13 @@ void GameSrv_ProcessEvent(GameSrv *srv, Event event)
             uint8_t *buffer;
 
             const size_t size_at_starts = conn->incoming.size;
-            if ((buffer = array_push(&conn->incoming, GAME_READ_CHUNK_SIZE)) == NULL) {
+            if ((buffer = array_push(&conn->incoming, GAME_SRV_READ_CHUNK_SIZE)) == NULL) {
                 log_error("Out of memory will reading from socket");
                 break;
             }
 
             size_t bytes;
-            if ((err = sys_recv(conn->source.socket, buffer, GAME_READ_CHUNK_SIZE, &bytes)) != 0) {
+            if ((err = sys_recv(conn->source.socket, buffer, GAME_SRV_READ_CHUNK_SIZE, &bytes)) != 0) {
                 array_shrink(&conn->incoming, size_at_starts);
                 if (!sys_would_block(err)) {
                     log_error(
@@ -811,10 +964,19 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
         GameSrv_SendInstanceEarlyPacket(&conn);
         GameSrv_SendItemStreamCreate(&conn);
         GameSrv_SendUpdateActiveWeaponSet(&conn);
+        GameSrv_SendWeaponSlots(&conn);
+        GameSrv_SendGoldStorageAdd(&conn);
+        GameSrv_SendPlayerFactions(&conn);
+        GameSrv_SendPlayerAgentAttributes(&conn);
+        GameSrv_SendPlayerProfession(&conn);
+        GameSrv_SendUnlockedProfession(&conn);
+        GameSrv_SendSkillbarUpdate(&conn);
+        GameSrv_SendPlayerAgentAttribute(&conn);
         GameSrv_SendCharacterCreationReady(&conn);
         GameSrv_SendUnlockedSkills(&conn);
         GameSrv_SendUnlockedPvpHeroes(&conn);
         GameSrv_SendPvpItems(&conn);
+        GameSrv_SendAccountFeatures(&conn);
         break;
     case MapType_MainTown:
     case MapType_MainExplorable:
@@ -925,12 +1087,14 @@ void GameSrv_HandleDisconnect(GameSrv *srv, size_t player_id)
 
 int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg)
 {
-    int err;
+    int err = ERR_OK;
     switch (msg->header) {
     case GAME_CMSG_DISCONNECT:
         GameSrv_HandleDisconnect(srv, player_id);
         log_info("GAME_CMSG_DISCONNECT");
         err = ERR_OK;
+        break;
+    case GAME_CMSG_PING_REPLY:
         break;
     case GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN:
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN");
@@ -943,6 +1107,10 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
     case GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS:
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS");
         err = GameSrv_HandleInstanceLoadRequestItems(srv, player_id, &msg->request_items);
+        break;
+    case GAME_SMSG_INSTANCE_CHAR_CREATION_START_RECV:
+        break;
+    case GAME_SMSG_INSTANCE_CHAR_CREATION_READY_RECV:
         break;
     default:
         log_warn(
@@ -958,6 +1126,8 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
 void GameSrv_Update(GameSrv *srv)
 {
     int err;
+
+    uint64_t current_time = sys_get_monotonic_time_ms();
 
     GameSrv_ProcessInternalMessages(srv);
     GameSrv_Poll(srv);
@@ -976,6 +1146,14 @@ void GameSrv_Update(GameSrv *srv)
     array_clear(&srv->player_messages);
 
     size_t n_connections = stbds_hmlen(srv->connections);
+    if (GAME_SRV_TIME_BETWEEN_PING_MS <= (current_time - srv->last_ping_request)) {
+        srv->last_ping_request = current_time;
+        for (size_t idx = 0; idx < n_connections; ++idx) {
+            GameConnection *conn = &srv->connections[idx].value;
+            GameSrv_SendPing(conn);
+        }
+    }
+
     for (size_t idx = 0; idx < n_connections; ++idx) {
         GameConnection *conn = &srv->connections[idx].value;
         if (array_empty(&conn->outgoing)) {

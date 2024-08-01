@@ -36,6 +36,11 @@ int sys_get_utc_time(UtcTime *time)
     return 0;
 }
 
+uint64_t sys_get_monotonic_time_ms()
+{
+    return GetTickCount64();
+}
+
 int sys_socket(uintptr_t *result, int af, int type, int protocol)
 {
     SOCKET fd;

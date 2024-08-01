@@ -117,6 +117,8 @@
 #define GAME_CMSG_ITEM_SALVAGE_UPGRADE              (GAME_CMSG_MASK | 0x0079) // 121
 #define GAME_CMSG_ITEM_CHANGE_GOLD                  (GAME_CMSG_MASK | 0x007A) // 122
 #define GAME_CMSG_ITEM_USE                          (GAME_CMSG_MASK | 0x007C) // 124
+#define GAME_SMSG_INSTANCE_CHAR_CREATION_START_RECV (GAME_CMSG_MASK | 0x0087) // 135
+#define GAME_SMSG_INSTANCE_CHAR_CREATION_READY_RECV (GAME_CMSG_MASK | 0x0088) // 136
 #define GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN       (GAME_CMSG_MASK | 0x0086) // 134
 #define GAME_CMSG_INSTANCE_LOAD_REQUEST_PLAYERS     (GAME_CMSG_MASK | 0x008E) // 142
 #define GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS       (GAME_CMSG_MASK | 0x008F) // 143
@@ -154,7 +156,7 @@
 #define GAME_SMSG_PING_REQUEST                      (0x000C) // 12
 #define GAME_SMSG_PING_REPLY                        (0x000D) // 13
 #define GAME_SMSG_FRIENDLIST_MESSAGE                (0x000E) // 14
-#define GAME_SMSG_ACCOUNT_CURRENCY                  (0x000F) // 15
+#define GAME_SMSG_ACCOUNT_FEATURE                   (0x000F) // 15
 #define GAME_SMSG_UNLOCKED_PVP_HEROES               (0x0018) // 24
 #define GAME_SMSG_PVP_ITEM_ADD_UNLOCK               (0x001A) // 26
 #define GAME_SMSG_PVP_ITEM_END                      (0x001B) // 27
@@ -177,7 +179,8 @@
 #define GAME_SMSG_HERO_ACCOUNT_NAME                 (0x0031) // 49
 #define GAME_SMSG_MESSAGE_OF_THE_DAY                (0x0033) // 51
 #define GAME_SMSG_AGENT_PINGED                      (0x0034) // 52
-#define GAME_SMSG_AGENT_UPDATE_ATTRIBUTE            (0x003B) // 59
+#define GAME_SMSG_AGENT_CREATE_ATTRIBUTES           (0x0037) // 55
+#define GAME_SMSG_AGENT_UPDATE_ATTRIBUTE            (0x003A) // 58
 #define GAME_SMSG_AGENT_ALLY_DESTROY                (0x003D) // 61
 #define GAME_SMSG_EFFECT_UPKEEP_ADDED               (0x003E) // 62
 #define GAME_SMSG_EFFECT_UPKEEP_REMOVED             (0x003F) // 63
