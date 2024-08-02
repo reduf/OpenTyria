@@ -993,6 +993,11 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
         return;
     }
 
+    if ((err = Db_GetCharacter(&srv->database, player->account_id, player->char_id, &player->character)) != 0) {
+        log_error("Could't load the character for this user from database");
+        return;
+    }
+
     size_t count;
     DbBag bags[BagModelId_Count];
     if ((err = Db_CharacterBags(&srv->database, player->account_id, player->char_id, bags, ARRAY_SIZE(bags), &count)) != 0) {

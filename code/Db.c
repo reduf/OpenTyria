@@ -80,6 +80,13 @@ int sqlite3_column_u8(sqlite3_stmt *stmt, int iCol, uint8_t *result)
     return ERR_OK;
 }
 
+int sqlite3_bind_uuid(sqlite3_stmt *stmt, int iCol, struct uuid uid)
+{
+    char buffer[UUID_STRING_LEN + 1];
+    uuid_snprint(buffer, sizeof(buffer), &uid);
+    return sqlite3_bind_text(stmt, iCol, buffer, UUID_STRING_LEN, SQLITE_TRANSIENT);
+}
+
 void append_fields(array_char_t *builder, const char **fields, size_t count)
 {
     for (size_t idx = 0; idx < count; ++idx) {
@@ -110,7 +117,7 @@ int Db_Open(Database *result, const char *path)
     array_char_t builder = {0};
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
-    appendf(&builder, "FROM sessions WHERE user_id = ? AND session_id = ?;");
+    appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_session, 0)) != SQLITE_OK) {
@@ -133,7 +140,17 @@ int Db_Open(Database *result, const char *path)
     appendf(&builder, "FROM characters WHERE account_id = ?;");
     array_add(&builder, '\0');
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_characters, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_account_characters, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
+    array_clear(&builder);
+    appendf(&builder, "SELECT ");
+    append_fields(&builder, DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
+    appendf(&builder, "FROM characters WHERE account_id = ? AND char_id = ?;");
+    array_add(&builder, '\0');
+
+    if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -166,8 +183,12 @@ void Db_Close(Database *database)
         log_error("Failed to finalize 'stmt_get_account', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_characters)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_characters', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_get_account_characters)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_get_account_characters', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_get_character)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_get_account_characters', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_finalize(database->stmt_get_friendships)) != SQLITE_OK) {
@@ -186,21 +207,16 @@ void Db_Close(Database *database)
 int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_id, DbSession *result)
 {
     int err;
-    char user_id_buffer[UUID_STRING_LEN + 1];
-    char session_id_buffer[UUID_STRING_LEN + 1];
-
-    uuid_snprint(user_id_buffer, sizeof(user_id_buffer), &user_id);
-    uuid_snprint(session_id_buffer, sizeof(session_id_buffer), &session_id);
 
     sqlite3_stmt *stmt = database->stmt_get_session;
-    if ((err = sqlite3_bind_text(stmt, 1, user_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK) {
-        log_error("Failed to bind user_id '%s' to a statement, err: %d (%s)", user_id_buffer, err, sqlite3_errstr(err));
+    if ((err = sqlite3_bind_uuid(stmt, 1, user_id)) != SQLITE_OK) {
+        log_error("Failed to bind user_id to a statement, err: %d (%s)", err, sqlite3_errstr(err));
         sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
-    if ((err = sqlite3_bind_text(stmt, 2, session_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK) {
-        log_error("Failed to bind session_id '%s' to a statement, err: %d (%s)", session_id_buffer, err, sqlite3_errstr(err));
+    if ((err = sqlite3_bind_uuid(stmt, 2, session_id)) != SQLITE_OK) {
+        log_error("Failed to bind session_id to a statement, err: %d (%s)", err, sqlite3_errstr(err));
         sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
@@ -219,8 +235,10 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
         sqlite3_reset(stmt);
         return ERR_OK;
     } else if (err == SQLITE_DONE) {
+        sqlite3_reset(stmt);
         return ERR_UNSUCCESSFUL;
     } else {
+        sqlite3_reset(stmt);
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
     }
@@ -229,12 +247,14 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
 int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
 {
     int err;
-    char account_id_buffer[UUID_STRING_LEN + 1];
-    uuid_snprint(account_id_buffer, sizeof(account_id_buffer), &account_id);
 
     sqlite3_stmt *stmt = database->stmt_get_account;
-    if ((err = sqlite3_bind_text(stmt, 1, account_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK) {
-        log_error("Failed to bind account_id '%s' to a statement, err: %d (%s)", account_id_buffer, err, sqlite3_errstr(err));
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
+        log_error(
+            "Failed to bind account_id '%s' to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
         sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
@@ -274,50 +294,93 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
     }
 }
 
+int DbCharacter_from_stmt(sqlite3_stmt *stmt, DbCharacter *result)
+{
+    int err;
+    if (((err = sqlite3_column_uuid(stmt, DbCharacterCols_char_id, &result->char_id)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, DbCharacterCols_created_at, &result->created_at)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
+        ((err = sqlite3_column_uuid(stmt, DbCharacterCols_account_id, &result->account_id)) != 0) ||
+        ((err = sqlite3_column_s16(stmt, DbCharacterCols_char_name, result->char_name.buf, ARRAY_SIZE(result->char_name.buf), &result->char_name.len)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, DbCharacterCols_experience, &result->experience)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, DbCharacterCols_gold, &result->gold)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, DbCharacterCols_last_outpost, &result->last_outpost)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_primary_profession, &result->primary_profession)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_secondary_profession, &result->secondary_profession)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_level, &result->level)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_campaign, &result->campaign)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_face, &result->face)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_hair_color, &result->hair_color)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_hair_style, &result->hair_style)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_height, &result->height)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_sex, &result->sex)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, DbCharacterCols_skin, &result->skin)) != 0)
+    ) {
+        return ERR_SERVER_ERROR;
+    }
+    return ERR_OK;
+}
+
+int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char_id, DbCharacter *result)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_get_character;
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind account_id or/and char_id to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        sqlite3_reset(stmt);
+        return ERR_SERVER_ERROR;
+    }
+
+    if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+        err = DbCharacter_from_stmt(stmt, result);
+        sqlite3_reset(stmt);
+        if (err != 0) {
+            return ERR_SERVER_ERROR;
+        } else {
+            return ERR_OK;
+        }
+    } else if (err == SQLITE_DONE) {
+        return ERR_UNSUCCESSFUL;
+    } else {
+        log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
 int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArray *results)
 {
     int err;
-    char account_id_buffer[UUID_STRING_LEN + 1];
-    uuid_snprint(account_id_buffer, sizeof(account_id_buffer), &account_id);
 
-    sqlite3_stmt *stmt = database->stmt_get_characters;
-    if ((err = sqlite3_bind_text(stmt, 1, account_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK) {
-        log_error("Failed to bind account_id '%s' to a statement, err: %d (%s)", account_id_buffer, err, sqlite3_errstr(err));
+    sqlite3_stmt *stmt = database->stmt_get_account_characters;
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
+        log_error("Failed to bind account_id to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
         sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
     while ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
         DbCharacter *result = (DbCharacter *)array_push(results, 1);
-        if (((err = sqlite3_column_uuid(stmt, DbCharacterCols_char_id, &result->char_id)) != 0) ||
-            ((err = sqlite3_column_i64(stmt, DbCharacterCols_created_at, &result->created_at)) != 0) ||
-            ((err = sqlite3_column_i64(stmt, DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
-            ((err = sqlite3_column_uuid(stmt, DbCharacterCols_account_id, &result->account_id)) != 0) ||
-            ((err = sqlite3_column_s16(stmt, DbCharacterCols_char_name, result->char_name.buf, ARRAY_SIZE(result->char_name.buf), &result->char_name.len)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbCharacterCols_experience, &result->experience)) != 0) ||
-            ((err = sqlite3_column_u16(stmt, DbCharacterCols_gold, &result->gold)) != 0) ||
-            ((err = sqlite3_column_u16(stmt, DbCharacterCols_last_outpost, &result->last_outpost)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_primary_profession, &result->primary_profession)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_secondary_profession, &result->secondary_profession)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_level, &result->level)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_campaign, &result->campaign)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_face, &result->face)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_hair_color, &result->hair_color)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_hair_style, &result->hair_style)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_height, &result->height)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_sex, &result->sex)) != 0) ||
-            ((err = sqlite3_column_u8(stmt, DbCharacterCols_skin, &result->skin)) != 0)
-        ) {
-            array_pop(results);
+        err = DbCharacter_from_stmt(stmt, result);
+        if (err != 0) {
             sqlite3_reset(stmt);
+            array_pop(results);
             return ERR_SERVER_ERROR;
         }
     }
 
-    sqlite3_reset(stmt);
     if (err != SQLITE_DONE) {
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
@@ -328,19 +391,13 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
 int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid char_id, DbBag *results, size_t count, size_t *returned)
 {
     int err;
-    char account_id_buffer[UUID_STRING_LEN + 1];
-    uuid_snprint(account_id_buffer, sizeof(account_id_buffer), &account_id);
-    char char_id_buffer[UUID_STRING_LEN + 1];
-    uuid_snprint(char_id_buffer, sizeof(char_id_buffer), &char_id);
-
+    
     sqlite3_stmt *stmt = database->stmt_get_character_bags;
-    if ((err = sqlite3_bind_text(stmt, 1, account_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK ||
-        (err = sqlite3_bind_text(stmt, 2, char_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK)
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
         log_error(
-            "Failed to bind account_id '%s', char_id: '%s' to a statement, err: %d (%s)",
-            account_id_buffer,
-            char_id_buffer,
+            "Failed to bind account_id or/and char_id to a statement, err: %d (%s)",
             err,
             sqlite3_errstr(err)
         );
