@@ -3,12 +3,20 @@ const char *SQL_GET_FRIENDS    = "SELECT * FROM friendships WHERE account_id = ?
 int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, struct uuid *result)
 {
     const char *text_value = (const char *)sqlite3_column_text(stmt, iCol);
-    if (!uuid_parse(result, text_value, strlen(text_value))) {
+    if (text_value == NULL || !uuid_parse(result, text_value, strlen(text_value))) {
         log_error("Couldn't parse uuid from database '%s'", text_value);
         return ERR_SERVER_ERROR;
     } else {
         return ERR_OK;
     }
+}
+
+int sqlite3_column_uuid_or(sqlite3_stmt *stmt, int iCol, struct uuid def, struct uuid *result)
+{
+    if (sqlite3_column_uuid(stmt, iCol, result) != 0) {
+        *result = def;
+    }
+    return ERR_OK;
 }
 
 int sqlite3_column_bool(sqlite3_stmt *stmt, int iCol, bool *result)
@@ -83,7 +91,7 @@ void append_fields(array_char_t *builder, const char **fields, size_t count)
     }
 }
 
-int AuthDb_Open(AuthDb *result, const char *path)
+int Db_Open(Database *result, const char *path)
 {
     int err;
 
@@ -102,7 +110,7 @@ int AuthDb_Open(AuthDb *result, const char *path)
     array_char_t builder = {0};
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
-    appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
+    appendf(&builder, "FROM sessions WHERE user_id = ? AND session_id = ?;");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_session, 0)) != SQLITE_OK) {
@@ -112,7 +120,7 @@ int AuthDb_Open(AuthDb *result, const char *path)
     array_clear(&builder);
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
-    appendf(&builder, " FROM accounts WHERE account_id = ?;");
+    appendf(&builder, "FROM accounts WHERE account_id = ?;");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_account, 0)) != SQLITE_OK) {
@@ -122,7 +130,7 @@ int AuthDb_Open(AuthDb *result, const char *path)
     array_clear(&builder);
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
-    appendf(&builder, " FROM characters WHERE account_id = ?;");
+    appendf(&builder, "FROM characters WHERE account_id = ?;");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_characters, 0)) != SQLITE_OK) {
@@ -132,7 +140,7 @@ int AuthDb_Open(AuthDb *result, const char *path)
     array_clear(&builder);
     appendf(&builder, "SELECT ");
     append_fields(&builder, DbBagColsName, ARRAY_SIZE(DbBagColsName));
-    appendf(&builder, " FROM bags WHERE char_id = ?;");
+    appendf(&builder, "FROM bags WHERE account_id = ? AND (char_id IS NULL OR char_id = ?);");
     array_add(&builder, '\0');
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, -1, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
@@ -146,7 +154,7 @@ exit_on_error:
     return ERR_UNSUCCESSFUL;
 }
 
-void AuthDb_Close(AuthDb *database)
+void Db_Close(Database *database)
 {
     int err;
 
@@ -175,7 +183,7 @@ void AuthDb_Close(AuthDb *database)
     }
 }
 
-int AuthDb_GetSession(AuthDb *database, struct uuid user_id, struct uuid session_id, DbSession *result)
+int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_id, DbSession *result)
 {
     int err;
     char user_id_buffer[UUID_STRING_LEN + 1];
@@ -218,7 +226,7 @@ int AuthDb_GetSession(AuthDb *database, struct uuid user_id, struct uuid session
     }
 }
 
-int AuthDb_GetAccount(AuthDb *database, struct uuid account_id, DbAccount *result)
+int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
 {
     int err;
     char account_id_buffer[UUID_STRING_LEN + 1];
@@ -266,7 +274,7 @@ int AuthDb_GetAccount(AuthDb *database, struct uuid account_id, DbAccount *resul
     }
 }
 
-int AuthDb_GetCharacters(AuthDb *database, struct uuid account_id, DbCharacterArray *results)
+int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArray *results)
 {
     int err;
     char account_id_buffer[UUID_STRING_LEN + 1];
@@ -314,5 +322,59 @@ int AuthDb_GetCharacters(AuthDb *database, struct uuid account_id, DbCharacterAr
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
     }
+    return ERR_OK;
+}
+
+int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid char_id, DbBag *results, size_t count, size_t *returned)
+{
+    int err;
+    char account_id_buffer[UUID_STRING_LEN + 1];
+    uuid_snprint(account_id_buffer, sizeof(account_id_buffer), &account_id);
+    char char_id_buffer[UUID_STRING_LEN + 1];
+    uuid_snprint(char_id_buffer, sizeof(char_id_buffer), &char_id);
+
+    sqlite3_stmt *stmt = database->stmt_get_character_bags;
+    if ((err = sqlite3_bind_text(stmt, 1, account_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK ||
+        (err = sqlite3_bind_text(stmt, 2, char_id_buffer, UUID_STRING_LEN, NULL)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind account_id '%s', char_id: '%s' to a statement, err: %d (%s)",
+            account_id_buffer,
+            char_id_buffer,
+            err,
+            sqlite3_errstr(err)
+        );
+        sqlite3_reset(stmt);
+        return ERR_SERVER_ERROR;
+    }
+
+    size_t idx = 0;
+    while ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+        if (count <= idx) {
+            sqlite3_reset(stmt);
+            return ERR_SERVER_ERROR;
+        }
+
+        DbBag *bag = &results[idx];
+        if (((err = sqlite3_column_uuid(stmt, DbBagCols_account_id, &bag->account_id)) != 0) ||
+            ((err = sqlite3_column_uuid_or(stmt, DbBagCols_char_id, null_uuid, &bag->char_id)) != 0) ||
+            ((err = sqlite3_column_u8(stmt, DbBagCols_bag_model_id, &bag->bag_model_id)) != 0) ||
+            ((err = sqlite3_column_u8(stmt, DbBagCols_bag_type, &bag->bag_type)) != 0) ||
+            ((err = sqlite3_column_u8(stmt, DbBagCols_slot_count, &bag->slot_count)) != 0)
+        ) {
+            sqlite3_reset(stmt);
+            return ERR_SERVER_ERROR;
+        }
+
+        ++idx;
+    }
+    
+    sqlite3_reset(stmt);
+    if (err != SQLITE_DONE) {
+        log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
+        return ERR_UNSUCCESSFUL;
+    }
+    
+    *returned = idx;
     return ERR_OK;
 }

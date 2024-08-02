@@ -111,10 +111,11 @@ static const char *DbCharacterColsName[] = {
 typedef array(DbCharacter) DbCharacterArray;
 
 #define DbBagColumnsDef \
+    X(struct uuid, account_id) \
     X(struct uuid, char_id) \
-    X(uint8_t, bag_enum) \
+    X(uint8_t, bag_model_id) \
     X(uint8_t, bag_type) \
-    X(uint8_t, max_slots) \
+    X(uint8_t, slot_count) \
 
 typedef struct DbBag {
     #define X(T, N) T N;
@@ -134,17 +135,18 @@ static const char *DbBagColsName[] = {
     #undef X
 };
 
-typedef struct AuthDb {
+typedef struct Database {
     sqlite3      *conn;
     sqlite3_stmt *stmt_get_session;
     sqlite3_stmt *stmt_get_account;
     sqlite3_stmt *stmt_get_characters;
     sqlite3_stmt *stmt_get_friendships;
     sqlite3_stmt *stmt_get_character_bags;
-} AuthDb;
+} Database;
 
-int AuthDb_Open(AuthDb *result, const char *path);
-void AuthDb_Close(AuthDb *database);
+int Db_Open(Database *result, const char *path);
+void Db_Close(Database *database);
 
-int AuthDb_GetSession(AuthDb *database, struct uuid user_id, struct uuid session_id, DbSession *result);
-int AuthDb_GetOnLoginData(AuthDb *database, struct uuid account_id, DbAccount *result);
+int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_id, DbSession *result);
+int Db_GetOnLoginData(Database *database, struct uuid account_id, DbAccount *result);
+int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid char_id, DbBag *results, size_t count, size_t *returned);

@@ -50,15 +50,6 @@ typedef struct GameConnMap {
     GameConnection value;
 } GameConnMap;
 
-typedef struct GamePlayer {
-    uint32_t         player_id;
-    uintptr_t        conn_token;
-    struct uuid      account_id;
-    struct uuid      char_id;
-    DbCharacter      character;
-} GamePlayer;
-typedef array(GamePlayer) GamePlayerArray;
-
 typedef struct GamePlayerMsg {
     size_t     player_id;
     GameCliMsg msg;
@@ -74,6 +65,7 @@ typedef struct GameSrv {
     MapType            map_type;
     uint32_t           district_number;
     Iocp               iocp;
+    Database           database;
     bool               quit_signaled;
     GameConnMap       *connections;
     array_uintptr_t    connections_with_event;
@@ -82,10 +74,11 @@ typedef struct GameSrv {
     Mutex              mtx;
     AdminMsgArray      admin_messages;
     GameClientArray    clients;
-    GamePlayerArray    players;
+    GmPlayerArray      players;
     size_t             player_count;
     GamePlayerMsgArray player_messages;
     uint64_t           last_ping_request;
+    uint16_t           next_bag_id;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 

@@ -67,17 +67,18 @@
 #include "random.h"
 #include "network.h"
 
+#include "Db.h"
+
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"
 #include "GmInventory.h"
+#include "GmPlayer.h"
 
 #include "opcodes.h"
 #include "msgdefs.h"
 #include "msgpack.h"
 #include "proto.h"
-
-#include "AuthDb.h"
 
 #include "GameMsg.h"
 #include "GameSrv.h"
@@ -90,7 +91,7 @@
 #endif
 
 #include "array.c"
-#include "AuthDb.c"
+#include "Db.c"
 #include "AuthSrv.c"
 #include "GameSrv.c"
 #include "int.c"
@@ -102,6 +103,7 @@
 #include "stream.c"
 #include "win32/iocp_win32.c"
 #include "win32/sys_win32.c"
+#include "GmInventory.c"
 
 #if defined(COMPILE_TESTS)
 #include "tests.c"

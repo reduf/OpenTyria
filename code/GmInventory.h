@@ -1,32 +1,87 @@
 #pragma once
 
-typedef enum BagEnum {
-    BagEnum_Backpack            = 0,
-    BagEnum_BeltPouch           = 1,
-    BagEnum_Bag1                = 2,
-    BagEnum_Bag2                = 3,
-    BagEnum_EquipmentPack       = 4,
-    BagEnum_MaterialStorage     = 5,
-    BagEnum_UnclaimedItems      = 6,
-    BagEnum_Storage1            = 7,
-    BagEnum_Storage2            = 8,
-    BagEnum_Storage3            = 9,
-    BagEnum_Storage4            = 10,
-    BagEnum_Storage5            = 11,
-    BagEnum_Storage6            = 12,
-    BagEnum_Storage7            = 13,
-    BagEnum_Storage8            = 14,
-    BagEnum_Storage9            = 15,
-    BagEnum_Storage10           = 16,
-    BagEnum_Storage11           = 17,
-    BagEnum_Storage12           = 18,
-    BagEnum_Storage13           = 19,
-    BagEnum_StorageAnniversary  = 20,
-    BagEnum_EquippedItems       = 21,
+typedef enum BagType {
+    BagType_Bag          = 1,
+    BagType_Equiped      = 2,
+    BagType_NotCollected = 3,
+    BagType_Storage      = 4,
+    BagType_MatsStorage  = 5,
+} BagType;
 
-    BagEnum_Count,
-    BagEnum_Invalid             = -1,
-} BagEnum;
+int BagType_FromInt(int value, BagType *result)
+{
+    switch (value) {
+    case BagType_Bag:
+    case BagType_Equiped:
+    case BagType_NotCollected:
+    case BagType_Storage:
+    case BagType_MatsStorage:
+        *result = (BagType)value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
+typedef enum BagModelId {
+    BagModelId_Backpack            = 0,
+    BagModelId_BeltPouch           = 1,
+    BagModelId_Bag1                = 2,
+    BagModelId_Bag2                = 3,
+    BagModelId_EquipmentPack       = 4,
+    BagModelId_MaterialStorage     = 5,
+    BagModelId_UnclaimedItems      = 6,
+    BagModelId_Storage1            = 7,
+    BagModelId_Storage2            = 8,
+    BagModelId_Storage3            = 9,
+    BagModelId_Storage4            = 10,
+    BagModelId_Storage5            = 11,
+    BagModelId_Storage6            = 12,
+    BagModelId_Storage7            = 13,
+    BagModelId_Storage8            = 14,
+    BagModelId_Storage9            = 15,
+    BagModelId_Storage10           = 16,
+    BagModelId_Storage11           = 17,
+    BagModelId_Storage12           = 18,
+    BagModelId_Storage13           = 19,
+    BagModelId_StorageAnniversary  = 20,
+    BagModelId_EquippedItems       = 21,
+
+    BagModelId_Count,
+    BagModelId_Invalid             = -1,
+} BagModelId;
+
+int BagModelId_FromInt(int value, BagModelId *result)
+{
+    switch (value) {
+    case BagModelId_Backpack:
+    case BagModelId_BeltPouch:
+    case BagModelId_Bag1:
+    case BagModelId_Bag2:
+    case BagModelId_EquipmentPack:
+    case BagModelId_MaterialStorage:
+    case BagModelId_UnclaimedItems:
+    case BagModelId_Storage1:
+    case BagModelId_Storage2:
+    case BagModelId_Storage3:
+    case BagModelId_Storage4:
+    case BagModelId_Storage5:
+    case BagModelId_Storage6:
+    case BagModelId_Storage7:
+    case BagModelId_Storage8:
+    case BagModelId_Storage9:
+    case BagModelId_Storage10:
+    case BagModelId_Storage11:
+    case BagModelId_Storage12:
+    case BagModelId_Storage13:
+    case BagModelId_StorageAnniversary:
+    case BagModelId_EquippedItems:
+        *result = (BagModelId)value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
 
 typedef enum EquipedItemSlot {
     EquipedItemSlot_Weapon      = 0,
@@ -40,10 +95,42 @@ typedef enum EquipedItemSlot {
     EquipedItemSlot_CostumeHead = 8,
 } EquipedItemSlot;
 
-typedef enum BagType {
-    BagType_Bag          = 1,
-    BagType_Equiped      = 2,
-    BagType_NotCollected = 3,
-    BagType_Storage      = 4,
-    BagType_MatsStorage  = 5,
-} BagType;
+typedef struct GmBag {
+    uint16_t       bag_id;
+    BagModelId     bag_model_id;
+    BagType        bag_type;
+    uint8_t        slot_count;
+    array_uint32_t items;
+} GmBag;
+
+typedef union GmBagArray {
+    struct {
+        GmBag backpack;
+        GmBag belt_pouch;
+        GmBag bag1;
+        GmBag bag2;
+        GmBag equipment_pack;
+        GmBag material_storage;
+        GmBag unclaimed_items;
+        GmBag storage1;
+        GmBag storage2;
+        GmBag storage3;
+        GmBag storage4;
+        GmBag storage5;
+        GmBag storage6;
+        GmBag storage7;
+        GmBag storage8;
+        GmBag storage9;
+        GmBag storage10;
+        GmBag storage11;
+        GmBag storage12;
+        GmBag storage13;
+        GmBag storage_anniversary;
+        GmBag equipped_items;
+    };
+    GmBag bags[BagModelId_Count];
+} GmBagArray;
+
+void GmBag_InitBackpack(GmBag *bag, uint16_t bag_id);
+void GmBag_InitUnclaimedItems(GmBag *bag, uint16_t bag_id);
+void GmBag_InitEquippedItems(GmBag *bag, uint16_t bag_id);

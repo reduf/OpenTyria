@@ -97,7 +97,7 @@ typedef struct AuthSrv {
     array_uintptr_t          objects_to_remove;
     ArrayEvent               events;
     mbedtls_chacha20_context random;
-    AuthDb                   database;
+    Database                 database;
     GameSrvArray             game_servers;
 } AuthSrv;
 

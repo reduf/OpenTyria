@@ -95,26 +95,28 @@ CREATE TABLE pvp_items (
 
 DROP TABLE IF EXISTS items;
 CREATE TABLE items (
-    char_id     VARCHAR(36),
-    bag_enum    INTEGER NOT NULL,
-    slot        INTEGER NOT NULL,
-    quantity    INTEGER NOT NULL,
-    dye_color   INTEGER NOT NULL,
-    model       INTEGER NOT NULL,
-    file_id     INTEGER NOT NULL,
-    flags       INTEGER NOT NULL,
+    account_id   VARCHAR(36),
+    char_id      VARCHAR(36),
+    bag_model_id INTEGER NOT NULL,
+    slot         INTEGER NOT NULL,
+    quantity     INTEGER NOT NULL,
+    dye_color    INTEGER NOT NULL,
+    model        INTEGER NOT NULL,
+    file_id      INTEGER NOT NULL,
+    flags        INTEGER NOT NULL,
 
-    PRIMARY KEY (char_id, bag_enum, slot)
+    PRIMARY KEY (account_id, char_id, bag_model_id, slot)
 );
 
 DROP TABLE IF EXISTS bags;
 CREATE TABLE bags (
-    char_id     VARCHAR(36),
-    bag_enum    INTEGER NOT NULL,
-    bag_type    INTEGER NOT NULL,
-    max_slots   INTEGER NOT NULL,
+    account_id   VARCHAR(36),
+    char_id      VARCHAR(36),
+    bag_model_id INTEGER NOT NULL,
+    bag_type     INTEGER NOT NULL,
+    slot_count   INTEGER NOT NULL,
 
-    PRIMARY KEY (char_id, bag_enum)
+    PRIMARY KEY (account_id, char_id, bag_model_id)
 );
 
 INSERT INTO sessions (user_id, session_id, account_id) VALUES
@@ -133,4 +135,24 @@ INSERT INTO characters (char_id, account_id, char_name, primary_profession, camp
  ("18fd5be4-5465-41c4-bab9-81240dc6c8bd", "58ec1cf3-2059-424b-8443-768244e401e9", "Kerman Martino", 2, 2, 1, 1, 1, 3, 1, 1),
  ("565ad034-28c4-4c4a-a1de-20208defc9cd", "58ec1cf3-2059-424b-8443-768244e401e9", "Detlef Kresten", 8, 2, 1, 1, 1, 3, 1, 1),
  ("d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tomaso Beata", 3, 1, 1, 1, 1, 3, 1, 1),
- ("a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tyrique Eua", 5, 1, 1, 1, 1, 3, 1, 1);
+ ("a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tyrique Eua", 5, 1, 1, 1, 1, 3, 1, 1); 
+
+INSERT INTO bags (account_id, char_id, bag_model_id, bag_type, slot_count) VALUES
+ ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 7, 4, 25),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 8, 4, 25),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 7, 4, 25),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 8, 4, 25),
+ ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 7, 4, 25),
+ ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 8, 4, 25),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 0,  1, 20),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 21, 2, 9),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 0,  1, 20),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 21, 2, 9),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 0,  1, 20),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 21, 2, 9),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 0,  1, 20),
+ ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 21, 2, 9),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 0,  1, 20),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 21, 2, 9),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 0,  1, 20),
+ ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 21, 2, 9);

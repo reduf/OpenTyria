@@ -455,7 +455,7 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
     uuid_dec_le(&session_id, msg->session_id);
 
     DbSession session;
-    if ((err = AuthDb_GetSession(&srv->database, user_id, session_id, &session)) != 0) {
+    if ((err = Db_GetSession(&srv->database, user_id, session_id, &session)) != 0) {
         AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_AUTH_ERROR);
         return ERR_OK;
     }
@@ -464,14 +464,14 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
     conn->session_id = session_id;
     conn->account_id = session.account_id;
 
-    if ((err = AuthDb_GetAccount(&srv->database, conn->account_id, &conn->account)) != 0) {
+    if ((err = Db_GetAccount(&srv->database, conn->account_id, &conn->account)) != 0) {
         AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
 
     
     array_clear(&conn->characters);
-    if ((err = AuthDb_GetCharacters(&srv->database, conn->account_id, &conn->characters)) != 0) {
+    if ((err = Db_GetCharacters(&srv->database, conn->account_id, &conn->characters)) != 0) {
         AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
@@ -686,7 +686,7 @@ int AuthSrv_Setup(AuthSrv *srv)
 
     // @Cleanup: How to move that out.
     const char *path = "D:/Dev/OpenTyria-c/db/database.db";
-    if ((err = AuthDb_Open(&srv->database, path)) != 0) {
+    if ((err = Db_Open(&srv->database, path)) != 0) {
         iocp_free(&srv->iocp);
         return ERR_UNSUCCESSFUL;
     }
@@ -703,7 +703,7 @@ void AuthSrv_Free(AuthSrv *srv)
     array_free(&srv->objects_to_remove);
     array_free(&srv->events);
     mbedtls_chacha20_free(&srv->random);
-    AuthDb_Close(&srv->database);
+    Db_Close(&srv->database);
     array_free(&srv->game_servers);
 }
 
