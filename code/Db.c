@@ -208,15 +208,15 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
     int err;
 
     sqlite3_stmt *stmt = database->stmt_get_session;
+    sqlite3_reset(stmt);
+
     if ((err = sqlite3_bind_uuid(stmt, 1, user_id)) != SQLITE_OK) {
         log_error("Failed to bind user_id to a statement, err: %d (%s)", err, sqlite3_errstr(err));
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
     if ((err = sqlite3_bind_uuid(stmt, 2, session_id)) != SQLITE_OK) {
         log_error("Failed to bind session_id to a statement, err: %d (%s)", err, sqlite3_errstr(err));
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
@@ -227,17 +227,13 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
             ((err = sqlite3_column_i64(stmt, DbSessionCols_updated_at, &result->updated_at)) != 0) ||
             ((err = sqlite3_column_uuid(stmt, DbSessionCols_account_id, &result->account_id)) != 0))
         {
-            sqlite3_reset(stmt);
             return ERR_UNSUCCESSFUL;
         }
 
-        sqlite3_reset(stmt);
         return ERR_OK;
     } else if (err == SQLITE_DONE) {
-        sqlite3_reset(stmt);
         return ERR_UNSUCCESSFUL;
     } else {
-        sqlite3_reset(stmt);
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
     }
@@ -248,13 +244,14 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
     int err;
 
     sqlite3_stmt *stmt = database->stmt_get_account;
+    sqlite3_reset(stmt);
+
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
         log_error(
             "Failed to bind account_id '%s' to a statement, err: %d (%s)",
             err,
             sqlite3_errstr(err)
         );
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
@@ -279,11 +276,9 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
             ((err = sqlite3_column_u32(stmt, DbAccountCols_imperial_points_amount, &result->imperial_points_amount)) != 0) ||
             ((err = sqlite3_column_u32(stmt, DbAccountCols_imperial_points_total, &result->imperial_points_total)) != 0)
         ) {
-            sqlite3_reset(stmt);
             return ERR_SERVER_ERROR;
         }
 
-        sqlite3_reset(stmt);
         return ERR_OK;
     } else if (err == SQLITE_DONE) {
         return ERR_UNSUCCESSFUL;
@@ -328,6 +323,8 @@ int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char
     int err;
 
     sqlite3_stmt *stmt = database->stmt_get_character;
+    sqlite3_reset(stmt);
+
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
@@ -336,13 +333,11 @@ int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char
             err,
             sqlite3_errstr(err)
         );
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
     if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
         err = DbCharacter_from_stmt(stmt, result);
-        sqlite3_reset(stmt);
         if (err != 0) {
             return ERR_SERVER_ERROR;
         } else {
@@ -361,12 +356,13 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
     int err;
 
     sqlite3_stmt *stmt = database->stmt_get_account_characters;
+    sqlite3_reset(stmt);
+
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
         log_error("Failed to bind account_id to a statement, err: %d (%s)",
             err,
             sqlite3_errstr(err)
         );
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
@@ -374,7 +370,6 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
         DbCharacter *result = (DbCharacter *)array_push(results, 1);
         err = DbCharacter_from_stmt(stmt, result);
         if (err != 0) {
-            sqlite3_reset(stmt);
             array_pop(results);
             return ERR_SERVER_ERROR;
         }
@@ -392,6 +387,8 @@ int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid cha
     int err;
     
     sqlite3_stmt *stmt = database->stmt_get_character_bags;
+    sqlite3_reset(stmt);
+
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
@@ -400,14 +397,12 @@ int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid cha
             err,
             sqlite3_errstr(err)
         );
-        sqlite3_reset(stmt);
         return ERR_SERVER_ERROR;
     }
 
     size_t idx = 0;
     while ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
         if (count <= idx) {
-            sqlite3_reset(stmt);
             return ERR_SERVER_ERROR;
         }
 
@@ -418,14 +413,12 @@ int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid cha
             ((err = sqlite3_column_u8(stmt, DbBagCols_bag_type, &bag->bag_type)) != 0) ||
             ((err = sqlite3_column_u8(stmt, DbBagCols_slot_count, &bag->slot_count)) != 0)
         ) {
-            sqlite3_reset(stmt);
             return ERR_SERVER_ERROR;
         }
 
         ++idx;
     }
     
-    sqlite3_reset(stmt);
     if (err != SQLITE_DONE) {
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
