@@ -368,8 +368,8 @@ void AuthSrv_SendCharactersInfo(AuthConnection *conn, uint32_t req_id)
         settings.face_style = ch->face;
         settings.primary_profession = ch->primary_profession;
         settings.hair_style = ch->hair_style;
-        settings.campaign1 = ch->campaign;
-        settings.campaign2 = ch->campaign;
+        settings.campaign = ch->campaign;
+        settings.campaign_type = ch->campaign;
         settings.level = ch->level;
         settings.secondary_profession = ch->secondary_profession;
         settings.helm_status = HelmStatus_Hide;

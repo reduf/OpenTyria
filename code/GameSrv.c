@@ -1393,6 +1393,26 @@ int GameSrv_HandleChangeEquippedItemColor(GameSrv *srv, size_t player_id, GameSr
     return ERR_OK;
 }
 
+int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_CharCreationConfirm *msg)
+{
+    UNREFERENCED_PARAMETER(srv);
+    UNREFERENCED_PARAMETER(player_id);
+    Appearance app;
+    memcpy(&app, msg->config, 4);
+    log_info(
+        "sex = %u\nheight = %u\nskin_color = %u\nhair_color = %u\nface = %u\nprof1 = %u\nhair_style = %u\ncampaign = %u\n",
+        app.sex,
+        app.height,
+        app.skin_color,
+        app.hair_color,
+        app.face,
+        app.prof1,
+        app.hair_style,
+        app.campaign
+    );
+    return ERR_UNSUCCESSFUL;
+}
+
 void GameSrv_RemoveConnection(GameSrv *srv, uintptr_t token)
 {
     GameConnection *conn;
@@ -1443,15 +1463,18 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS");
         err = GameSrv_HandleInstanceLoadRequestItems(srv, player_id, &msg->request_items);
         break;
-    case GAME_CMSG_INSTANCE_CHAR_CREATION_START_RECV:
+    case GAME_CMSG_CHAR_CREATION_START_RECV:
         break;
-    case GAME_CMSG_INSTANCE_CHAR_CREATION_READY_RECV:
+    case GAME_CMSG_CHAR_CREATION_READY_RECV:
         break;
     case GAME_CMSG_CHAR_CREATION_CHANGE_PROF:
         err = GameSrv_HandleCharCreationChangeProf(srv, player_id, &msg->char_creation_change_prof);
         break;
     case GAME_CMSG_CHANGE_EQUIPPED_ITEM_COLOR:
         err = GameSrv_HandleChangeEquippedItemColor(srv, player_id, &msg->change_equipped_item_color);
+        break;
+    case GAME_CMSG_CHAR_CREATION_CONFIRM:
+        err = GameSrv_HandleCharCreationConfirm(srv, player_id, &msg->char_creation_confirm);
         break;
     default:
         log_warn(

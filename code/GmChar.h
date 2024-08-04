@@ -104,6 +104,17 @@ typedef enum DyeColor {
     DyeColor_Pink = 13
 } DyeColor;
 
+typedef struct Appearance {
+    unsigned int sex        : 1;
+    unsigned int height     : HEIGHT_BITS;
+    unsigned int skin_color : SKIN_COLOR_BITS;
+    unsigned int hair_color : HAIR_COLOR_BITS;
+    unsigned int face       : FACE_STYLE_BITS;
+    unsigned int prof1      : 4;
+    unsigned int hair_style : HAIR_STYLE_BITS;
+    unsigned int campaign   : 2; // 0=prof, 1=faction, 2=nightfall
+} Appearance;
+
 #pragma pack(push, 1)
 typedef struct CharacterSettings {
     uint16_t     version;           // currently it's always 6
@@ -116,9 +127,9 @@ typedef struct CharacterSettings {
     uint32_t     face_style           : FACE_STYLE_BITS;
     uint32_t     primary_profession   : 4;
     uint32_t     hair_style           : HAIR_STYLE_BITS;
-    uint32_t     campaign1            : 2; // 0=prof, 1=faction, 2=nightfall
+    uint32_t     campaign             : 2; // 0=prof, 1=faction, 2=nightfall
     uint8_t      guild_hall_id[16];
-    uint16_t     campaign2            : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
+    uint16_t     campaign_type        : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
     uint16_t     level                : LEVEL_BITS;
     uint16_t     is_pvp               : 1;
     uint16_t     secondary_profession : 4;

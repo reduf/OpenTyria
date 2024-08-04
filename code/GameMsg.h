@@ -93,6 +93,13 @@ typedef struct GameSrv_ChangeEquippedItemColor {
     uint8_t  dye_color;
 } GameSrv_ChangeEquippedItemColor;
 
+typedef struct GameSrv_CharCreationConfirm {
+    uint16_t header;
+    uint32_t n_name;
+    uint16_t name[20];
+    uint8_t  config[8];
+} GameSrv_CharCreationConfirm;
+
 typedef struct GameSrv_UpdateProfession {
     uint16_t header;
     uint32_t agent_id;
@@ -266,6 +273,7 @@ typedef union GameCliMsg {
     GameSrv_RequestItems                 request_items;
     GameSrv_CharCreationChangeProf       char_creation_change_prof;
     GameSrv_ChangeEquippedItemColor      change_equipped_item_color;
+    GameSrv_CharCreationConfirm          char_creation_confirm;
 } GameCliMsg;
 
 typedef union GameSrvMsg {
