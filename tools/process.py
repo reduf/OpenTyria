@@ -33,6 +33,7 @@ import sys
 import ctypes
 import struct
 import functools
+import traceback
 
 BOOL        = ctypes.c_long
 BYTE        = ctypes.c_byte
@@ -671,7 +672,10 @@ class Hook(object):
         return hook
 
     def __call__(self, *args, **kw):
-        return self.callback(*self.extargs, *args, **kw)
+        try:
+            return self.callback(*self.extargs, *args, **kw)
+        except:
+            print(traceback.format_exc())
 
     def clone(self):
         return Hook(self.callback, self.callconv, self.argtypes)
