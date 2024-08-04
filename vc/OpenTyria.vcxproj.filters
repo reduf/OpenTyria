@@ -20,6 +20,10 @@
     <ClCompile Include="..\code\AuthSrv.c" />
     <ClCompile Include="..\code\network.c" />
     <ClCompile Include="..\code\GameSrv.c" />
+    <ClCompile Include="..\code\Db.c" />
+    <ClCompile Include="..\code\GmDefaultArmors.c" />
+    <ClCompile Include="..\code\GmInventory.c" />
+    <ClCompile Include="..\code\GmPlayer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\code\array.h" />
@@ -50,6 +54,12 @@
     <ClInclude Include="..\code\AuthSrv.h" />
     <ClInclude Include="..\code\network.h" />
     <ClInclude Include="..\code\GameMsg.h" />
+    <ClInclude Include="..\code\Db.h" />
+    <ClInclude Include="..\code\GmDefaultArmors.h" />
+    <ClInclude Include="..\code\GmInventory.h" />
+    <ClInclude Include="..\code\GmItem.h" />
+    <ClInclude Include="..\code\GmPlayer.h" />
+    <ClInclude Include="..\code\slice.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />
