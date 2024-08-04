@@ -91,30 +91,6 @@ GmItem* GameSrv_AllocateItem(GameSrv *srv)
     return &srv->items.data[item_id];
 }
 
-void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id)
-{
-    assert(item_id != 0);
-
-    if (srv->items.size <= item_id) {
-        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.size);
-        return;
-    }
-
-    memset(&srv->items.data[item_id], 0, sizeof(srv->items.data[item_id]));
-    array_add(&srv->free_items_slots, item_id);
-}
-
-void GameSrv_FreeBagItems(GameSrv *srv, GmBag *bag)
-{
-    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
-        uint32_t item_id = bag->items[idx];
-        if (item_id != 0) {
-            GameSrv_FreeItemId(srv, item_id);
-        }
-    }
-    memset(bag->items, 0, sizeof(bag->items));
-}
-
 GameConnection* GameSrv_GetConnection(GameSrv *srv, uintptr_t token)
 {
     ptrdiff_t idx;
@@ -124,14 +100,11 @@ GameConnection* GameSrv_GetConnection(GameSrv *srv, uintptr_t token)
     return &srv->connections[(size_t)idx].value;
 }
 
-GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
+GameSrvMsg* GameConnection_BuildMsg(GameConnection *conn, uint16_t header)
 {
-    size_t player_idx = player_id - 1;
-    if ((player_idx < srv->players.size) && (srv->players.data[player_idx].player_id == player_id)) {
-        return &srv->players.data[player_idx];
-    } else {
-        return NULL;
-    }
+    memset(&conn->srv_msg, 0, sizeof(conn->srv_msg));
+    conn->srv_msg.header = header;
+    return &conn->srv_msg;
 }
 
 int GameConnection_SendMessage(GameConnection *conn, GameSrvMsg *msg, size_t size)
@@ -159,11 +132,51 @@ int GameConnection_SendMessage(GameConnection *conn, GameSrvMsg *msg, size_t siz
     return ERR_OK;
 }
 
-GameSrvMsg* GameConnection_BuildMsg(GameConnection *conn, uint16_t header)
+void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id)
 {
-    memset(&conn->srv_msg, 0, sizeof(conn->srv_msg));
-    conn->srv_msg.header = header;
-    return &conn->srv_msg;
+    assert(item_id != 0);
+
+    if (srv->items.size <= item_id) {
+        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.size);
+        return;
+    }
+
+    memset(&srv->items.data[item_id], 0, sizeof(srv->items.data[item_id]));
+    array_add(&srv->free_items_slots, item_id);
+}
+
+void GameSrv_FreeBagItems(GameSrv *srv, GmPlayer *player, GmBag *bag)
+{
+    GameConnection *conn = GameSrv_GetConnection(srv, player->conn_token);
+
+    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
+        uint32_t item_id = bag->items[idx];
+        if (item_id == 0) {
+            continue;
+        }
+
+        if (conn != NULL) {
+            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_REMOVE);
+            GameSrv_ItemRemove *msg = &buffer->item_remove;
+            msg->stream_id = 1;
+            msg->item_id = item_id;
+
+            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        }
+
+        GameSrv_FreeItemId(srv, item_id);
+    }
+    memset(bag->items, 0, sizeof(bag->items));
+}
+
+GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
+{
+    size_t player_idx = player_id - 1;
+    if ((player_idx < srv->players.size) && (srv->players.data[player_idx].player_id == player_id)) {
+        return &srv->players.data[player_idx];
+    } else {
+        return NULL;
+    }
 }
 
 void GameSrv_SendPing(GameConnection *conn)
@@ -792,13 +805,13 @@ void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendPlayerProfession(GameConnection *conn)
+void GameSrv_SendPlayerProfession(GameConnection *conn, Profession prof, bool is_pvp)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
     GameSrv_UpdateProfession *msg = &buffer->update_profession;
     msg->agent_id = 42;
-    msg->primary_profession = Profession_Warrior;
-    msg->is_pvp = 0;
+    msg->primary_profession = prof;
+    msg->is_pvp = is_pvp;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -1110,7 +1123,7 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
         GameSrv_SendGoldStorageAdd(&conn);
         GameSrv_SendPlayerFactions(&conn);
         GameSrv_SendPlayerAgentAttributes(&conn);
-        GameSrv_SendPlayerProfession(&conn);
+        GameSrv_SendPlayerProfession(&conn, Profession_Warrior, 0);
         GameSrv_SendUnlockedProfession(&conn);
         GameSrv_SendSkillbarUpdate(&conn);
         GameSrv_SendPlayerAgentAttribute(&conn);
@@ -1281,13 +1294,8 @@ void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendEquippedItems(GameSrv *srv, GmPlayer *player)
+void GameSrv_SendEquippedItems(GameSrv *srv, GameConnection *conn, GmPlayer *player)
 {
-    GameConnection *conn;
-    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
-        return;
-    }
-
     GmBag *bag = &player->bags.equipped_items;
     for (size_t idx = 0; idx < bag->slot_count; ++idx) {
         uint32_t item_id = bag->items[idx];
@@ -1312,7 +1320,7 @@ void GameSrv_SendEquippedItems(GameSrv *srv, GmPlayer *player)
         }
 
         {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_CHANGE_LOCATION);
+            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_MOVED_TO_LOCATION);
             GameSrv_ItemMoveToLocation *msg = &buffer->item_move_to_location;
             msg->stream_id = 1;
             msg->item_id = item->item_id;
@@ -1342,9 +1350,9 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return err;
     }
 
-    GmItemSlice items = GetDefaultEquipments(player->char_creation_selected_prof, player->char_creation_campaign_type);
+    GmItemSlice items = GetDefaultEquipments(player->char_creation_campaign_type, player->char_creation_selected_prof);
     GmBag *bag = &player->bags.equipped_items;
-    GameSrv_FreeBagItems(srv, bag);
+    GameSrv_FreeBagItems(srv, player, bag);
 
     for (size_t idx = 0; idx < items.len; ++idx) {
         const GmItem *item_def = &items.ptr[idx];
@@ -1367,7 +1375,13 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         GmBagSetItem(bag, item_slot, item_id);
     }
 
-    GameSrv_SendEquippedItems(srv, player);
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return ERR_OK;
+    }
+
+    GameSrv_SendPlayerProfession(conn, msg->profession, msg->campaign_type == CampaignType_Pvp);
+    GameSrv_SendEquippedItems(srv, conn, player);
     return ERR_OK;
 }
 
@@ -1429,9 +1443,9 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS");
         err = GameSrv_HandleInstanceLoadRequestItems(srv, player_id, &msg->request_items);
         break;
-    case GAME_SMSG_INSTANCE_CHAR_CREATION_START_RECV:
+    case GAME_CMSG_INSTANCE_CHAR_CREATION_START_RECV:
         break;
-    case GAME_SMSG_INSTANCE_CHAR_CREATION_READY_RECV:
+    case GAME_CMSG_INSTANCE_CHAR_CREATION_READY_RECV:
         break;
     case GAME_CMSG_CHAR_CREATION_CHANGE_PROF:
         err = GameSrv_HandleCharCreationChangeProf(srv, player_id, &msg->char_creation_change_prof);

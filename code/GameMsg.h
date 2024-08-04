@@ -238,6 +238,12 @@ typedef struct GameSrv_ItemGeneralInfo {
     uint32_t modifiers[64];
 } GameSrv_ItemGeneralInfo;
 
+typedef struct GameSrv_ItemRemove {
+    uint16_t header;
+    uint16_t stream_id;
+    uint32_t item_id;
+} GameSrv_ItemRemove;
+
 typedef struct GameSrv_ItemSetProfession {
     uint16_t header;
     uint32_t item_id;
@@ -292,6 +298,7 @@ typedef union GameSrvMsg {
     GameSrv_AgentAttrUpdateFloat         agent_attr_update_float;
     GameSrv_PlayerAttr                   player_attr;
     GameSrv_ItemGeneralInfo              item_general_info;
+    GameSrv_ItemRemove                   item_remove;
     GameSrv_ItemSetProfession            item_set_profession;
     GameSrv_ItemMoveToLocation           item_move_to_location;
 } GameSrvMsg;

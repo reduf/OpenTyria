@@ -166,7 +166,7 @@ GmItem g_DefRangerPropheciesPveEquipments[] = {
         .model = 6138,
         .quantity = 1,
         .profession = Profession_Ranger,
-        .name = {3, {0x24B1, 0xA91F, 0xDEEF}},
+        .name = {4, {0x24B1, 0xA91F, 0xDEEF, 0x1C00}},
         .modifiers = {3, {0xA3C80A00, 0x80300000, 0xA0F81E00}},
     },
     {
@@ -959,7 +959,7 @@ GmItem g_DefMesmerFactionsPveEquipments[] = {
 };
 
 GmItem g_DefElementalistFactionsPveEquipments[] = {
-{
+    {
         .file_id = 0x80000378,
         .item_type = ItemType_Chest,
         .unk0 = 29,
@@ -1016,7 +1016,7 @@ GmItem g_DefElementalistFactionsPveEquipments[] = {
         .model = 9323,
         .quantity = 1,
         .profession = Profession_Elementalist,
-        .name = {0},
+        .name = {1, {0x5500}},
         .modifiers = {2, {0x62C80500, 0xA3C80500}},
     },
     {
