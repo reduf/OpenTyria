@@ -330,6 +330,83 @@ cmsg_names = {
 0x00B0: 'GAME_CMSG_PARTY_LEAVE_GUILD_HALL',
 }
 
+item_types = {
+    0: 'ItemType_Salvage',
+    1: 'ItemType_Leadhand',
+    2: 'ItemType_Axe',
+    3: 'ItemType_Bag',
+    4: 'ItemType_Feet',
+    5: 'ItemType_Bow',
+    6: 'ItemType_Bundle',
+    7: 'ItemType_Chest',
+    8: 'ItemType_Rune',
+    9: 'ItemType_Consumable',
+    10: 'ItemType_Dye',
+    11: 'ItemType_Material',
+    12: 'ItemType_Focus',
+    13: 'ItemType_Arms',
+    14: 'ItemType_Sigil',
+    15: 'ItemType_Hammer',
+    16: 'ItemType_Head',
+    17: 'ItemType_SalvageItem',
+    18: 'ItemType_Key',
+    19: 'ItemType_Legs',
+    20: 'ItemType_Coins',
+    21: 'ItemType_QuestItem',
+    22: 'ItemType_Wand',
+    24: 'ItemType_Shield',
+    26: 'ItemType_Staff',
+    27: 'ItemType_Sword',
+    29: 'ItemType_Kit',
+    30: 'ItemType_Trophy',
+    31: 'ItemType_Scroll',
+    32: 'ItemType_Daggers',
+    33: 'ItemType_Present',
+    34: 'ItemType_Minipet',
+    35: 'ItemType_Scythe',
+    36: 'ItemType_Spear',
+    43: 'ItemType_Handbook',
+    44: 'ItemType_CostumeBody',
+    45: 'ItemType_CostumeHead',
+}
+
+dye_colors = {
+    0: 'DyeColor_None',
+    2: 'DyeColor_Blue',
+    3: 'DyeColor_Green',
+    4: 'DyeColor_Purple',
+    5: 'DyeColor_Red',
+    6: 'DyeColor_Yellow',
+    7: 'DyeColor_Brown',
+    8: 'DyeColor_Orange',
+    9: 'DyeColor_Silver',
+    10: 'DyeColor_Black',
+    11: 'DyeColor_Gray',
+    12: 'DyeColor_White',
+    13: 'DyeColor_Pink',
+}
+
+professions = {
+    0 : 'Profession_None',
+    1 : 'Profession_Warrior',
+    2 : 'Profession_Ranger',
+    3 : 'Profession_Monk',
+    4 : 'Profession_Necromancer',
+    5 : 'Profession_Mesmer',
+    6 : 'Profession_Elementalist',
+    7 : 'Profession_Assassin',
+    8 : 'Profession_Ritualist',
+    9 : 'Profession_Paragon',
+    10 : 'Profession_Dervish',
+}
+
+campaign_types = {
+    0: 'CampaignType_Pvp',
+    1: 'CampaignType_Prophecies',
+    2: 'CampaignType_Faction',
+    3: 'CampaignType_Nightfall',
+}
+
 def main(args):
     if (2 ** 32) < sys.maxsize:
         print('Use a 32 bits version of Python')
@@ -355,6 +432,16 @@ def main(args):
             name = "unknown"
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'SendPacket: {header}, 0x{header:X}, {name}')
+        if header == 94:
+            campaign_type, profession = proc.read(packet + 4, 'II')
+            if profession in professions:
+                profession = professions[profession]
+            if campaign_type in campaign_types:
+                campaign_type = campaign_types[campaign_type]
+            print(f'>> profession = {profession}, campaign_type = {campaign_type}')
+        if header == 130:
+            param1, param2 = proc.read(packet + 4, 'II')
+            print(f'>> param1 = {param1}, param2 = {param2}')
 
     @Hook.rawcall
     def on_recv_packet(ctx):
@@ -366,7 +453,7 @@ def main(args):
             name = "unknown"
 
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f'RecvPacket: {header}, 0x{header:X}, {name}')
+        # print(f'RecvPacket: {header}, 0x{header:X}, {name}')
 
         # if header == 26:
         #     _, val, count, *values = proc.read(packet, 'III64I')
@@ -384,9 +471,40 @@ def main(args):
         # if name == 'GAME_SMSG_AGENT_ATTR_UPDATE_INT':
         #     attr_id, agent_id, value = proc.read(packet + 4, 'III')
         #     print(f'>>> (int) attr_id: {attr_id}, agent_id: {agent_id}, value: {value}')
+        # if name == 'GAME_SMSG_ITEM_SET_PROFESSION':
+        #     a, b = proc.read(packet + 4, 'II')
+        #     print(f'a = {a}, b = {b}')
         # elif name == 'GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT':
         #     attr_id, agent_id, value = proc.read(packet + 4, 'III')
         #     print(f'>>> (float) attr_id: {attr_id}, agent_id: {agent_id}, value: {value}')
+        # if name == 'GAME_SMSG_INVENTORY_CREATE_BAG':
+        #     stream_id, bag_type, bag_model_id, bag_id, slot_count, assoc_item_id = proc.read(packet + 4, 'IIIIII')
+        #     print(f'>> stream_id = {stream_id}, bag_type = {bag_type}, bag_model_id = {bag_model_id}, bag_id = {bag_id}, slot_count = {slot_count}, assoc_item_id = {assoc_item_id}')
+        # if name == 'GAME_SMSG_ITEM_MOVED_TO_LOCATION':
+        #     stream_id, item_id, bag_id, slot = proc.read(packet + 4, 'IIII')
+        #     print(f'>> stream_id = {stream_id}, item_id = {item_id}, bag_id = {bag_id}, slot = {slot}')
+        # if name == 'GAME_SMSG_ITEM_CHANGE_LOCATION':
+        #     unk1, item_id, bag_id, slot = proc.read(packet + 4, 'IIII')
+        #     print(f'>> unk1 = {unk1}, item_id = {item_id}, bag_id = {bag_id}, slot = {slot}')
+        # if name == 'GAME_SMSG_ITEM_REMOVE':
+        #     a, b = proc.read(packet + 4, 'II')
+        #     print(f'>> {a}, {b}')
+        # if name == 'GAME_SMSG_ITEM_STREAM_CREATE':
+        #     stream_id = proc.read(packet + 4, 'II')
+        #     print(f'stream_id = {stream_id}')
+        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+            item_id, file_id, item_type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, *modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI64I')
+            name = name[:name.index(b'\0\0')]
+            name = tuple(name[i] + (name[i+1] << 8) for i in range(0, len(name), 2))
+            name_str = ', '.join(f'0x{val:X}' for val in name)
+            name = f'{{{len(name)}, {{{name_str}}}}}'
+            modifier = modifier[:n_modifier]
+            modifier_str = ', '.join(f'0x{val:X}' for val in modifier)
+            modifier = f'{{{len(modifier)}, {{{modifier_str}}}}}'
+            item_type = item_types[item_type]
+            dye_color = dye_colors[dye_color]
+            if dye_color in ('DyeColor_None', 'DyeColor_Gray'):
+                print(f'{{\n    .file_id = 0x{file_id:X},\n    .item_type = {item_type},\n    .unk0 = {unk0},\n    .dye_color = {dye_color},\n    .materials = {materials},\n    .unk1 = {unk1},\n    .flags = 0x{flags:X},\n    .value = {value},\n    .model = {model},\n    .quantity = {quantity},\n    .name = {name},\n    .modifiers = {modifier},\n}},')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)
