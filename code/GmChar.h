@@ -20,9 +20,51 @@ typedef enum Profession {
     Profession_Count
 } Profession;
 
+int Profession_FromInt(int value, Profession *result)
+{
+    switch (value) {
+    case Profession_None:
+    case Profession_Warrior:
+    case Profession_Ranger:
+    case Profession_Monk:
+    case Profession_Necromancer:
+    case Profession_Mesmer:
+    case Profession_Elementalist:
+    case Profession_Assassin:
+    case Profession_Ritualist:
+    case Profession_Paragon:
+    case Profession_Dervish:
+        *result = (Profession) value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
+typedef enum CampaignType {
+    CampaignType_Pvp,
+    CampaignType_Prophecies,
+    CampaignType_Factions,
+    CampaignType_Nightfall,
+} CampaignType;
+
+int CampaignType_FromInt(int value, CampaignType *result)
+{
+    switch (value) {
+    case CampaignType_Pvp:
+    case CampaignType_Prophecies:
+    case CampaignType_Factions:
+    case CampaignType_Nightfall:
+        *result = (CampaignType) value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
 typedef enum Campaign {
     Campaign_Prophecies,
-    Campaign_Faction,
+    Campaign_Factions,
     Campaign_Nightfall,
 } Campaign;
 

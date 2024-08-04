@@ -7,5 +7,7 @@ typedef struct GmPlayer {
     struct uuid  char_id;
     DbCharacter  character;
     GmBagArray   bags;
+    CampaignType char_creation_campaign_type;
+    Profession   char_creation_selected_prof;
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;

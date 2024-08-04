@@ -81,6 +81,18 @@ typedef struct GameSrv_RequestItems {
     uint8_t  unk1;
 } GameSrv_RequestItems;
 
+typedef struct GameSrv_CharCreationChangeProf {
+    uint16_t header;
+    uint8_t  campaign_type;
+    uint8_t  profession;
+} GameSrv_CharCreationChangeProf;
+
+typedef struct GameSrv_ChangeEquippedItemColor {
+    uint16_t header;
+    uint8_t  equipped_item_slot;
+    uint8_t  dye_color;
+} GameSrv_ChangeEquippedItemColor;
+
 typedef struct GameSrv_UpdateProfession {
     uint16_t header;
     uint32_t agent_id;
@@ -207,42 +219,80 @@ typedef struct GameSrv_PlayerAttr {
     uint32_t total_earned_skill_points;
 } GameSrv_PlayerAttr;
 
+typedef struct GameSrv_ItemGeneralInfo {
+    uint16_t header;
+    uint32_t item_id;
+    uint32_t file_id;
+    uint8_t  item_type;
+    uint8_t  unk0;
+    uint16_t dye_color;
+    uint16_t materials;
+    uint8_t  unk1;
+    uint32_t flags; // interaction
+    uint32_t value;
+    uint32_t model;
+    uint32_t quantity;
+    uint32_t n_name;
+    uint16_t name[64];
+    uint32_t n_modifiers;
+    uint32_t modifiers[64];
+} GameSrv_ItemGeneralInfo;
+
+typedef struct GameSrv_ItemSetProfession {
+    uint16_t header;
+    uint32_t item_id;
+    uint8_t  profession;
+} GameSrv_ItemSetProfession;
+
+typedef struct GameSrv_ItemMoveToLocation {
+    uint16_t header;
+    uint16_t stream_id;
+    uint32_t item_id;
+    uint16_t bag_id;
+    uint8_t  slot;
+} GameSrv_ItemMoveToLocation;
+
 typedef union GameCliMsg {
-    uint16_t                     header;
-    uint8_t                      buffer[MSG_MAX_BUFFER_SIZE];
-    GameSrv_LoadSpawnPoint       load_spawn_point;
-    GameSrv_RequestPlayers       request_players;
-    GameSrv_RequestItems         request_items;
+    uint16_t                             header;
+    uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
+    GameSrv_LoadSpawnPoint               load_spawn_point;
+    GameSrv_RequestPlayers               request_players;
+    GameSrv_RequestItems                 request_items;
+    GameSrv_CharCreationChangeProf       char_creation_change_prof;
+    GameSrv_ChangeEquippedItemColor      change_equipped_item_color;
 } GameCliMsg;
 
 typedef union GameSrvMsg {
-    uint16_t                     header;
-    uint8_t                      buffer[MSG_MAX_BUFFER_SIZE];
-    GameSrv_PingReply            ping_reply;
-    GameSrv_InstanceHead         instance_head;
-    GameSrv_InstancePlayerName   instance_player_name;
-    GameSrv_InstanceInfo         instance_info;
-    GameSrv_ReadyForMapSpawn     ready_for_map_spawn;
-    GameSrv_ItemStreamCreate     item_stream_create;
-    GameSrv_UpdateGold           update_gold;
-    GameSrv_WeaponSet            weapon_set;
-    GameSrv_LoadSpawnPoint       load_spawn_point;
-    GameSrv_UpdateProfession     update_profession;
-    GameSrv_UnlockedProfession   unlocked_profession;
-    GameSrv_UpdateActiveWeapon   update_active_weapon_set;
-    GameSrv_InventoryCreateBag   inventory_create_bag;
-    GameSrv_UnlockedSkills       unlocked_skills;
-    GameSrv_UnlockedPvpHeroes    unlocked_pvp_heroes;
-    GameSrv_PvpItemAddUnlock     pvp_item_add_unlock;
-    GameSrv_AccountFeature       account_feature;
-    GameSrv_KurzickMax           kurzick_max;
-    GameSrv_LuxonMax             luxon_max;
-    GameSrv_BalthazarMax         balthazar_max;
-    GameSrv_ImperialMax          imperial_max;
-    GameSrv_AgentCreateAttribute agent_create_attribute;
-    GameSrv_SkillbarUpdate       skillbar_update;
-    GameSrv_AgentAttrUpdateInt   agent_attr_update_int;
-    GameSrv_AgentAttrUpdateFloat agent_attr_update_float;
-    GameSrv_PlayerAttr           player_attr;
+    uint16_t                             header;
+    uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
+    GameSrv_PingReply                    ping_reply;
+    GameSrv_InstanceHead                 instance_head;
+    GameSrv_InstancePlayerName           instance_player_name;
+    GameSrv_InstanceInfo                 instance_info;
+    GameSrv_ReadyForMapSpawn             ready_for_map_spawn;
+    GameSrv_ItemStreamCreate             item_stream_create;
+    GameSrv_UpdateGold                   update_gold;
+    GameSrv_WeaponSet                    weapon_set;
+    GameSrv_LoadSpawnPoint               load_spawn_point;
+    GameSrv_UpdateProfession             update_profession;
+    GameSrv_UnlockedProfession           unlocked_profession;
+    GameSrv_UpdateActiveWeapon           update_active_weapon_set;
+    GameSrv_InventoryCreateBag           inventory_create_bag;
+    GameSrv_UnlockedSkills               unlocked_skills;
+    GameSrv_UnlockedPvpHeroes            unlocked_pvp_heroes;
+    GameSrv_PvpItemAddUnlock             pvp_item_add_unlock;
+    GameSrv_AccountFeature               account_feature;
+    GameSrv_KurzickMax                   kurzick_max;
+    GameSrv_LuxonMax                     luxon_max;
+    GameSrv_BalthazarMax                 balthazar_max;
+    GameSrv_ImperialMax                  imperial_max;
+    GameSrv_AgentCreateAttribute         agent_create_attribute;
+    GameSrv_SkillbarUpdate               skillbar_update;
+    GameSrv_AgentAttrUpdateInt           agent_attr_update_int;
+    GameSrv_AgentAttrUpdateFloat         agent_attr_update_float;
+    GameSrv_PlayerAttr                   player_attr;
+    GameSrv_ItemGeneralInfo              item_general_info;
+    GameSrv_ItemSetProfession            item_set_profession;
+    GameSrv_ItemMoveToLocation           item_move_to_location;
 } GameSrvMsg;
 #pragma pack(pop)

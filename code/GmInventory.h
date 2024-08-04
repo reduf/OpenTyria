@@ -1,8 +1,10 @@
 #pragma once
 
+#define GM_BAG_MAX_SLOT 30
+
 typedef enum BagType {
     BagType_Bag          = 1,
-    BagType_Equiped      = 2,
+    BagType_Equipped     = 2,
     BagType_NotCollected = 3,
     BagType_Storage      = 4,
     BagType_MatsStorage  = 5,
@@ -12,7 +14,7 @@ int BagType_FromInt(int value, BagType *result)
 {
     switch (value) {
     case BagType_Bag:
-    case BagType_Equiped:
+    case BagType_Equipped:
     case BagType_NotCollected:
     case BagType_Storage:
     case BagType_MatsStorage:
@@ -83,24 +85,24 @@ int BagModelId_FromInt(int value, BagModelId *result)
     }
 }
 
-typedef enum EquipedItemSlot {
-    EquipedItemSlot_Weapon      = 0,
-    EquipedItemSlot_OffHand     = 1,
-    EquipedItemSlot_Chest       = 2,
-    EquipedItemSlot_Leggings    = 3,
-    EquipedItemSlot_Helm        = 4,
-    EquipedItemSlot_Boots       = 5,
-    EquipedItemSlot_Gloves      = 6,
-    EquipedItemSlot_Costume     = 7,
-    EquipedItemSlot_CostumeHead = 8,
-} EquipedItemSlot;
+typedef enum EquippedItemSlot {
+    EquippedItemSlot_Weapon      = 0,
+    EquippedItemSlot_OffHand     = 1,
+    EquippedItemSlot_Chest       = 2,
+    EquippedItemSlot_Legs        = 3,
+    EquippedItemSlot_Helm        = 4,
+    EquippedItemSlot_Boots       = 5,
+    EquippedItemSlot_Gloves      = 6,
+    EquippedItemSlot_Costume     = 7,
+    EquippedItemSlot_CostumeHead = 8,
+} EquippedItemSlot;
 
 typedef struct GmBag {
     uint16_t       bag_id;
     BagModelId     bag_model_id;
     BagType        bag_type;
     uint8_t        slot_count;
-    array_uint32_t items;
+    uint32_t       items[GM_BAG_MAX_SLOT];
 } GmBag;
 
 typedef union GmBagArray {
@@ -134,3 +136,4 @@ typedef union GmBagArray {
 void GmBag_InitBackpack(GmBag *bag, uint16_t bag_id);
 void GmBag_InitUnclaimedItems(GmBag *bag, uint16_t bag_id);
 void GmBag_InitEquippedItems(GmBag *bag, uint16_t bag_id);
+void GmBagSetItem(GmBag *bag, size_t slot, uint32_t item_id);

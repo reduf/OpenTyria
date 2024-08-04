@@ -58,6 +58,7 @@
 #include "endian.h"
 #include "uuid.h"
 #include "array.h"
+#include "slice.h"
 #include "errors.h"
 
 #include "stream.h"
@@ -74,6 +75,8 @@
 #include "GmMap.h"
 #include "GmInventory.h"
 #include "GmPlayer.h"
+#include "GmItem.h"
+#include "GmDefaultArmors.h"
 
 #include "opcodes.h"
 #include "msgdefs.h"
@@ -91,9 +94,11 @@
 #endif
 
 #include "array.c"
-#include "Db.c"
 #include "AuthSrv.c"
+#include "Db.c"
 #include "GameSrv.c"
+#include "GmDefaultArmors.c"
+#include "GmInventory.c"
 #include "int.c"
 #include "logs.c"
 #include "msgdefs.c"
@@ -103,7 +108,6 @@
 #include "stream.c"
 #include "win32/iocp_win32.c"
 #include "win32/sys_win32.c"
-#include "GmInventory.c"
 
 #if defined(COMPILE_TESTS)
 #include "tests.c"

@@ -4,7 +4,6 @@ int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, struct uuid *result)
 {
     const char *text_value = (const char *)sqlite3_column_text(stmt, iCol);
     if (text_value == NULL || !uuid_parse(result, text_value, strlen(text_value))) {
-        log_error("Couldn't parse uuid from database '%s'", text_value);
         return ERR_SERVER_ERROR;
     } else {
         return ERR_OK;

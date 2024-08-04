@@ -79,6 +79,8 @@ typedef struct GameSrv {
     GamePlayerMsgArray player_messages;
     uint64_t           last_ping_request;
     uint16_t           next_bag_id;
+    GmItemArray        items;
+    array_uint32_t     free_items_slots;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 

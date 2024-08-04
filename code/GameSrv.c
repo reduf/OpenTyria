@@ -65,7 +65,54 @@ void GameSrv_Free(GameSrv *srv)
     array_free(&srv->admin_messages);
     array_free(&srv->clients);
     array_free(&srv->players);
+    array_free(&srv->items);
+    array_free(&srv->free_items_slots);
     Db_Close(&srv->database);
+}
+
+GmItem* GameSrv_AllocateItem(GameSrv *srv)
+{
+    if (srv->free_items_slots.size == 0) {
+        size_t item_count = srv->items.size;
+        size_t new_size = size_t_max(item_count * 2, 64);
+        array_resize(&srv->items, new_size);
+        if (item_count == 0) {
+            ++item_count;
+        }
+        size_t added = new_size - item_count;
+        uint32_t *free_idxs = array_push(&srv->free_items_slots, added);
+        for (size_t idx = 0; idx < added; ++idx) {
+            free_idxs[idx] = (uint32_t)(item_count + idx);
+        }
+    }
+
+    uint32_t item_id = array_pop(&srv->free_items_slots);
+    srv->items.data[item_id].item_id = item_id;
+    return &srv->items.data[item_id];
+}
+
+void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id)
+{
+    assert(item_id != 0);
+
+    if (srv->items.size <= item_id) {
+        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.size);
+        return;
+    }
+
+    memset(&srv->items.data[item_id], 0, sizeof(srv->items.data[item_id]));
+    array_add(&srv->free_items_slots, item_id);
+}
+
+void GameSrv_FreeBagItems(GameSrv *srv, GmBag *bag)
+{
+    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
+        uint32_t item_id = bag->items[idx];
+        if (item_id != 0) {
+            GameSrv_FreeItemId(srv, item_id);
+        }
+    }
+    memset(bag->items, 0, sizeof(bag->items));
 }
 
 GameConnection* GameSrv_GetConnection(GameSrv *srv, uintptr_t token)
@@ -1025,7 +1072,7 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
         bag->bag_model_id = bag_model_id;
         bag->bag_type = bags[idx].bag_type;
         bag->slot_count = bags[idx].slot_count;
-        array_init(&bag->items);
+        memset(bag->items, 0, sizeof(bag->items));
     }
 }
 
@@ -1153,6 +1200,185 @@ int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameS
     return ERR_OK;
 }
 
+int GetBagSlotForItemType(ItemType item_type, EquippedItemSlot *result)
+{
+    switch (item_type) {
+    case ItemType_Leadhand:
+    case ItemType_Axe:
+    case ItemType_Bow:
+    case ItemType_Hammer:
+    case ItemType_Wand:
+    case ItemType_Staff:
+    case ItemType_Sword:
+    case ItemType_Daggers:
+    case ItemType_Scythe:
+    case ItemType_Spear:
+        *result = EquippedItemSlot_Weapon;
+        return ERR_OK;
+    case ItemType_Focus:
+    case ItemType_Shield:
+        *result = EquippedItemSlot_OffHand;
+        return ERR_OK;
+    case ItemType_Chest:
+        *result = EquippedItemSlot_Chest;
+        return ERR_OK;
+    case ItemType_Feet:
+        *result = EquippedItemSlot_Boots;
+        return ERR_OK;
+    case ItemType_Arms:
+        *result = EquippedItemSlot_Gloves;
+        return ERR_OK;
+    case ItemType_Head:
+        *result = EquippedItemSlot_Helm;
+        return ERR_OK;
+    case ItemType_Legs:
+        *result = EquippedItemSlot_Legs;
+        return ERR_OK;
+    case ItemType_CostumeBody:
+        *result = EquippedItemSlot_Costume;
+        return ERR_OK;
+    case ItemType_CostumeHead:
+        *result = EquippedItemSlot_CostumeHead;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
+GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
+{
+    if (srv->items.size <= item_id) {
+        return NULL;
+    }
+    GmItem *result = &srv->items.data[item_id];
+    if (result->item_id == 0) {
+        return NULL;
+    }
+    return result;
+}
+
+void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_GENERAL_INFO);
+    GameSrv_ItemGeneralInfo *msg = &buffer->item_general_info;
+    msg->item_id = item->item_id;
+    msg->file_id = item->file_id;
+    msg->item_type = item->item_type;
+    msg->unk0 = item->unk0;
+    msg->dye_color = item->dye_color;
+    msg->materials = item->materials;
+    msg->unk1 = item->unk1;
+    msg->flags = item->flags;
+    msg->value = item->value;
+    msg->model = item->model;
+    msg->quantity = item->quantity;
+    msg->n_name = item->name.size;
+    STATIC_ASSERT(ARRAY_SIZE(msg->name) <= ARRAY_SIZE(item->name.data));
+    memcpy_u16(msg->name, item->name.data, item->name.size);
+    msg->n_modifiers = item->modifiers.size;
+    STATIC_ASSERT(ARRAY_SIZE(msg->modifiers) <= ARRAY_SIZE(item->modifiers.data));
+    memcpy_u32(msg->modifiers, item->modifiers.data, item->modifiers.size);
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendEquippedItems(GameSrv *srv, GmPlayer *player)
+{
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return;
+    }
+
+    GmBag *bag = &player->bags.equipped_items;
+    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
+        uint32_t item_id = bag->items[idx];
+        if (item_id == 0) {
+            continue;
+        }
+
+        GmItem *item;
+        if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
+            log_warn("Player has non-existing item %" PRIu32 " in his inventory", item_id);
+            continue;
+        }
+
+        GameConnection_SendItemGeneralInfo(conn, item);
+
+        {
+            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_SET_PROFESSION);
+            GameSrv_ItemSetProfession *msg = &buffer->item_set_profession;
+            msg->item_id = item->item_id;
+            msg->profession = item->profession;
+            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        }
+
+        {
+            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_CHANGE_LOCATION);
+            GameSrv_ItemMoveToLocation *msg = &buffer->item_move_to_location;
+            msg->stream_id = 1;
+            msg->item_id = item->item_id;
+            msg->bag_id = bag->bag_id;
+            msg->slot = (uint8_t)idx;
+            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        }
+    }
+}
+
+int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv_CharCreationChangeProf *msg)
+{
+    int err;
+
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        return ERR_SERVER_ERROR;
+    }
+
+    if ((err = Profession_FromInt(msg->profession, &player->char_creation_selected_prof)) != 0) {
+        log_warn("Invalid `Profession` value %u", msg->profession);
+        return err;
+    }
+
+    if ((err = CampaignType_FromInt(msg->campaign_type, &player->char_creation_campaign_type)) != 0) {
+        log_warn("Invalid `CampaignType` value %u", msg->campaign_type);
+        return err;
+    }
+
+    GmItemSlice items = GetDefaultEquipments(player->char_creation_selected_prof, player->char_creation_campaign_type);
+    GmBag *bag = &player->bags.equipped_items;
+    GameSrv_FreeBagItems(srv, bag);
+
+    for (size_t idx = 0; idx < items.len; ++idx) {
+        const GmItem *item_def = &items.ptr[idx];
+        EquippedItemSlot item_slot;
+        if ((err = GetBagSlotForItemType(item_def->item_type, &item_slot)) != 0) {
+            log_warn(
+                "Failed to get an item slot for the item of type %s (%d)",
+                ItemType_tostring(item_def->item_type),
+                item_def->item_type
+            );
+            continue;
+        }
+        GmItem *item = GameSrv_AllocateItem(srv);
+        uint32_t item_id = item->item_id;
+
+        // This will override the `item_id` to 0, but we restore it. 
+        *item = *item_def;
+        item->item_id = item_id;
+
+        GmBagSetItem(bag, item_slot, item_id);
+    }
+
+    GameSrv_SendEquippedItems(srv, player);
+    return ERR_OK;
+}
+
+int GameSrv_HandleChangeEquippedItemColor(GameSrv *srv, size_t player_id, GameSrv_ChangeEquippedItemColor *msg)
+{
+    UNREFERENCED_PARAMETER(srv);
+    UNREFERENCED_PARAMETER(player_id);
+    UNREFERENCED_PARAMETER(msg);
+    return ERR_OK;
+}
+
 void GameSrv_RemoveConnection(GameSrv *srv, uintptr_t token)
 {
     GameConnection *conn;
@@ -1206,6 +1432,12 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
     case GAME_SMSG_INSTANCE_CHAR_CREATION_START_RECV:
         break;
     case GAME_SMSG_INSTANCE_CHAR_CREATION_READY_RECV:
+        break;
+    case GAME_CMSG_CHAR_CREATION_CHANGE_PROF:
+        err = GameSrv_HandleCharCreationChangeProf(srv, player_id, &msg->char_creation_change_prof);
+        break;
+    case GAME_CMSG_CHANGE_EQUIPPED_ITEM_COLOR:
+        err = GameSrv_HandleChangeEquippedItemColor(srv, player_id, &msg->change_equipped_item_color);
         break;
     default:
         log_warn(
