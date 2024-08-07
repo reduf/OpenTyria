@@ -1,0 +1,3 @@
+#pragma once
+
+#define GM_ERROR_CHARACTER_NAME_ALREADY_EXIST 29

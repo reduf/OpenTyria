@@ -357,26 +357,10 @@ void AuthSrv_SendCharactersInfo(AuthConnection *conn, uint32_t req_id)
         STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->char_name.buf));
         memcpy_u16(msg->character_info.name, ch->char_name.buf, ch->char_name.len);
 
-        CharacterSettings settings = {0};
-        settings.version = 6;
-        settings.last_outpost = ch->last_outpost;
-        settings.last_time_played = 0;
-        settings.sex = ch->sex;
-        settings.height = ch->height;
-        settings.skin_color = ch->skin;
-        settings.hair_color = ch->hair_color;
-        settings.face_style = ch->face;
-        settings.primary_profession = ch->primary_profession;
-        settings.hair_style = ch->hair_style;
-        settings.campaign = ch->campaign;
-        settings.campaign_type = ch->campaign;
-        settings.level = ch->level;
-        settings.secondary_profession = ch->secondary_profession;
-        settings.helm_status = HelmStatus_Hide;
-        settings.number_of_pieces = 5;
-
-        msg->character_info.n_extended = sizeof(settings);
-        memcpy(msg->character_info.extended, &settings, sizeof(settings));
+        STATIC_ASSERT(sizeof(ch->settings.buf) <= sizeof(msg->character_info.extended));
+        assert(ch->settings.len <= sizeof(msg->character_info.extended));
+        msg->character_info.n_extended = (uint32_t) ch->settings.len;
+        memcpy(msg->character_info.extended, ch->settings.buf, ch->settings.len);
         AuthConnection_SendMessage(conn, msg, sizeof(msg->character_info));
     }
 }
@@ -605,13 +589,16 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
 
     req.district_number = msg->district;
 
-    if (!(conn->selected_character_idx < conn->characters.size)) {
+    if (conn->characters.size != 0 && !(conn->selected_character_idx < conn->characters.size)) {
         log_error("Client tried to join a server without a selected character");
         AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
 
-    struct uuid char_id = conn->characters.data[conn->selected_character_idx].char_id;
+    struct uuid char_id = {0};
+    if (conn->selected_character_idx < conn->characters.size) {
+        conn->characters.data[conn->selected_character_idx].char_id;
+    }
 
     // @Cleanup:
     // Ensure the client isn't on an other game server.

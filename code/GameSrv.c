@@ -46,6 +46,10 @@ int GameSrv_Setup(GameSrv *srv)
         return err;
     }
 
+    if ((err = random_init_from_sys(&srv->random)) != 0) {
+        return err;
+    }
+
     const char *path = "D:/Dev/OpenTyria-c/db/database.db";
     if ((err = Db_Open(&srv->database, path)) != 0) {
         return err;
@@ -212,13 +216,13 @@ void GameSrv_SendInstanceHead(GameConnection *conn)
 
 void GameSrv_SendCharacterCreationStart(GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_CHAR_CREATION_START);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_START);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
 void GameSrv_SendCharacterCreationReady(GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_CHAR_CREATION_READY);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_READY);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
@@ -1283,7 +1287,7 @@ void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
     msg->unk1 = item->unk1;
     msg->flags = item->flags;
     msg->value = item->value;
-    msg->model = item->model;
+    msg->model_id = item->model_id;
     msg->quantity = item->quantity;
     msg->n_name = item->name.size;
     STATIC_ASSERT(ARRAY_SIZE(msg->name) <= ARRAY_SIZE(item->name.data));
@@ -1395,22 +1399,72 @@ int GameSrv_HandleChangeEquippedItemColor(GameSrv *srv, size_t player_id, GameSr
 
 int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_CharCreationConfirm *msg)
 {
-    UNREFERENCED_PARAMETER(srv);
-    UNREFERENCED_PARAMETER(player_id);
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        return ERR_OK;
+    }
+
     Appearance app;
     memcpy(&app, msg->config, 4);
-    log_info(
-        "sex = %u\nheight = %u\nskin_color = %u\nhair_color = %u\nface = %u\nprof1 = %u\nhair_style = %u\ncampaign = %u\n",
-        app.sex,
-        app.height,
-        app.skin_color,
-        app.hair_color,
-        app.face,
-        app.prof1,
-        app.hair_style,
-        app.campaign
-    );
-    return ERR_UNSUCCESSFUL;
+
+    CharacterSettings settings = {6};
+    settings.last_outpost = 0;
+    settings.last_time_played = 0;
+    settings.sex = app.sex;
+    settings.height = app.height;
+    settings.skin_color = app.skin_color;
+    settings.hair_color = app.hair_color;
+    settings.face_style = app.face_style;
+    settings.primary_profession = app.primary_profession;
+    settings.hair_style = app.hair_style;
+    settings.campaign = app.campaign;
+    settings.campaign_type = player->char_creation_campaign_type;
+    settings.level = 1;
+    settings.is_pvp = player->char_creation_campaign_type == CampaignType_Pvp;
+    settings.secondary_profession = Profession_None;
+    settings.helm_status = HelmStatus_Show;
+    settings.number_of_pieces = 0;
+
+    GmBag *bag = &player->bags.equipped_items;
+    assert(EquippedItemSlot_Count <= bag->slot_count);
+    for (uint8_t idx = EquippedItemSlot_Chest; idx <= EquippedItemSlot_Gloves; ++idx) {
+        if (bag->items[idx] == 0) {
+            continue;
+        }
+
+        GmItem *item;
+        if ((item = GameSrv_GetItemById(srv, bag->items[idx])) == NULL) {
+            log_warn("Invalid item id %u in equiped item", bag->items[idx]);
+            continue;
+        }
+
+        size_t pos = settings.number_of_pieces++;
+        settings.pieces[pos].file_id = item->file_id & 0xFFFF;
+        settings.pieces[pos].col1 = item->dye_color;
+    }
+
+    struct uuid char_id;
+    random_get_bytes(&srv->random, &char_id, sizeof(char_id));
+
+    int err;
+    if ((err = Db_CreateCharacter(&srv->database, player->account_id, char_id, msg->n_name, msg->name, &settings)) != 0) {
+        // ?
+        // abort();
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return ERR_OK;
+    }
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, 152);
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_ERROR);
+    GameSrv_CharCreationError *msg2 = &buffer->char_creation_error;
+    msg2->error_code = GM_ERROR_CHARACTER_NAME_ALREADY_EXIST;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg2));
+
+    return ERR_OK;
 }
 
 void GameSrv_RemoveConnection(GameSrv *srv, uintptr_t token)

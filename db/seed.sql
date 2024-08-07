@@ -51,28 +51,20 @@ CREATE TABLE characters (
     updated_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
     account_id           VARCHAR(36) NOT NULL,
     char_name            BLOB(32) NOT NULL,
+    settings             BLOB(64) NOT NULL,
     skill_points         INTEGER DEFAULT 0,
     skill_points_total   INTEGER DEFAULT 0,
     experience           INTEGER DEFAULT 0,
     gold                 INTEGER DEFAULT 0,
-    last_outpost         INTEGER DEFAULT 0,
-    primary_profession   INTEGER NOT NULL,
-    secondary_profession INTEGER DEFAULT 0,
-    level                INTEGER DEFAULT 1,
     active_weapon_set    INTEGER DEFAULT 0,
-    campaign             INTEGER NOT NULL,
-    face                 INTEGER NOT NULL,
-    hair_color           INTEGER NOT NULL,
-    hair_style           INTEGER NOT NULL,
-    height               INTEGER NOT NULL,
-    sex                  INTEGER NOT NULL,
-    skin                 INTEGER NOT NULL,
     current_item_slot    INTEGER DEFAULT 0,
     unlocked_skills      BLOB(128) DEFAULT '',
     unlocked_professions INTEGER DEFAULT 0,
 
     PRIMARY KEY (char_id)
 );
+
+CREATE UNIQUE INDEX characters_char_name_idx ON characters(char_name);
 
 DROP TABLE IF EXISTS friendships;
 CREATE TABLE friendships (
@@ -129,30 +121,30 @@ INSERT INTO accounts (account_id, eula_accepted, current_char_id) VALUES
  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", TRUE, "209147c4-2492-471e-9e9e-09da1cbbee95"),
  ("864094a4-e0e4-40bd-a89d-051ad7c063aa", FALSE, NULL);
 
-INSERT INTO characters (char_id, account_id, char_name, primary_profession, campaign, face, hair_color, hair_style, height, sex, skin) VALUES
- ("8eb3db49-6c09-4830-938e-03a0e3e585e7", "58ec1cf3-2059-424b-8443-768244e401e9", "Christian Herakles", 1, 0, 1, 1, 1, 3, 1, 1),
- ("0f8b69e2-6592-43c5-a61e-72a45f5e891c", "58ec1cf3-2059-424b-8443-768244e401e9", "Nayeli Pontius", 4, 1, 1, 1, 1, 3, 1, 1),
- ("18fd5be4-5465-41c4-bab9-81240dc6c8bd", "58ec1cf3-2059-424b-8443-768244e401e9", "Kerman Martino", 2, 2, 1, 1, 1, 3, 1, 1),
- ("565ad034-28c4-4c4a-a1de-20208defc9cd", "58ec1cf3-2059-424b-8443-768244e401e9", "Detlef Kresten", 8, 2, 1, 1, 1, 3, 1, 1),
- ("d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tomaso Beata", 3, 1, 1, 1, 1, 3, 1, 1),
- ("a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tyrique Eua", 5, 1, 1, 1, 1, 3, 1, 1); 
-
-INSERT INTO bags (account_id, char_id, bag_model_id, bag_type, slot_count) VALUES
- ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 7, 4, 25),
- ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 8, 4, 25),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 7, 4, 25),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 8, 4, 25),
- ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 7, 4, 25),
- ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 8, 4, 25),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 0,  1, 20),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 21, 2, 9),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 0,  1, 20),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 21, 2, 9),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 0,  1, 20),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 21, 2, 9),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 0,  1, 20),
- ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 21, 2, 9),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 0,  1, 20),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 21, 2, 9),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 0,  1, 20),
- ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 21, 2, 9);
+-- INSERT INTO characters (char_id, account_id, char_name, settings) VALUES
+--  ("8eb3db49-6c09-4830-938e-03a0e3e585e7", "58ec1cf3-2059-424b-8443-768244e401e9", "Christian Herakles", ""),
+--  ("0f8b69e2-6592-43c5-a61e-72a45f5e891c", "58ec1cf3-2059-424b-8443-768244e401e9", "Nayeli Pontius", ""),
+--  ("18fd5be4-5465-41c4-bab9-81240dc6c8bd", "58ec1cf3-2059-424b-8443-768244e401e9", "Kerman Martino", ""),
+--  ("565ad034-28c4-4c4a-a1de-20208defc9cd", "58ec1cf3-2059-424b-8443-768244e401e9", "Detlef Kresten", ""),
+--  ("d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tomaso Beata", ""),
+--  ("a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "Tyrique Eua", ""); 
+-- 
+-- INSERT INTO bags (account_id, char_id, bag_model_id, bag_type, slot_count) VALUES
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 7, 4, 25),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", NULL, 8, 4, 25),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 7, 4, 25),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", NULL, 8, 4, 25),
+--  ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 7, 4, 25),
+--  ("864094a4-e0e4-40bd-a89d-051ad7c063aa", NULL, 8, 4, 25),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 0,  1, 20),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "8eb3db49-6c09-4830-938e-03a0e3e585e7", 21, 2, 9),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 0,  1, 20),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "0f8b69e2-6592-43c5-a61e-72a45f5e891c", 21, 2, 9),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 0,  1, 20),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "18fd5be4-5465-41c4-bab9-81240dc6c8bd", 21, 2, 9),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 0,  1, 20),
+--  ("58ec1cf3-2059-424b-8443-768244e401e9", "565ad034-28c4-4c4a-a1de-20208defc9cd", 21, 2, 9),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 0,  1, 20),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "d8d45b60-7cad-4f3e-bfdf-faafec9b6a77", 21, 2, 9),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 0,  1, 20),
+--  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "a3c9f0d4-c13d-4c9f-94ee-2165babe1a3a", 21, 2, 9);

@@ -95,6 +95,8 @@ typedef enum EquippedItemSlot {
     EquippedItemSlot_Gloves      = 6,
     EquippedItemSlot_Costume     = 7,
     EquippedItemSlot_CostumeHead = 8,
+
+    EquippedItemSlot_Count
 } EquippedItemSlot;
 
 typedef struct GmBag {

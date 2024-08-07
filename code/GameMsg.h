@@ -237,7 +237,7 @@ typedef struct GameSrv_ItemGeneralInfo {
     uint8_t  unk1;
     uint32_t flags; // interaction
     uint32_t value;
-    uint32_t model;
+    uint32_t model_id;
     uint32_t quantity;
     uint32_t n_name;
     uint16_t name[64];
@@ -264,6 +264,21 @@ typedef struct GameSrv_ItemMoveToLocation {
     uint16_t bag_id;
     uint8_t  slot;
 } GameSrv_ItemMoveToLocation;
+
+typedef struct GameSrv_CharCreationError {
+    uint16_t header;
+    uint32_t error_code;
+} GameSrv_CharCreationError;
+
+typedef struct GameSrv_CharCreationSuccess {
+    uint16_t header;
+    uint8_t  char_id[16];
+    uint32_t n_name;
+    uint16_t name[16];
+    uint16_t idk;
+    uint32_t n_settings;
+    uint8_t  settings[1024];
+} GameSrv_CharCreationSuccess;
 
 typedef union GameCliMsg {
     uint16_t                             header;
@@ -309,5 +324,7 @@ typedef union GameSrvMsg {
     GameSrv_ItemRemove                   item_remove;
     GameSrv_ItemSetProfession            item_set_profession;
     GameSrv_ItemMoveToLocation           item_move_to_location;
+    GameSrv_CharCreationError            char_creation_error;
+    GameSrv_CharCreationSuccess          char_creation_success;
 } GameSrvMsg;
 #pragma pack(pop)

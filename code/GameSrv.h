@@ -81,6 +81,7 @@ typedef struct GameSrv {
     uint16_t           next_bag_id;
     GmItemArray        items;
     array_uint32_t     free_items_slots;
+    mbedtls_chacha20_context random;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 

@@ -105,15 +105,16 @@ typedef enum DyeColor {
 } DyeColor;
 
 typedef struct Appearance {
-    unsigned int sex        : 1;
-    unsigned int height     : HEIGHT_BITS;
-    unsigned int skin_color : SKIN_COLOR_BITS;
-    unsigned int hair_color : HAIR_COLOR_BITS;
-    unsigned int face       : FACE_STYLE_BITS;
-    unsigned int prof1      : 4;
-    unsigned int hair_style : HAIR_STYLE_BITS;
-    unsigned int campaign   : 2; // 0=prof, 1=faction, 2=nightfall
+    unsigned int sex                : 1;
+    unsigned int height             : HEIGHT_BITS;
+    unsigned int skin_color         : SKIN_COLOR_BITS;
+    unsigned int hair_color         : HAIR_COLOR_BITS;
+    unsigned int face_style         : FACE_STYLE_BITS;
+    unsigned int primary_profession : 4;
+    unsigned int hair_style         : HAIR_STYLE_BITS;
+    unsigned int campaign           : 2; // 0=prof, 1=faction, 2=nightfall
 } Appearance;
+STATIC_ASSERT(sizeof(Appearance) == 4);
 
 #pragma pack(push, 1)
 typedef struct CharacterSettings {
@@ -139,7 +140,7 @@ typedef struct CharacterSettings {
     uint8_t      h0021[4];            // Can be \xDD\xDD\xDD\xDD or \xF0\xAD\xBA\x0D
     struct
     {
-        uint16_t     piece_id;
+        uint16_t     file_id;
         uint8_t      col1             : 4;
         uint8_t      col2             : 4;
         uint8_t      zero;            // always 0 for some reason

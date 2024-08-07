@@ -94,7 +94,7 @@ typedef struct GmItem {
     uint8_t      unk1;
     uint32_t     flags;
     uint32_t     value;
-    uint32_t     model;
+    uint32_t     model_id;
     uint32_t     quantity;
     Profession   profession;
     struct

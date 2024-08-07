@@ -11,6 +11,7 @@ enum
     ERR_TIMEOUT,
     ERR_BAD_USER_DATA,
     ERR_NOT_ENOUGH_DATA,
+    ERR_BUFFER_TOO_SMALL,
 };
 
 enum

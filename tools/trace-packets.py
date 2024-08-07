@@ -432,16 +432,16 @@ def main(args):
             name = "unknown"
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'SendPacket: {header}, 0x{header:X}, {name}')
-        if header == 94:
-            campaign_type, profession = proc.read(packet + 4, 'II')
-            if profession in professions:
-                profession = professions[profession]
-            if campaign_type in campaign_types:
-                campaign_type = campaign_types[campaign_type]
-            print(f'>> profession = {profession}, campaign_type = {campaign_type}')
-        if header == 130:
-            param1, param2 = proc.read(packet + 4, 'II')
-            print(f'>> param1 = {param1}, param2 = {param2}')
+        # if header == 94:
+        #     campaign_type, profession = proc.read(packet + 4, 'II')
+        #     if profession in professions:
+        #         profession = professions[profession]
+        #     if campaign_type in campaign_types:
+        #         campaign_type = campaign_types[campaign_type]
+        #     print(f'>> profession = {profession}, campaign_type = {campaign_type}')
+        # if header == 130:
+        #     param1, param2 = proc.read(packet + 4, 'II')
+        #     print(f'>> param1 = {param1}, param2 = {param2}')
 
     @Hook.rawcall
     def on_recv_packet(ctx):
@@ -453,8 +453,11 @@ def main(args):
             name = "unknown"
 
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # print(f'RecvPacket: {header}, 0x{header:X}, {name}')
+        print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
 
+        # if header == 394:
+        #     value, = proc.read(packet + 4, 'I')
+        #     print(f'value = {value}')
         # if header == 26:
         #     _, val, count, *values = proc.read(packet, 'III64I')
         #     temp = ', '.join(f'{val:X}' for val in values[:count])
@@ -492,19 +495,19 @@ def main(args):
         # if name == 'GAME_SMSG_ITEM_STREAM_CREATE':
         #     stream_id = proc.read(packet + 4, 'II')
         #     print(f'stream_id = {stream_id}')
-        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
-            item_id, file_id, item_type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, *modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI64I')
-            name = name[:name.index(b'\0\0')]
-            name = tuple(name[i] + (name[i+1] << 8) for i in range(0, len(name), 2))
-            name_str = ', '.join(f'0x{val:X}' for val in name)
-            name = f'{{{len(name)}, {{{name_str}}}}}'
-            modifier = modifier[:n_modifier]
-            modifier_str = ', '.join(f'0x{val:X}' for val in modifier)
-            modifier = f'{{{len(modifier)}, {{{modifier_str}}}}}'
-            item_type = item_types[item_type]
-            dye_color = dye_colors[dye_color]
-            if dye_color in ('DyeColor_None', 'DyeColor_Gray'):
-                print(f'{{\n    .file_id = 0x{file_id:X},\n    .item_type = {item_type},\n    .unk0 = {unk0},\n    .dye_color = {dye_color},\n    .materials = {materials},\n    .unk1 = {unk1},\n    .flags = 0x{flags:X},\n    .value = {value},\n    .model = {model},\n    .quantity = {quantity},\n    .name = {name},\n    .modifiers = {modifier},\n}},')
+        # if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+        #     item_id, file_id, item_type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, *modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI64I')
+        #     name = name[:name.index(b'\0\0')]
+        #     name = tuple(name[i] + (name[i+1] << 8) for i in range(0, len(name), 2))
+        #     name_str = ', '.join(f'0x{val:X}' for val in name)
+        #     name = f'{{{len(name)}, {{{name_str}}}}}'
+        #     modifier = modifier[:n_modifier]
+        #     modifier_str = ', '.join(f'0x{val:X}' for val in modifier)
+        #     modifier = f'{{{len(modifier)}, {{{modifier_str}}}}}'
+        #     item_type = item_types[item_type]
+        #     dye_color = dye_colors[dye_color]
+        #     if dye_color in ('DyeColor_None', 'DyeColor_Gray'):
+        #         print(f'{{\n    .file_id = 0x{file_id:X},\n    .item_type = {item_type},\n    .unk0 = {unk0},\n    .dye_color = {dye_color},\n    .materials = {materials},\n    .unk1 = {unk1},\n    .flags = 0x{flags:X},\n    .value = {value},\n    .model = {model},\n    .quantity = {quantity},\n    .name = {name},\n    .modifiers = {modifier},\n}},')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)

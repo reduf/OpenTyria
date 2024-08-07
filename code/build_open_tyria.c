@@ -68,8 +68,9 @@
 #include "random.h"
 #include "network.h"
 
-#include "Db.h"
+#include "DbSchema.h"
 
+#include "GmErrors.h"
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"
@@ -77,6 +78,8 @@
 #include "GmPlayer.h"
 #include "GmItem.h"
 #include "GmDefaultArmors.h"
+
+#include "Db.h"
 
 #include "opcodes.h"
 #include "msgdefs.h"
