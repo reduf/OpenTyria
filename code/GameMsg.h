@@ -8,8 +8,8 @@ typedef struct GameSrv_PingReply {
 
 typedef struct GameSrv_InstanceHead {
     uint16_t header;
-    uint8_t  b1;
-    uint8_t  b2;
+    uint8_t  pve_unlocked_flags;
+    uint8_t  pvp_unlocked_flags;
     uint8_t  b3;
     uint8_t  b4;
 } GameSrv_InstanceHead;

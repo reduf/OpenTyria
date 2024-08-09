@@ -207,8 +207,8 @@ void GameSrv_SendInstanceHead(GameConnection *conn)
 
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_HEAD);
     GameSrv_InstanceHead *msg = &buffer->instance_head;
-    msg->b1 = DEFAULT_FLAGS | PROPHECIES_UNLOCK | FACTIONS_UNLOCK | NIGHTFALL_UNLOCK;
-    msg->b2 = 0x3F;
+    msg->pve_unlocked_flags = DEFAULT_FLAGS | PROPHECIES_UNLOCK | FACTIONS_UNLOCK | NIGHTFALL_UNLOCK;
+    msg->pvp_unlocked_flags = DEFAULT_FLAGS | PROPHECIES_UNLOCK | FACTIONS_UNLOCK | NIGHTFALL_UNLOCK;
     msg->b3 = 0;
     msg->b4 = 0;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
@@ -1399,6 +1399,8 @@ int GameSrv_HandleChangeEquippedItemColor(GameSrv *srv, size_t player_id, GameSr
 
 int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_CharCreationConfirm *msg)
 {
+    int err;
+
     GmPlayer *player;
     if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
         return ERR_OK;
@@ -1446,23 +1448,34 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     struct uuid char_id;
     random_get_bytes(&srv->random, &char_id, sizeof(char_id));
 
-    int err;
-    if ((err = Db_CreateCharacter(&srv->database, player->account_id, char_id, msg->n_name, msg->name, &settings)) != 0) {
-        // ?
-        // abort();
-    }
-
     GameConnection *conn;
     if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
         return ERR_OK;
     }
 
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, 152);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CHAR_CREATION_DONE);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_ERROR);
-    GameSrv_CharCreationError *msg2 = &buffer->char_creation_error;
-    msg2->error_code = GM_ERROR_CHARACTER_NAME_ALREADY_EXIST;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg2));
+
+    if ((err = Db_CreateCharacter(&srv->database, player->account_id, char_id, msg->n_name, msg->name, &settings)) != 0) {
+        log_error("Failed to insert character in database");
+
+        buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_ERROR);
+        GameSrv_CharCreationError *msg2 = &buffer->char_creation_error;
+        msg2->error_code = GM_ERROR_CHARACTER_NAME_ALREADY_EXIST;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg2));
+        return ERR_OK;
+    }
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_SUCCESS);
+    GameSrv_CharCreationSuccess *result = &buffer->char_creation_success;
+    uuid_enc_le(result->char_id, &char_id);
+    STATIC_ASSERT(sizeof(result->n_name) <= sizeof(msg->n_name));
+    result->n_name = msg->n_name;
+    memcpy_u16(result->name, msg->name, msg->n_name);
+    result->idk = 0x2211; // what is that?
+    STATIC_ASSERT(sizeof(settings) <= sizeof(result->settings));
+    result->n_settings = sizeof(settings);
+    memcpy(result->settings, &settings, sizeof(settings));
 
     return ERR_OK;
 }

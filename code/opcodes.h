@@ -226,6 +226,7 @@
 #define GAME_SMSG_CARTOGRAPHY_DATA                  (0x0089) // 137
 #define GAME_SMSG_COMPASS_DRAWING                   (0x0090) // 144
 #define GAME_SMSG_MAPS_UNLOCKED                     (0x0093) // 147
+#define GAME_SMSG_AGENT_CHAR_CREATION_DONE          (0x0098) // 152
 #define GAME_SMSG_AGENT_UPDATE_SCALE                (0x0099) // 153
 #define GAME_SMSG_AGENT_UPDATE_NPC_NAME             (0x009A) // 154
 #define GAME_SMSG_AGENT_DISPLAY_DIALOG              (0x009D) // 157
