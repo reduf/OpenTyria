@@ -22,6 +22,7 @@ typedef array(IoSource) ArrayIoSource;
 void IoSource_setup(IoSource *source, uintptr_t socket);
 void IoSource_free(IoSource *source);
 IoSource IoSource_take(IoSource *source);
+void IoSource_reset(IoSource *source);
 
 typedef struct Iocp {
     uintptr_t handle;

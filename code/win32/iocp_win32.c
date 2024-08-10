@@ -91,9 +91,15 @@ void IoSource_free(IoSource *source)
 IoSource IoSource_take(IoSource *source)
 {
     IoSource result = *source;
-    source->socket = INVALID_SOCKET;
+    source->socket = 0;
     source->state = NULL;
     return result;
+}
+
+void IoSource_reset(IoSource *source)
+{
+    IoSource temp = IoSource_take(source);
+    IoSource_free(&temp);
 }
 
 int afd_poll(HANDLE handle, LPAFD_POLL_INFO params, LPOVERLAPPED ovlp)

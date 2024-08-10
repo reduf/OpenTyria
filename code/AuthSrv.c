@@ -303,6 +303,174 @@ int AuthConnection_SendMessage(AuthConnection *conn, AuthSrvMsg *msg, size_t siz
     return ERR_OK;
 }
 
+int AuthSrv_Setup(AuthSrv *srv)
+{
+    int err;
+
+    unsigned char random_key[32];
+    if ((err = sys_getrandom(random_key, 32)) != 0) {
+        log_error("Failed to get %zu random bytes", sizeof(random_key));
+        return err;
+    }
+
+    memset(srv, 0, sizeof(*srv));
+
+    if ((err = iocp_setup(&srv->iocp)) != 0) {
+        return err;
+    }
+
+    // @Cleanup: How to move that out.
+    const char *path = "D:/Dev/OpenTyria-c/db/database.db";
+    if ((err = Db_Open(&srv->database, path)) != 0) {
+        iocp_free(&srv->iocp);
+        return ERR_UNSUCCESSFUL;
+    }
+
+    random_init(&srv->random, random_key);
+    return 0;
+}
+
+void AuthSrv_Free(AuthSrv *srv)
+{
+    iocp_free(&srv->iocp);
+    stbds_hmfree(srv->objects);
+    array_free(&srv->objects_with_event);
+    array_free(&srv->objects_to_remove);
+    array_free(&srv->events);
+    mbedtls_chacha20_free(&srv->random);
+    Db_Close(&srv->database);
+    array_free(&srv->game_servers);
+    stbds_hmfree(srv->connected_accounts);
+}
+
+bool AuthSrv_IssueNextToken(AuthSrv *srv, uintptr_t *result)
+{
+    if (++srv->last_token_issued == UINTPTR_MAX) {
+        log_error("Can't issue any more token, all values were exhausted");
+        return false;
+    }
+
+    *result = srv->last_token_issued;
+    return true;
+}
+
+IoObject *AuthSrv_GetObject(AuthSrv *srv, uintptr_t token)
+{
+    ptrdiff_t idx;
+    if ((idx = stbds_hmgeti(srv->objects, token)) == -1) {
+        return NULL;
+    }
+    return &srv->objects[(size_t)idx].value;
+}
+
+ConnectedAccountInfo* AuthSrv_GetConnectedAccount(AuthSrv *srv, struct uuid account_id)
+{
+    ptrdiff_t idx;
+    if ((idx = stbds_hmgeti(srv->connected_accounts, account_id)) == -1) {
+        return NULL;
+    }
+    return &srv->connected_accounts[(size_t)idx];
+}
+
+void AuthSrv_DelConnectedAccount(AuthSrv *srv, struct uuid account_id)
+{
+    stbds_hmdel(srv->connected_accounts, account_id);
+}
+
+ConnectedAccountInfo* AuthSrv_AddConnectedAccount(AuthSrv *srv, struct uuid account_id)
+{
+    ConnectedAccountInfo info = {0};
+    info.key = account_id;
+    stbds_hmputs(srv->connected_accounts, info);
+    return &srv->connected_accounts[stbds_temp(srv->connected_accounts - 1)];
+}
+
+void AuthSrv_FreeAuthConnectionByToken(AuthSrv *srv, uintptr_t token)
+{
+    IoObject *object;
+    if ((object = AuthSrv_GetObject(srv, token)) == NULL) {
+        return;
+    }
+
+    switch (object->type) {
+    case IoObjectType_AuthConnection:
+        IoSource_reset(&object->auth_connection.source);
+        array_clear(&object->auth_connection.outgoing);
+        array_add(&srv->objects_to_remove, token);
+        break;
+    default:
+        abort();
+    }
+}
+
+void AuthSrv_CloseAuthConnection(AuthSrv *srv, AuthConnection *conn)
+{
+    IoSource_reset(&conn->source);
+    array_clear(&conn->outgoing);
+    array_add(&srv->objects_to_remove, conn->token);
+
+    ConnectedAccountInfo *connected;
+    if ((connected = AuthSrv_GetConnectedAccount(srv, conn->account_id)) == NULL) {
+        return;
+    }
+
+    connected->auth_conn_token = 0;
+    if (connected->map_token == 0) {
+        AuthSrv_DelConnectedAccount(srv, conn->account_id);
+    }
+}
+
+void AuthSrv_GetMessages(AuthSrv *srv, AuthConnection *conn)
+{
+    int err;
+    uint16_t header;
+    size_t total_consumed = 0;
+
+    while (sizeof(header) <= (conn->incoming.size - total_consumed)) {
+        const uint8_t *input = &conn->incoming.data[total_consumed];
+        size_t size = conn->incoming.size - total_consumed;
+
+        header = le16dec(input) & ~AUTH_CMSG_MASK;
+        if (ARRAY_SIZE(AUTH_CMSG_FORMATS) <= header) {
+            AuthSrv_CloseAuthConnection(srv, conn);
+            break;
+        }
+
+        MsgFormat format = AUTH_CMSG_FORMATS[header];
+
+        size_t consumed;
+        AuthCliMsg *msg = malloc(sizeof(*msg));
+        if ((err = unpack_msg(format, &consumed, input, size, msg->buffer, sizeof(msg->buffer))) != 0) {
+            free(msg);
+
+            if (err != ERR_NOT_ENOUGH_DATA) {
+                log_warn("Received invalid message from client %04" PRIXPTR, conn->token);
+                AuthSrv_CloseAuthConnection(srv, conn);
+            }
+
+            break;
+        }
+
+        array_add(&conn->messages, msg);
+        total_consumed += consumed;
+    }
+
+    array_remove_range_ordered(&conn->incoming, 0, total_consumed);
+}
+
+void AuthSrv_PeerDisconnected(AuthSrv *srv, AuthConnection *conn)
+{
+    size_t count = array_size(&conn->messages);
+    if (count != 0 && array_at(&conn->messages, count - 1) == NULL) {
+        log_warn("Tried to peer disconnect twice");
+        return;
+    }
+
+    AuthSrv_GetMessages(srv, conn);
+    array_add(&conn->messages, NULL);
+    AuthSrv_CloseAuthConnection(srv, conn);
+}
+
 void AuthSrv_SendSessionInfo(AuthSrv *srv, AuthConnection *conn)
 {
     random_get_bytes(&srv->random, &conn->server_salt, sizeof(conn->server_salt));
@@ -440,23 +608,32 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
 
     DbSession session;
     if ((err = Db_GetSession(&srv->database, user_id, session_id, &session)) != 0) {
-        AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_AUTH_ERROR);
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_AUTH_ERROR);
         return ERR_OK;
+    }
+
+    ConnectedAccountInfo *connected_account;
+    if ((connected_account = AuthSrv_GetConnectedAccount(srv, session.account_id)) != NULL) {
+        AuthSrv_FreeAuthConnectionByToken(srv, connected_account->auth_conn_token);
+        connected_account->auth_conn_token = conn->token;
+    } else {
+        connected_account = AuthSrv_AddConnectedAccount(srv, session.account_id);
+        connected_account->auth_conn_token = conn->token;
     }
 
     conn->user_id = user_id;
     conn->session_id = session_id;
     conn->account_id = session.account_id;
+    conn->connected = true;
 
     if ((err = Db_GetAccount(&srv->database, conn->account_id, &conn->account)) != 0) {
-        AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
-
     
     array_clear(&conn->characters);
     if ((err = Db_GetCharacters(&srv->database, conn->account_id, &conn->characters)) != 0) {
-        AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
 
@@ -509,6 +686,11 @@ int AuthSrv_HandleChangePlayCharacter(AuthConnection *conn, AuthCliMsg *msg)
 {
     assert(msg->header == AUTH_CMSG_CHANGE_PLAY_CHARACTER);
 
+    if (!conn->connected) {
+        AuthSrv_SendRequestResponse(conn, msg->change_character.req_id, GM_ERROR_DISCONNECTED);
+        return ERR_OK;
+    }
+
     DbCharacterArray characters = conn->characters;
     for (size_t idx = 0; characters.size; ++idx) {
         DbCharacter *ch = &characters.data[idx];
@@ -520,7 +702,7 @@ int AuthSrv_HandleChangePlayCharacter(AuthConnection *conn, AuthCliMsg *msg)
         }
     }
 
-    AuthSrv_SendRequestResponse(conn, msg->change_character.req_id, GAME_ERROR_NETWORK_ERROR);
+    AuthSrv_SendRequestResponse(conn, msg->change_character.req_id, GM_ERROR_NETWORK_ERROR);
     return ERR_OK;
 }
 
@@ -578,6 +760,11 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
     assert(cli_msg->header == AUTH_CMSG_REQUEST_GAME_INSTANCE);
     RequestGameInstance *msg = &cli_msg->request_game_instance;
 
+    if (!conn->connected) {
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_DISCONNECTED);
+        return ERR_OK;
+    }
+
     RequestGameInstanceParams req = {0};
     if ((err = MapType_FromInt(&req.map_type, msg->map_type)) != 0 ||
         (err = DistrictRegion_FromInt(&req.region, msg->region)) != 0 ||
@@ -591,7 +778,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
 
     if (conn->characters.size != 0 && !(conn->selected_character_idx < conn->characters.size)) {
         log_error("Client tried to join a server without a selected character");
-        AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_NETWORK_ERROR);
         return ERR_OK;
     }
 
@@ -607,7 +794,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
     if (AuthSrv_FindCompatibleGameSrv(srv, req, &idx) != 0) {
         if (AuthSrv_AllocGameServer(srv, req, &idx) != 0) {
             log_error("Couldn't allocate an appropriate game server");
-            AuthSrv_SendRequestResponse(conn, msg->req_id, GAME_ERROR_NETWORK_ERROR);
+            AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_NETWORK_ERROR);
             return ERR_OK;
         }
     }
@@ -653,56 +840,6 @@ int AuthSrv_HandleAddAccessKey(AuthConnection *conn, AuthCliMsg *cli_msg)
     log_info("Adding access key: '%s'", buffer);
     AuthSrv_SendRequestResponse(conn, msg->req_id, 0);
     return ERR_OK;
-}
-
-int AuthSrv_Setup(AuthSrv *srv)
-{
-    int err;
-
-    unsigned char random_key[32];
-    if ((err = sys_getrandom(random_key, 32)) != 0) {
-        log_error("Failed to get %zu random bytes", sizeof(random_key));
-        return err;
-    }
-
-    memset(srv, 0, sizeof(*srv));
-
-    if ((err = iocp_setup(&srv->iocp)) != 0) {
-        return err;
-    }
-
-    // @Cleanup: How to move that out.
-    const char *path = "D:/Dev/OpenTyria-c/db/database.db";
-    if ((err = Db_Open(&srv->database, path)) != 0) {
-        iocp_free(&srv->iocp);
-        return ERR_UNSUCCESSFUL;
-    }
-
-    random_init(&srv->random, random_key);
-    return 0;
-}
-
-void AuthSrv_Free(AuthSrv *srv)
-{
-    iocp_free(&srv->iocp);
-    stbds_hmfree(srv->objects);
-    array_free(&srv->objects_with_event);
-    array_free(&srv->objects_to_remove);
-    array_free(&srv->events);
-    mbedtls_chacha20_free(&srv->random);
-    Db_Close(&srv->database);
-    array_free(&srv->game_servers);
-}
-
-bool AuthSrv_IssueNextToken(AuthSrv *srv, uintptr_t *result)
-{
-    if (++srv->last_token_issued == UINTPTR_MAX) {
-        log_error("Can't issue any more token, all values were exhausted");
-        return false;
-    }
-
-    *result = srv->last_token_issued;
-    return true;
 }
 
 int AuthSrv_Bind(AuthSrv *srv, const char *addr, size_t addr_len)
@@ -752,70 +889,6 @@ int AuthSrv_Bind(AuthSrv *srv, const char *addr, size_t addr_len)
 
     stbds_hmput(srv->objects, token, obj);
     return ERR_OK;
-}
-
-void AuthSrv_GetMessages(AuthSrv *srv, AuthConnection *conn)
-{
-    int err;
-    uint16_t header;
-    size_t total_consumed = 0;
-
-    while (sizeof(header) <= (conn->incoming.size - total_consumed)) {
-        const uint8_t *input = &conn->incoming.data[total_consumed];
-        size_t size = conn->incoming.size - total_consumed;
-
-        header = le16dec(input) & ~AUTH_CMSG_MASK;
-        if (ARRAY_SIZE(AUTH_CMSG_FORMATS) <= header) {
-            IoSource_free(&conn->source);
-            array_add(&srv->objects_to_remove, conn->token);
-            break;
-        }
-
-        MsgFormat format = AUTH_CMSG_FORMATS[header];
-
-        size_t consumed;
-        AuthCliMsg *msg = malloc(sizeof(*msg));
-        if ((err = unpack_msg(format, &consumed, input, size, msg->buffer, sizeof(msg->buffer))) != 0) {
-            free(msg);
-
-            if (err != ERR_NOT_ENOUGH_DATA) {
-                log_warn("Received invalid message from client %04" PRIXPTR, conn->token);
-                IoSource_free(&conn->source);
-                array_add(&srv->objects_to_remove, conn->token);
-            }
-
-            break;
-        }
-
-        array_add(&conn->messages, msg);
-        total_consumed += consumed;
-    }
-
-    array_remove_range_ordered(&conn->incoming, 0, total_consumed);
-}
-
-void AuthSrv_PeerDisconnected(AuthSrv *srv, AuthConnection *conn)
-{
-    size_t count = array_size(&conn->messages);
-    if (count != 0 && array_at(&conn->messages, count - 1) == NULL) {
-        log_warn("Tried to peer disconnect twice");
-        return;
-    }
-
-    AuthSrv_GetMessages(srv, conn);
-    array_add(&conn->messages, NULL);
-
-    IoSource_free(&conn->source);
-    array_add(&srv->objects_to_remove, conn->token);
-}
-
-IoObject *AuthSrv_GetObject(AuthSrv *srv, uintptr_t token)
-{
-    ptrdiff_t idx;
-    if ((idx = stbds_hmgeti(srv->objects, token)) == -1) {
-        return NULL;
-    }
-    return &srv->objects[(size_t)idx].value;
 }
 
 void AuthSrv_ProcessListenerEvent(AuthSrv *srv, IoSource *listener)
@@ -1099,8 +1172,7 @@ void AuthSrv_ProcessAuthConnectionEvent(AuthSrv *srv, AuthConnection *conn, Even
         }
 
         if (err != ERR_OK) {
-            IoSource_free(&conn->source);
-            array_add(&srv->objects_to_remove, conn->token);
+            AuthSrv_CloseAuthConnection(srv, conn);
             break;
         }
     }
@@ -1175,7 +1247,7 @@ void AuthSrv_Update(AuthSrv *srv)
         }
 
         if ((err = AuthConnection_FlushOutgoingBuffer(conn)) != 0) {
-            array_add(&srv->objects_to_remove, conn->token);
+            AuthSrv_CloseAuthConnection(srv, conn);
         }
     }
 

@@ -13,9 +13,3 @@ enum
     ERR_NOT_ENOUGH_DATA,
     ERR_BUFFER_TOO_SMALL,
 };
-
-enum
-{
-    GAME_ERROR_NETWORK_ERROR = 2,
-    GAME_ERROR_AUTH_ERROR    = 11,
-};

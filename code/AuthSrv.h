@@ -58,6 +58,7 @@ typedef struct AuthConnection {
     struct uuid      computer_hash;
     uint32_t         server_salt;
     PlayerStatus     player_status;
+    bool             connected;
     DbAccount        account;
     DbCharacterArray characters;
     size_t           selected_character_idx;
@@ -89,6 +90,13 @@ typedef struct IoObjectMap {
     IoObject  value;
 } IoObjectMap;
 
+typedef struct ConnectedAccountInfo {
+    struct uuid key; // account id
+    struct uuid char_id;
+    uint32_t    map_token;
+    uintptr_t   auth_conn_token;
+} ConnectedAccountInfo;
+
 typedef struct AuthSrv {
     Iocp                     iocp;
     uintptr_t                last_token_issued;
@@ -99,6 +107,7 @@ typedef struct AuthSrv {
     mbedtls_chacha20_context random;
     Database                 database;
     GameSrvArray             game_servers;
+    ConnectedAccountInfo    *connected_accounts;
 } AuthSrv;
 
 int  AuthSrv_Setup(AuthSrv *srv);
