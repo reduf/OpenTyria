@@ -220,9 +220,9 @@ void GameSrv_SendCharacterCreationStart(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
-void GameSrv_SendCharacterCreationReady(GameConnection *conn)
+void GameSrv_SendInstancePlayerDataDone(GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_READY);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_PLAYER_DATA_DONE);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
@@ -709,9 +709,9 @@ void GameSrv_SendPlayerAgentAttributes(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->agent_create_attribute));
 }
 
-void GameSrv_SendInstanceEarlyPacket(GameConnection *conn)
+void GameSrv_SendInstancePlayerDataStart(GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_EARLY_PACKET);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_PLAYER_DATA_START);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
@@ -1116,26 +1116,8 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
     switch (srv->map_type) {
     case MapType_CharacterCreation:
         GameSrv_CreateDefaultBags(srv, conn.player_id);
-
         GameSrv_SendInstanceHead(&conn);
         GameSrv_SendCharacterCreationStart(&conn);
-        GameSrv_SendInstanceEarlyPacket(&conn);
-        GameSrv_SendItemStreamCreate(&conn);
-        GameSrv_SendInventory(srv, &conn, conn.player_id);
-        GameSrv_SendUpdateActiveWeaponSet(&conn);
-        GameSrv_SendWeaponSlots(&conn);
-        GameSrv_SendGoldStorageAdd(&conn);
-        GameSrv_SendPlayerFactions(&conn);
-        GameSrv_SendPlayerAgentAttributes(&conn);
-        GameSrv_SendPlayerProfession(&conn, Profession_Warrior, 0);
-        GameSrv_SendUnlockedProfession(&conn);
-        GameSrv_SendSkillbarUpdate(&conn);
-        GameSrv_SendPlayerAgentAttribute(&conn);
-        GameSrv_SendCharacterCreationReady(&conn);
-        GameSrv_SendUnlockedSkills(&conn);
-        GameSrv_SendUnlockedPvpHeroes(&conn);
-        GameSrv_SendPvpItems(&conn);
-        GameSrv_SendAccountFeatures(&conn);
         break;
     case MapType_MainTown:
     case MapType_MainExplorable:
@@ -1146,7 +1128,7 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
     case MapType_ArenaExplorable:
     case MapType_HeroesAscentOutpost:
         GameSrv_SendInstanceHead(&conn);
-        GameSrv_SendInstanceEarlyPacket(&conn);
+        GameSrv_SendInstancePlayerDataStart(&conn);
         GameSrv_SendInstanceLoadPlayerName(&conn);
         GameSrv_SendInstanceLoadInfo(srv, &conn);
         break;
@@ -1214,6 +1196,55 @@ int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameS
     // Send GAME_SMSG_PLAYER_ATTR_MAX_BALTHAZAR
     // Send GAME_SMSG_PLAYER_ATTR_MAX_IMPERIAL
     // GameSrv_SendReadyForMapSpawn(&conn);
+    return ERR_OK;
+}
+
+int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
+{
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Unknown player");
+        return ERR_OK;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return ERR_OK;
+    }
+
+    GameSrv_SendInstancePlayerDataStart(conn);
+    GameSrv_SendItemStreamCreate(conn);
+    GameSrv_SendInventory(srv, conn, conn->player_id);
+    GameSrv_SendUpdateActiveWeaponSet(conn);
+    GameSrv_SendWeaponSlots(conn);
+    GameSrv_SendGoldStorageAdd(conn);
+    GameSrv_SendPlayerFactions(conn);
+    GameSrv_SendPlayerAgentAttributes(conn);
+    GameSrv_SendPlayerProfession(conn, Profession_Warrior, 0);
+    GameSrv_SendUnlockedProfession(conn);
+    GameSrv_SendSkillbarUpdate(conn);
+    GameSrv_SendPlayerAgentAttribute(conn);
+    GameSrv_SendInstancePlayerDataDone(conn);
+    return ERR_OK;
+}
+
+int GameSrv_HandleCharCreationRequestArmors(GameSrv *srv, size_t player_id)
+{
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Unknown player");
+        return ERR_OK;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return ERR_OK;
+    }
+
+    GameSrv_SendUnlockedSkills(conn);
+    GameSrv_SendUnlockedPvpHeroes(conn);
+    GameSrv_SendPvpItems(conn);
+    GameSrv_SendAccountFeatures(conn);
     return ERR_OK;
 }
 
@@ -1530,9 +1561,11 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_ITEMS");
         err = GameSrv_HandleInstanceLoadRequestItems(srv, player_id, &msg->request_items);
         break;
-    case GAME_CMSG_CHAR_CREATION_START_RECV:
+    case GAME_CMSG_CHAR_CREATION_REQUEST_PLAYER:
+        err = GameSrv_HandleCharCreationRequestPlayer(srv, player_id);
         break;
-    case GAME_CMSG_CHAR_CREATION_READY_RECV:
+    case GAME_CMSG_CHAR_CREATION_REQUEST_ARMORS:
+        err = GameSrv_HandleCharCreationRequestArmors(srv, player_id);
         break;
     case GAME_CMSG_CHAR_CREATION_CHANGE_PROF:
         err = GameSrv_HandleCharCreationChangeProf(srv, player_id, &msg->char_creation_change_prof);

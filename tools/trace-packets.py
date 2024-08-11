@@ -23,8 +23,8 @@ def main(args):
     @Hook.stdcall(LPVOID, DWORD, LPVOID)
     def on_send_packet(ctx, size, packet):
         header, = proc.read(packet, 'I')
-        if header in auth_cmsg_names:
-            name = auth_cmsg_names[header]
+        if header in game_cmsg_names:
+            name = game_cmsg_names[header]
         else:
             name = "unknown"
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -44,8 +44,8 @@ def main(args):
     def on_recv_packet(ctx):
         packet, = proc.read(ctx.Esp, 'I')
         header, = proc.read(packet, 'I')
-        if header in auth_smsg_names:
-            name = auth_smsg_names[header]
+        if header in game_smsg_names:
+            name = game_smsg_names[header]
         else:
             name = "unknown"
 
@@ -105,9 +105,9 @@ def main(args):
         #     dye_color = dye_colors[dye_color]
         #     if dye_color in ('DyeColor_None', 'DyeColor_Gray'):
         #         print(f'{{\n    .file_id = 0x{file_id:X},\n    .item_type = {item_type},\n    .unk0 = {unk0},\n    .dye_color = {dye_color},\n    .materials = {materials},\n    .unk1 = {unk1},\n    .flags = 0x{flags:X},\n    .value = {value},\n    .model = {model},\n    .quantity = {quantity},\n    .name = {name},\n    .modifiers = {modifier},\n}},')
-        if name == 'AUTH_SMSG_REQUEST_RESPONSE':
-            req_id, status = proc.read(packet + 4, 'II')
-            print(f'req_id = {req_id}, status = {status}')
+        # if name == 'AUTH_SMSG_REQUEST_RESPONSE':
+        #     req_id, status = proc.read(packet + 4, 'II')
+        #     print(f'req_id = {req_id}, status = {status}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)
