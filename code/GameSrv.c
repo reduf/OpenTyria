@@ -1183,19 +1183,28 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
 
 int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameSrv_RequestItems *msg)
 {
-    UNREFERENCED_PARAMETER(srv);
-    UNREFERENCED_PARAMETER(player_id);
     UNREFERENCED_PARAMETER(msg);
-    // GameSrv_SendItemStreamCreate(&conn);
-    // Send all items and location GAME_SMSG_ITEM_GENERAL_INFO & GAME_SMSG_INVENTORY_ITEM_LOCATION
-    // Send all carried item GAME_SMSG_ITEM_WEAPON_SET
-    // GameSrv_SendGoldStorageAdd(&conn);
-    // Send GAME_SMSG_QUEST_ADD
-    // Send GAME_SMSG_PLAYER_ATTR_MAX_KURZICK
-    // Send GAME_SMSG_PLAYER_ATTR_MAX_LUXON
-    // Send GAME_SMSG_PLAYER_ATTR_MAX_BALTHAZAR
-    // Send GAME_SMSG_PLAYER_ATTR_MAX_IMPERIAL
-    // GameSrv_SendReadyForMapSpawn(&conn);
+
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Unknown player");
+        return ERR_OK;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        return ERR_OK;
+    }
+
+    GameSrv_SendItemStreamCreate(conn);
+    GameSrv_SendUpdateActiveWeaponSet(conn);
+    GameSrv_SendInventory(srv, conn, conn->player_id);
+    GameSrv_SendWeaponSlots(conn);
+    GameSrv_SendGoldStorageAdd(conn);
+    // GameSrv_SendQuests(conn);
+    GameSrv_SendPlayerFactions(conn);
+    GameSrv_SendReadyForMapSpawn(&conn);
+
     return ERR_OK;
 }
 
@@ -1484,9 +1493,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
         return ERR_OK;
     }
 
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CHAR_CREATION_DONE);
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
-
+    GameSrvMsg *buffer;
     if ((err = Db_CreateCharacter(&srv->database, player->account_id, char_id, msg->n_name, msg->name, &settings)) != 0) {
         log_error("Failed to insert character in database");
 
