@@ -90,6 +90,7 @@ typedef enum DbCharacterCols {
     #define X(T, N) DbCharacterCols_ ## N,
     DbCharacterColumnsDef
     #undef X
+    DbCharacterCols_Count,
 } DbCharacterCols;
 
 static const char *DbCharacterColsName[] = {

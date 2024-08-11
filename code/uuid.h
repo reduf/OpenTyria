@@ -16,7 +16,7 @@ static const struct uuid null_uuid = {0};
 
 #define uuid_equals(a, b) (uuid_cmp(a, b) == 0)
 
-int uuid_is_null(const struct uuid *u)
+bool uuid_is_null(const struct uuid *u)
 {
     return !memcmp(u, &null_uuid, sizeof(*u));
 }

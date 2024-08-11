@@ -7,7 +7,7 @@ typedef enum BagType {
     BagType_Equipped     = 2,
     BagType_NotCollected = 3,
     BagType_Storage      = 4,
-    BagType_MatsStorage  = 5,
+    BagType_MatStorage   = 5,
 } BagType;
 
 int BagType_FromInt(int value, BagType *result)
@@ -17,7 +17,7 @@ int BagType_FromInt(int value, BagType *result)
     case BagType_Equipped:
     case BagType_NotCollected:
     case BagType_Storage:
-    case BagType_MatsStorage:
+    case BagType_MatStorage:
         *result = (BagType)value;
         return ERR_OK;
     default:
@@ -138,4 +138,6 @@ typedef union GmBagArray {
 void GmBag_InitBackpack(GmBag *bag, uint16_t bag_id);
 void GmBag_InitUnclaimedItems(GmBag *bag, uint16_t bag_id);
 void GmBag_InitEquippedItems(GmBag *bag, uint16_t bag_id);
+void GmBag_InitMaterialStorage(GmBag *bag, uint16_t bag_id);
+void GmBag_InitStorage(GmBagArray *bags, BagModelId model_id, uint16_t bag_id);
 void GmBagSetItem(GmBag *bag, size_t slot, uint32_t item_id);

@@ -1,6 +1,6 @@
 #pragma once
 
-#define LOG_MSG_SIZE (1024)
+#define LOG_MSG_SIZE (4096)
 
 unsigned int log_minimum_level = LOG_DEBUG;
 

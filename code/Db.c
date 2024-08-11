@@ -134,13 +134,13 @@ int sqlite3_bind_u8_array(sqlite3_stmt *stmt, int iCol, size_t len, const uint8_
     return sqlite3_bind_blob64(stmt, iCol, ptr, len, NULL);
 }
 
-void append_fields(array_char_t *builder, const char **fields, size_t count)
+void append_fields(array_char_t *builder, const char *table, const char **fields, size_t count)
 {
     for (size_t idx = 0; idx < count; ++idx) {
         if (idx == count - 1) {
-            appendf(builder, "%s ", fields[idx]);
+            appendf(builder, "%s.%s ", table, fields[idx]);
         } else {
-            appendf(builder, "%s, ", fields[idx]);
+            appendf(builder, "%s.%s, ", table, fields[idx]);
         }
     }
 }
@@ -174,7 +174,7 @@ int Db_Open(Database *result, const char *path)
 
     array_char_t builder = {0};
     appendf(&builder, "SELECT ");
-    append_fields(&builder, DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
+    append_fields(&builder, "sessions", DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
     appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_session, 0)) != SQLITE_OK) {
@@ -183,7 +183,7 @@ int Db_Open(Database *result, const char *path)
 
     array_clear(&builder);
     appendf(&builder, "SELECT ");
-    append_fields(&builder, DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
+    append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, "FROM accounts WHERE account_id = ?;");
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_account, 0)) != SQLITE_OK) {
@@ -192,7 +192,7 @@ int Db_Open(Database *result, const char *path)
 
     array_clear(&builder);
     appendf(&builder, "SELECT ");
-    append_fields(&builder, DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
+    append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ?;");
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_account_characters, 0)) != SQLITE_OK) {
@@ -201,7 +201,7 @@ int Db_Open(Database *result, const char *path)
 
     array_clear(&builder);
     appendf(&builder, "SELECT ");
-    append_fields(&builder, DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
+    append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ? AND char_id = ?;");
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character, 0)) != SQLITE_OK) {
@@ -210,7 +210,18 @@ int Db_Open(Database *result, const char *path)
 
     array_clear(&builder);
     appendf(&builder, "SELECT ");
-    append_fields(&builder, DbBagColsName, ARRAY_SIZE(DbBagColsName));
+    append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
+    appendf(&builder, ", ");
+    append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
+    appendf(&builder, "FROM characters JOIN accounts ON accounts.account_id = characters.account_id WHERE characters.account_id = ? AND characters.char_id = ?;");
+
+    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character_and_account, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
+    array_clear(&builder);
+    appendf(&builder, "SELECT ");
+    append_fields(&builder, "bags", DbBagColsName, ARRAY_SIZE(DbBagColsName));
     appendf(&builder, "FROM bags WHERE account_id = ? AND (char_id IS NULL OR char_id = ?);");
 
     if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
@@ -246,7 +257,11 @@ void Db_Close(Database *database)
     }
 
     if ((err = sqlite3_finalize(database->stmt_get_character)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_account_characters', err: %d (%s)", err, sqlite3_errstr(err));
+        log_error("Failed to finalize 'stmt_get_account_character', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_get_character_and_account)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_get_account_character_and_account', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_finalize(database->stmt_get_friendships)) != SQLITE_OK) {
@@ -264,6 +279,54 @@ void Db_Close(Database *database)
     if ((err = sqlite3_close_v2(database->conn)) != SQLITE_OK) {
         log_error("Failed to close database %d (%s)", err, sqlite3_errstr(err));
     }
+}
+
+int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
+{
+    int err;
+    if (((err = sqlite3_column_uuid(stmt, idx + DbCharacterCols_char_id, &result->char_id)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbCharacterCols_created_at, &result->created_at)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
+        ((err = sqlite3_column_uuid(stmt, idx + DbCharacterCols_account_id, &result->account_id)) != 0) ||
+        ((err = sqlite3_column_u16_array(stmt, idx + DbCharacterCols_char_name, result->char_name.buf, ARRAY_SIZE(result->char_name.buf), &result->char_name.len)) != 0) ||
+        ((err = sqlite3_column_u8_array(stmt, idx + DbCharacterCols_settings, result->settings.buf, ARRAY_SIZE(result->settings.buf), &result->settings.len)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_experience, &result->experience)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_gold, &result->gold)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0)
+    ) {
+        return ERR_SERVER_ERROR;
+    }
+    return ERR_OK;
+}
+
+int DbAccount_from_stmt(sqlite3_stmt *stmt, int idx, DbAccount *result)
+{
+    int err;
+    if (((err = sqlite3_column_uuid(stmt, idx + DbAccountCols_account_id, &result->account_id)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbAccountCols_created_at, &result->created_at)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbAccountCols_updated_at, &result->updated_at)) != 0) ||
+        ((err = sqlite3_column_bool(stmt, idx + DbAccountCols_eula_accepted, &result->eula_accepted)) != 0) ||
+        ((err = sqlite3_column_uuid(stmt, idx + DbAccountCols_current_char_id, &result->current_char_id)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbAccountCols_current_territory, &result->current_territory)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbAccountCols_storage_gold, &result->storage_gold)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_balthazar_points_max, &result->balthazar_points_max)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_balthazar_points_amount, &result->balthazar_points_amount)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_balthazar_points_total, &result->balthazar_points_total)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_kurzick_points_max, &result->kurzick_points_max)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_kurzick_points_amount, &result->kurzick_points_amount)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_kurzick_points_total, &result->kurzick_points_total)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_luxon_points_max, &result->luxon_points_max)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_luxon_points_amount, &result->luxon_points_amount)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_luxon_points_total, &result->luxon_points_total)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_imperial_points_max, &result->imperial_points_max)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_imperial_points_amount, &result->imperial_points_amount)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbAccountCols_imperial_points_total, &result->imperial_points_total)) != 0)
+    ) {
+        return ERR_SERVER_ERROR;
+    }
+    return ERR_OK;
 }
 
 int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_id, DbSession *result)
@@ -315,56 +378,17 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
     }
 
     if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
-        if (((err = sqlite3_column_uuid(stmt, DbAccountCols_account_id, &result->account_id)) != 0) ||
-            ((err = sqlite3_column_i64(stmt, DbAccountCols_created_at, &result->created_at)) != 0) ||
-            ((err = sqlite3_column_i64(stmt, DbAccountCols_updated_at, &result->updated_at)) != 0) ||
-            ((err = sqlite3_column_bool(stmt, DbAccountCols_eula_accepted, &result->eula_accepted)) != 0) ||
-            ((err = sqlite3_column_uuid(stmt, DbAccountCols_current_char_id, &result->current_char_id)) != 0) ||
-            ((err = sqlite3_column_u16(stmt, DbAccountCols_current_territory, &result->current_territory)) != 0) ||
-            ((err = sqlite3_column_u16(stmt, DbAccountCols_storage_gold, &result->storage_gold)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_balthazar_points_max, &result->balthazar_points_max)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_balthazar_points_amount, &result->balthazar_points_amount)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_balthazar_points_total, &result->balthazar_points_total)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_kurzick_points_max, &result->kurzick_points_max)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_kurzick_points_amount, &result->kurzick_points_amount)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_kurzick_points_total, &result->kurzick_points_total)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_luxon_points_max, &result->luxon_points_max)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_luxon_points_amount, &result->luxon_points_amount)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_luxon_points_total, &result->luxon_points_total)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_imperial_points_max, &result->imperial_points_max)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_imperial_points_amount, &result->imperial_points_amount)) != 0) ||
-            ((err = sqlite3_column_u32(stmt, DbAccountCols_imperial_points_total, &result->imperial_points_total)) != 0)
-        ) {
+        if (DbAccount_from_stmt(stmt, 0, result) != 0) {
             return_close(ERR_SERVER_ERROR, stmt);
+        } else {
+            return_close(ERR_OK, stmt);
         }
-
-        return_close(ERR_OK, stmt);
     } else if (err == SQLITE_DONE) {
         return_close(ERR_UNSUCCESSFUL, stmt);
     } else {
         log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
         return_close(ERR_UNSUCCESSFUL, stmt);
     }
-}
-
-int DbCharacter_from_stmt(sqlite3_stmt *stmt, DbCharacter *result)
-{
-    int err;
-    if (((err = sqlite3_column_uuid(stmt, DbCharacterCols_char_id, &result->char_id)) != 0) ||
-        ((err = sqlite3_column_i64(stmt, DbCharacterCols_created_at, &result->created_at)) != 0) ||
-        ((err = sqlite3_column_i64(stmt, DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
-        ((err = sqlite3_column_uuid(stmt, DbCharacterCols_account_id, &result->account_id)) != 0) ||
-        ((err = sqlite3_column_u16_array(stmt, DbCharacterCols_char_name, result->char_name.buf, ARRAY_SIZE(result->char_name.buf), &result->char_name.len)) != 0) ||
-        ((err = sqlite3_column_u8_array(stmt, DbCharacterCols_settings, result->settings.buf, ARRAY_SIZE(result->settings.buf), &result->settings.len)) != 0) ||
-        ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
-        ((err = sqlite3_column_u32(stmt, DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
-        ((err = sqlite3_column_u32(stmt, DbCharacterCols_experience, &result->experience)) != 0) ||
-        ((err = sqlite3_column_u16(stmt, DbCharacterCols_gold, &result->gold)) != 0) ||
-        ((err = sqlite3_column_u8(stmt, DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0)
-    ) {
-        return ERR_SERVER_ERROR;
-    }
-    return ERR_OK;
 }
 
 int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char_id, DbCharacter *result)
@@ -384,8 +408,45 @@ int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char
     }
 
     if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
-        err = DbCharacter_from_stmt(stmt, result);
+        err = DbCharacter_from_stmt(stmt, 0, result);
         if (err != 0) {
+            return_close(ERR_SERVER_ERROR, stmt);
+        } else {
+            return_close(ERR_OK, stmt);
+        }
+    } else if (err == SQLITE_DONE) {
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    } else {
+        log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    }
+}
+
+int Db_GetCharacterAndAccount(
+    Database *database,
+    struct uuid account_id,
+    struct uuid char_id,
+    DbAccount *account,
+    DbCharacter *character)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_get_character_and_account;
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind account_id or/and char_id to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        return_close(ERR_SERVER_ERROR, stmt);
+    }
+
+    if ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+        if ((err = DbCharacter_from_stmt(stmt, 0, character)) != 0 ||
+            (err = DbAccount_from_stmt(stmt, DbCharacterCols_Count, account)) != 0)
+        {
             return_close(ERR_SERVER_ERROR, stmt);
         } else {
             return_close(ERR_OK, stmt);
@@ -413,8 +474,7 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
 
     while ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
         DbCharacter *result = (DbCharacter *)array_push(results, 1);
-        err = DbCharacter_from_stmt(stmt, result);
-        if (err != 0) {
+        if (DbCharacter_from_stmt(stmt, 0, result) != 0) {
             array_pop(results);
             return_close(ERR_SERVER_ERROR, stmt);
         }

@@ -780,12 +780,17 @@ void GameSrv_SendUpdateActiveWeaponSet(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendGoldStorageAdd(GameConnection *conn)
+void GameSrv_SendGoldStorage(GameSrv *srv, GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_GOLD_STORAGE_ADD);
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, conn->player_id)) == NULL) {
+        return;
+    }
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_GOLD_STORAGE);
     GameSrv_UpdateGold *msg = &buffer->update_gold;
     msg->stream = 1;
-    // uint32_t gold;
+    msg->gold = player->account.storage_gold;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -1042,7 +1047,22 @@ void GameSrv_CreateDefaultBags(GameSrv *srv, size_t player_id)
         return;
     }
 
-    GmBag_InitBackpack(&player->bags.backpack, ++srv->next_bag_id);
+    if (player->bags.backpack.bag_id == 0) {
+        GmBag_InitBackpack(&player->bags.backpack, ++srv->next_bag_id);
+    }
+
+    if (player->bags.material_storage.bag_id == 0) {
+        GmBag_InitMaterialStorage(&player->bags.material_storage, ++srv->next_bag_id);
+    }
+
+    if (player->bags.storage1.bag_id == 0) {
+        GmBag_InitStorage(&player->bags, BagModelId_Storage1, ++srv->next_bag_id);
+    }
+
+    if (player->bags.storage2.bag_id == 0) {
+        GmBag_InitStorage(&player->bags, BagModelId_Storage2, ++srv->next_bag_id);
+    }
+
     GmBag_InitUnclaimedItems(&player->bags.unclaimed_items, ++srv->next_bag_id);
     GmBag_InitEquippedItems(&player->bags.equipped_items, ++srv->next_bag_id);
 }
@@ -1057,9 +1077,26 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
         return;
     }
 
-    if ((err = Db_GetCharacter(&srv->database, player->account_id, player->char_id, &player->character)) != 0) {
-        log_error("Could't load the character for this user from database");
-        return;
+    if (uuid_is_null(&player->char_id)) {
+        if ((err = Db_GetAccount(
+                &srv->database,
+                player->account_id,
+                &player->account)) != 0)
+        {
+            log_error("Could't load the character for this user from database");
+            return;
+        }
+    } else {
+        if ((err = Db_GetCharacterAndAccount(
+                &srv->database,
+                player->account_id,
+                player->char_id,
+                &player->account,
+                &player->character)) != 0)
+        {
+            log_error("Could't load the character for this user from database");
+            return;
+        }
     }
 
     size_t count;
@@ -1109,13 +1146,14 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
     if (!msg->reconnection) {
         GameSrv_CreatePlayer(srv, msg, &conn.player_id);
         GameSrv_LoadPlayerFromDatabase(srv, conn.player_id);
+        GameSrv_CreateDefaultBags(srv, conn.player_id);
+        // @TODO: Create agent
     } else {
         abort();
     }
 
     switch (srv->map_type) {
     case MapType_CharacterCreation:
-        GameSrv_CreateDefaultBags(srv, conn.player_id);
         GameSrv_SendInstanceHead(&conn);
         GameSrv_SendCharacterCreationStart(&conn);
         break;
@@ -1200,10 +1238,10 @@ int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameS
     GameSrv_SendUpdateActiveWeaponSet(conn);
     GameSrv_SendInventory(srv, conn, conn->player_id);
     GameSrv_SendWeaponSlots(conn);
-    GameSrv_SendGoldStorageAdd(conn);
+    GameSrv_SendGoldStorage(srv, conn);
     // GameSrv_SendQuests(conn);
     GameSrv_SendPlayerFactions(conn);
-    GameSrv_SendReadyForMapSpawn(&conn);
+    GameSrv_SendReadyForMapSpawn(conn);
 
     return ERR_OK;
 }
@@ -1226,7 +1264,7 @@ int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
     GameSrv_SendInventory(srv, conn, conn->player_id);
     GameSrv_SendUpdateActiveWeaponSet(conn);
     GameSrv_SendWeaponSlots(conn);
-    GameSrv_SendGoldStorageAdd(conn);
+    GameSrv_SendGoldStorage(srv, conn);
     GameSrv_SendPlayerFactions(conn);
     GameSrv_SendPlayerAgentAttributes(conn);
     GameSrv_SendPlayerProfession(conn, Profession_Warrior, 0);

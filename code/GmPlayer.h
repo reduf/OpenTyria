@@ -6,6 +6,7 @@ typedef struct GmPlayer {
     struct uuid  account_id;
     struct uuid  char_id;
     DbCharacter  character;
+    DbAccount    account;
     GmBagArray   bags;
     CampaignType char_creation_campaign_type;
     Profession   char_creation_selected_prof;

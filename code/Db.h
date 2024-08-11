@@ -4,6 +4,7 @@ typedef struct Database {
     sqlite3      *conn;
     sqlite3_stmt *stmt_get_session;
     sqlite3_stmt *stmt_get_account;
+    sqlite3_stmt *stmt_get_character_and_account;
     sqlite3_stmt *stmt_get_account_characters;
     sqlite3_stmt *stmt_get_character;
     sqlite3_stmt *stmt_get_friendships;

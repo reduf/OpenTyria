@@ -309,8 +309,8 @@
 #define GAME_SMSG_ITEM_UPDATE_NAME                  (0x0139) // 313
 #define GAME_SMSG_ITEM_MOVED_TO_LOCATION            (0x013D) // 317
 #define GAME_SMSG_INVENTORY_CREATE_BAG              (0x013E) // 318
-#define GAME_SMSG_GOLD_CHARACTER_ADD                (0x013F) // 319
-#define GAME_SMSG_GOLD_STORAGE_ADD                  (0x0140) // 320
+#define GAME_SMSG_UPDATE_GOLD_CHARACTER             (0x013F) // 319
+#define GAME_SMSG_UPDATE_GOLD_STORAGE               (0x0140) // 320
 #define GAME_SMSG_ITEM_STREAM_CREATE                (0x0143) // 323
 #define GAME_SMSG_ITEM_STREAM_DESTROY               (0x0144) // 324
 #define GAME_SMSG_ITEM_WEAPON_SET                   (0x0146) // 326
