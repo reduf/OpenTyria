@@ -2,6 +2,7 @@
 
 typedef struct GmPlayer {
     uint32_t     player_id;
+    uint32_t     agent_id;
     uintptr_t    conn_token;
     struct uuid  account_id;
     struct uuid  char_id;

@@ -786,7 +786,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
 
     struct uuid char_id = {0};
     if (conn->selected_character_idx < conn->characters.size) {
-        conn->characters.data[conn->selected_character_idx].char_id;
+        char_id = conn->characters.data[conn->selected_character_idx].char_id;
     }
 
     // @Cleanup:

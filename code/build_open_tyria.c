@@ -76,6 +76,7 @@
 #include "GmMap.h"
 #include "GmInventory.h"
 #include "GmPlayer.h"
+#include "GmAgent.h"
 #include "GmItem.h"
 #include "GmDefaultArmors.h"
 
@@ -100,6 +101,7 @@
 #include "AuthSrv.c"
 #include "Db.c"
 #include "GameSrv.c"
+#include "GmAgent.c"
 #include "GmDefaultArmors.c"
 #include "GmInventory.c"
 #include "int.c"

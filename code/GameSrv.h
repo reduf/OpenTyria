@@ -42,7 +42,7 @@ typedef struct GameConnection {
     arc4_context          cipher_enc;
     arc4_context          cipher_dec;
     GameSrvMsg            srv_msg;
-    size_t                player_id;
+    uint32_t              player_id;
 } GameConnection;
 
 typedef struct GameConnMap {
@@ -51,7 +51,7 @@ typedef struct GameConnMap {
 } GameConnMap;
 
 typedef struct GamePlayerMsg {
-    size_t     player_id;
+    uint32_t   player_id;
     GameCliMsg msg;
 } GamePlayerMsg;
 typedef array(GamePlayerMsg) GamePlayerMsgArray;
@@ -81,6 +81,8 @@ typedef struct GameSrv {
     uint16_t           next_bag_id;
     GmItemArray        items;
     array_uint32_t     free_items_slots;
+    GmAgentArray       agents;
+    array_uint32_t     free_agents_slots;
     mbedtls_chacha20_context random;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
