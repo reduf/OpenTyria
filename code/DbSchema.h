@@ -69,7 +69,7 @@ static const char *DbAccountColsName[] = {
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
     X(struct uuid, account_id) \
-    X(static_array(uint16_t, 20), char_name) \
+    X(static_array(uint16_t, 20), charname) \
     X(static_array(uint8_t, 64), settings) \
     X(uint32_t, skill_points) \
     X(uint32_t, skill_points_total) \

@@ -50,7 +50,7 @@ CREATE TABLE characters (
     created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
     account_id           VARCHAR(36) NOT NULL,
-    char_name            BLOB(32) NOT NULL,
+    charname             BLOB(32) NOT NULL,
     settings             BLOB(64) NOT NULL,
     skill_points         INTEGER DEFAULT 0,
     skill_points_total   INTEGER DEFAULT 0,
@@ -64,7 +64,7 @@ CREATE TABLE characters (
     PRIMARY KEY (char_id)
 );
 
-CREATE UNIQUE INDEX characters_char_name_idx ON characters(char_name);
+CREATE UNIQUE INDEX characters_charname_idx ON characters(charname);
 
 DROP TABLE IF EXISTS friendships;
 CREATE TABLE friendships (
@@ -121,7 +121,7 @@ INSERT INTO accounts (account_id, eula_accepted, current_char_id) VALUES
  ("a65d1882-f4f5-4067-b6b6-8c99671bb6b6", TRUE, "209147c4-2492-471e-9e9e-09da1cbbee95"),
  ("864094a4-e0e4-40bd-a89d-051ad7c063aa", FALSE, NULL);
 
--- INSERT INTO characters (char_id, account_id, char_name, settings) VALUES
+-- INSERT INTO characters (char_id, account_id, charname, settings) VALUES
 --  ("8eb3db49-6c09-4830-938e-03a0e3e585e7", "58ec1cf3-2059-424b-8443-768244e401e9", "Christian Herakles", ""),
 --  ("0f8b69e2-6592-43c5-a61e-72a45f5e891c", "58ec1cf3-2059-424b-8443-768244e401e9", "Nayeli Pontius", ""),
 --  ("18fd5be4-5465-41c4-bab9-81240dc6c8bd", "58ec1cf3-2059-424b-8443-768244e401e9", "Kerman Martino", ""),

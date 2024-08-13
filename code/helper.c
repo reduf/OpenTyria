@@ -19,6 +19,11 @@ int memcmp_u16(const uint16_t *left, const uint16_t *right, size_t count)
     return memcmp(left, right, count * sizeof(uint16_t));
 }
 
+bool memeq_u16(uint16_t *dst, const uint16_t *src, size_t count)
+{
+    return memcmp_u16(dst, src, count) == 0;
+}
+
 size_t size_t_max(size_t left, size_t right)
 {
     return left < right ? right : left;

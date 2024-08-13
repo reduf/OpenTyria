@@ -228,8 +228,13 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
-    const char *sql = "INSERT INTO characters (char_id, account_id, char_name, settings) VALUES (?, ?, ?, ?);";
+    const char *sql = "INSERT INTO characters (char_id, account_id, charname, settings) VALUES (?, ?, ?, ?);";
     if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_insert_character, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
+    sql = "DELETE FROM characters WHERE account_id = ? AND char_id = ?;";
+    if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_delete_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -276,6 +281,10 @@ void Db_Close(Database *database)
         log_error("Failed to finalize 'stmt_insert_character', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
+    if ((err = sqlite3_finalize(database->stmt_delete_character)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_delete_character', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
     if ((err = sqlite3_close_v2(database->conn)) != SQLITE_OK) {
         log_error("Failed to close database %d (%s)", err, sqlite3_errstr(err));
     }
@@ -288,7 +297,7 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_i64(stmt, idx + DbCharacterCols_created_at, &result->created_at)) != 0) ||
         ((err = sqlite3_column_i64(stmt, idx + DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
         ((err = sqlite3_column_uuid(stmt, idx + DbCharacterCols_account_id, &result->account_id)) != 0) ||
-        ((err = sqlite3_column_u16_array(stmt, idx + DbCharacterCols_char_name, result->char_name.buf, ARRAY_SIZE(result->char_name.buf), &result->char_name.len)) != 0) ||
+        ((err = sqlite3_column_u16_array(stmt, idx + DbCharacterCols_charname, result->charname.buf, ARRAY_SIZE(result->charname.buf), &result->charname.len)) != 0) ||
         ((err = sqlite3_column_u8_array(stmt, idx + DbCharacterCols_settings, result->settings.buf, ARRAY_SIZE(result->settings.buf), &result->settings.len)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
@@ -558,6 +567,30 @@ int Db_CreateCharacter(
         return_close(ERR_OK, stmt);
     } else {
         log_error("Failed to insert a row, err: %d (%s)", err, sqlite3_errstr(err));
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    }
+}
+
+int Db_DeleteCharacter(Database *database, struct uuid account_id, struct uuid char_id)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_delete_character;
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind values to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        return_close(ERR_SERVER_ERROR, stmt);
+    }
+
+    if ((err = sqlite3_step(stmt)) == SQLITE_DONE) {
+        return_close(ERR_OK, stmt);
+    } else {
+        log_error("Failed to delete a character, err: %d (%s)", err, sqlite3_errstr(err));
         return_close(ERR_UNSUCCESSFUL, stmt);
     }
 }

@@ -501,7 +501,9 @@ void AuthSrv_SendAccountInfo(AuthConnection *conn, uint32_t req_id)
     memcpy_literal(msg->account_info.h000E, "\x3F\x00\x00\x00\x00\x00\x00\x00");
     memcpy_literal(msg->account_info.h0016, "\x80\x3F\x42\x00\x83\x00\x0C\x02"); // control which campaigns are owned.
     uuid_enc_le(msg->account_info.account_uuid, &conn->account_id);
-    uuid_enc_le(msg->account_info.character_uuid, &conn->characters.data[0].char_id);
+    if (conn->characters.size != 0) {
+        uuid_enc_le(msg->account_info.character_uuid, &conn->characters.data[0].char_id);
+    }
     msg->account_info.h003E = 8;
     msg->account_info.n_unk4 = sizeof(features) - 1;
     memcpy(msg->account_info.unk4, features, msg->account_info.n_unk4);
@@ -521,9 +523,9 @@ void AuthSrv_SendCharactersInfo(AuthConnection *conn, uint32_t req_id)
         msg->character_info.req_id = req_id;
         uuid_enc_le(msg->character_info.uuid, &ch->char_id);
         // msg.character_info.unk0 = ;
-        msg->character_info.n_name = (uint32_t)ch->char_name.len;
-        STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->char_name.buf));
-        memcpy_u16(msg->character_info.name, ch->char_name.buf, ch->char_name.len);
+        msg->character_info.n_name = (uint32_t)ch->charname.len;
+        STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->charname.buf));
+        memcpy_u16(msg->character_info.name, ch->charname.buf, ch->charname.len);
 
         STATIC_ASSERT(sizeof(ch->settings.buf) <= sizeof(msg->character_info.extended));
         assert(ch->settings.len <= sizeof(msg->character_info.extended));
@@ -538,7 +540,7 @@ void AuthSrv_SendAccountSettings(AuthConnection *conn, uint32_t req_id)
     static const uint8_t settings[] = "\x08\x00\x66\x21\x00\x10\x38\x43\x7F\xDE\x68\x8E\xF5\x93\xFF\xFF\x00\xC1\x3F\x00\x00\x00\x08\x42\x01\x5E\x00\x02\x00\x80\x33\x18\x00\x81\x03\x00\x00\x00\x4B\x0A\x00\x02\x00\x1B\x00\xD7\x00\x42\x00\x42\x00\x73\x0F\x00\x07\x0C\x09\x0B\x01\x02\x03\x04\x05\x06\x07\x08\x0A\x00\x00\x76\x14\x00\x08\x00\x00\x00\xEF\x03\x01\x00\x00\x08\x80\xDC\x00\xDF\xAA\x0B\x20\x00\x02\x01\x77\xF0\x01\x10\x3B\x38\x03\xC0\xFF\x7D\x99\x01\xFB\xBF\xFA\xBB\xFF\x00\x00\x00\x0D\x00\x00\xA1\x01\x00\x00\xCB\x01\x53\xA4\x01\x96\x00\x00\x96\x03\xEF\x00\x29\x02\xF8\x00\x26\x02\x51\x6D\x01\x2D\x02\x6C\x35\x59\x2F\x00\x1C\x02\x00\xBD\x51\xD8\x00\xB0\x01\x48\x0C\x51\xE1\x00\xC3\x01\x3A\x0C\x51\x82\x00\x00\x01\x57\x0D\x06\xC8\x02\x5E\x03\xDE\x00\x1D\x02\x60\x00\x00\x00\x00\x06\x15\x06\x54\x01\x0C\x02\xDE\x00\x06\x5E\x01\xC1\x01\xFB\xFF\x1A\x02\x06\x05\x03\xFF\x01\xA3\x00\x77\x02\x06\xF7\x01\x44\x02\x94\x00\xA0\x02\x46\xF1\x00\x00\x00\x42\x00\x27\xF3\xF0\x6F\x00\x8C\x02\x06\x9A\x00\x19\x02\x27\x00\x1C\x02\x46\xDE\x02\x00\x00\x59\x00\x60\x00\x00\x00\x00\x06\x6C\x03\x8E\x02\x29\x00\x81\x03\x06\x24\x03\x00\x00\xED\x00\x00\x00\x06\x03\x05\x00\x00\xE2\x00\x00\x00\x06\x02\x01\x13\x03\x2F\x00\x2F\x03\x31\x57\xB5\xB7\x00\x25\x00\x01\x10\x01\x12\x02\x22\xFF\x14\x00\x06\x86\x03\x00\x00\x0F\x01\x00\x00\x27\x1F\xFA\x90\x00\xC8\x00\x06\xEB\x03\xEE\x01\xB0\x00\x84\x02\x60\x00\x00\x00\x00\x05\x99\x00\xF4\x01\xB0\x00\x64\x00\x47\x1F\x01\xDE\x01\x4B\x64\x60\x00\x00\x00\x00\x06\xA8\x02\x1F\x02\x84\x00\x22\x02\x60\x00\x00\x00\x00\x06\xD5\x04\x00\x00\xB0\x01\x00\x00\x06\xD7\x04\x00\x00\x26\x02\x00\x00\x06\xD6\x04\x00\x00\x9A\x02\x00\x00\x06\x20\x01\x11\x02\x2D\x00\x52\x02\x60\x00\x00\x00\x00\x06\xB8\x03\xD2\x01\x64\x00\x71\x02\x60\x00\x00\x00\x00\x06\xB8\x03\xEA\x01\x64\x00\x38\x02\x05\xDD\x00\xD2\x01\x82\x00\xD0\x00\x47\xEE\x00\x2C\x01\x70\xFA\x60\x00\x00\x00\x00\x06\x76\x04\x00\x00\xFA\x00\x00\x00\x46\x29\x03\x00\x00\x5A\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x46\x22\x02\x00\x00\x3B\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x06\x35\x04\x00\x00\x97\x00\x00\x00\x06\x23\x01\x00\x00\x7B\x01\x00\x00\x06\x26\x01\x00\x00\xDB\x00\x00\x00\x06\x2E\x01\x00\x00\xA9\x01\x00\x00\x06\x24\x01\x00\x00\x3C\x02\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x60\x00\x00\x00\x00\x0D\x11\x02\x5A\x00\xD6\x01\x1C\x00";
     const uint32_t n_settings = sizeof(settings) - 1;
 
-    AccountSettings *msg = &AuthConnection_BuildMsg(conn, AUTH_SMSG_ACCOUNT_SETTINGS)->account_settings;
+    AuthSrv_AccountSettings *msg = &AuthConnection_BuildMsg(conn, AUTH_SMSG_ACCOUNT_SETTINGS)->account_settings;
     msg->req_id = req_id;
     STATIC_ASSERT(sizeof(settings) <= sizeof(msg->data));
     msg->n_data = n_settings;
@@ -600,7 +602,7 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
     int err;
 
     assert(cli_msg->header == AUTH_CMSG_PORTAL_ACCOUNT_LOGIN);
-    PortalAccountLogin *msg = &cli_msg->portal_account_login;
+    AuthSrv_PortalAccountLogin *msg = &cli_msg->portal_account_login;
 
     struct uuid session_id, user_id;
     uuid_dec_le(&user_id, msg->user_id);
@@ -694,8 +696,8 @@ int AuthSrv_HandleChangePlayCharacter(AuthConnection *conn, AuthCliMsg *msg)
     DbCharacterArray characters = conn->characters;
     for (size_t idx = 0; characters.size; ++idx) {
         DbCharacter *ch = &characters.data[idx];
-        if (ch->char_name.len == msg->change_character.n_name &&
-            memcmp_u16(ch->char_name.buf, msg->change_character.name, ch->char_name.len) == 0)
+        if (ch->charname.len == msg->change_character.n_name &&
+            memcmp_u16(ch->charname.buf, msg->change_character.name, ch->charname.len) == 0)
         {
             AuthSrv_SendRequestResponse(conn, msg->change_character.req_id, 0);
             return ERR_OK;
@@ -758,7 +760,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
 {
     int err;
     assert(cli_msg->header == AUTH_CMSG_REQUEST_GAME_INSTANCE);
-    RequestGameInstance *msg = &cli_msg->request_game_instance;
+    AuthSrv_RequestGameInstance *msg = &cli_msg->request_game_instance;
 
     if (!conn->connected) {
         AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_DISCONNECTED);
@@ -830,7 +832,7 @@ int AuthSrv_HandleAcceptEula(AuthConnection *conn, AuthCliMsg *cli_msg)
 int AuthSrv_HandleAddAccessKey(AuthConnection *conn, AuthCliMsg *cli_msg)
 {
     assert(cli_msg->header == AUTH_CMSG_ADD_ACCESS_KEY);
-    AddAccessKey *msg = &cli_msg->add_access_key;
+    AuthSrv_AddAccessKey *msg = &cli_msg->add_access_key;
 
     char buffer[sizeof(msg->key) + 1];
     if (!s16_to_ascii(buffer, sizeof(buffer), msg->key, msg->n_key)) {
@@ -838,6 +840,37 @@ int AuthSrv_HandleAddAccessKey(AuthConnection *conn, AuthCliMsg *cli_msg)
     }
 
     log_info("Adding access key: '%s'", buffer);
+    AuthSrv_SendRequestResponse(conn, msg->req_id, 0);
+    return ERR_OK;
+}
+
+int AuthSrv_HandleDeleteCharacter(AuthSrv *srv, AuthConnection *conn, AuthSrv_DeleteCharacter *msg)
+{
+    int err;
+
+    size_t idx;
+    for (idx = 0; idx < conn->characters.size; ++idx) {
+        DbCharacter *ch = &conn->characters.data[idx];
+        if (msg->n_charname != ch->charname.len) {
+            continue;
+        }
+
+        if (memeq_u16(msg->charname, ch->charname.buf, ch->charname.len)) {
+            break;
+        }
+    }
+
+    if (idx == conn->characters.size) {
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_INVALID_CHARNAME);
+        return ERR_OK;
+    }
+
+    DbCharacter *ch = &conn->characters.data[idx];
+    if ((err = Db_DeleteCharacter(&srv->database, conn->account_id, ch->char_id)) != 0) {
+        AuthSrv_SendRequestResponse(conn, msg->req_id, GM_ERROR_NETWORK_ERROR);
+        return ERR_OK;
+    }
+
     AuthSrv_SendRequestResponse(conn, msg->req_id, 0);
     return ERR_OK;
 }
@@ -1162,6 +1195,9 @@ void AuthSrv_ProcessAuthConnectionEvent(AuthSrv *srv, AuthConnection *conn, Even
             break;
         case AUTH_CMSG_ADD_ACCESS_KEY:
             err = AuthSrv_HandleAddAccessKey(conn, msg);
+            break;
+        case AUTH_CMSG_DELETE_CHARACTER:
+            err = AuthSrv_HandleDeleteCharacter(srv, conn, &msg->delete_character);
             break;
         default:
             log_warn(

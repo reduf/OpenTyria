@@ -10,6 +10,7 @@ typedef struct Database {
     sqlite3_stmt *stmt_get_friendships;
     sqlite3_stmt *stmt_get_character_bags;
     sqlite3_stmt *stmt_insert_character;
+    sqlite3_stmt *stmt_delete_character;
 } Database;
 
 int Db_Open(Database *result, const char *path);
@@ -27,3 +28,5 @@ int Db_CreateCharacter(
     struct uuid char_id,
     size_t n_name, const uint16_t *name,
     CharacterSettings *settings);
+
+int Db_DeleteCharacter(Database *database, struct uuid account_id, struct uuid char_id);
