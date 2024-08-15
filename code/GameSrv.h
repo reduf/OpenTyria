@@ -75,6 +75,7 @@ typedef struct GameSrv {
     AdminMsgArray      admin_messages;
     GameClientArray    clients;
     GmPlayerArray      players;
+    array_uint32_t     free_players_slots;
     size_t             player_count;
     GamePlayerMsgArray player_messages;
     uint64_t           last_ping_request;

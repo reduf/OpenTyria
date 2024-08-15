@@ -69,6 +69,7 @@ void GameSrv_Free(GameSrv *srv)
     array_free(&srv->admin_messages);
     array_free(&srv->clients);
     array_free(&srv->players);
+    array_free(&srv->free_players_slots);
     array_free(&srv->items);
     array_free(&srv->free_items_slots);
     array_free(&srv->agents);
@@ -177,9 +178,8 @@ void GameSrv_FreeBagItems(GameSrv *srv, GmPlayer *player, GmBag *bag)
 
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
 {
-    size_t player_idx = player_id - 1;
-    if ((player_idx < srv->players.len) && (srv->players.ptr[player_idx].player_id == player_id)) {
-        return &srv->players.ptr[player_idx];
+    if ((player_id < srv->players.len) && (srv->players.ptr[player_id].player_id == player_id)) {
+        return &srv->players.ptr[player_id];
     } else {
         return NULL;
     }
@@ -1034,20 +1034,28 @@ void GameSrv_Poll(GameSrv *srv)
 
 void GameSrv_CreatePlayer(GameSrv *srv, AdminMsg_TransferUser *msg, uint32_t *result)
 {
-    size_t player_idx;
-    if (srv->player_count == array_size(&srv->players)) {
-        (void) array_push(&srv->players, 1);
-        player_idx = array_size(&srv->players) - 1;
-    } else {
-        for (player_idx = 0; player_idx < srv->players.len; ++player_idx) {
-            if (srv->players.ptr[player_idx].player_id == 0) {
-                break;
-            }
+    if (srv->free_players_slots.len == 0) {
+        size_t new_size, idx;
+        if (srv->players.len == 0) {
+            new_size = 32;
+            idx = 1;
+        } else {
+            new_size = srv->players.len * 2;
+            idx = srv->players.len;
+        }
+
+        array_resize(&srv->players, new_size);
+        array_reserve(&srv->free_players_slots, srv->players.len - new_size);
+        for (; idx < new_size; ++idx) {
+            array_add(&srv->free_players_slots, (uint32_t) idx);
         }
     }
 
-    GmPlayer *player = &srv->players.ptr[player_idx];
-    player->player_id = (uint32_t) (player_idx + 1);
+    uint32_t player_id = array_pop(&srv->free_players_slots);
+
+    GmPlayer *player = &srv->players.ptr[player_id];
+    memset(player, 0, sizeof(*player));
+    player->player_id = (uint32_t) player_id;
     player->conn_token = msg->token;
     player->account_id = msg->account_id;
     player->char_id = msg->char_id;
@@ -1062,11 +1070,11 @@ GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id)
     return &srv->agents.ptr[agent_id];
 }
 
-uint32_t GameSrv_AllocAgent(GameSrv *srv)
+uint32_t GameSrv_CreateAgent(GameSrv *srv)
 {
     if (srv->free_agents_slots.len == 0) {
         size_t new_size, idx;
-        if (srv->agents.cap == 0) {
+        if (srv->agents.len == 0) {
             new_size = 32;
             idx = 1; // skip the first slot
         } else {
@@ -1123,7 +1131,7 @@ void GameSrv_CreatePlayerAgent(GameSrv *srv, uint32_t player_id)
         return;
     }
 
-    player->agent_id = GameSrv_AllocAgent(srv);
+    player->agent_id = GameSrv_CreateAgent(srv);
     GameSrv_GetAgentOrAbort(srv, player->agent_id)->player_id = player_id;
 }
 
@@ -1625,9 +1633,8 @@ void GameSrv_RemoveConnection(GameSrv *srv, uintptr_t token)
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id)
 {
     // nothing to free in GmPlayer
-    size_t player_idx = player_id - 1;
-    assert(player_idx < srv->players.len);
-    memset(&srv->players.ptr[player_idx], 0, sizeof(srv->players.ptr[player_idx]));
+    assert(player_id < srv->players.len);
+    memset(&srv->players.ptr[player_id], 0, sizeof(srv->players.ptr[player_id]));
     --srv->player_count;
 }
 
