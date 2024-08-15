@@ -14,7 +14,7 @@ int GameConnection_FlushOutgoingBuffer(GameConnection *conn)
 {
     int err;
     size_t bytes_sent;
-    if ((err = sys_send(conn->source.socket, conn->outgoing.data, conn->outgoing.size, &bytes_sent)) != 0) {
+    if ((err = sys_send(conn->source.socket, conn->outgoing.ptr, conn->outgoing.len, &bytes_sent)) != 0) {
         if (sys_would_block(err)) {
             conn->writable = false;
             return ERR_OK;
@@ -24,7 +24,7 @@ int GameConnection_FlushOutgoingBuffer(GameConnection *conn)
         return ERR_UNSUCCESSFUL;
     }
 
-    if (bytes_sent != conn->outgoing.size) {
+    if (bytes_sent != conn->outgoing.len) {
         conn->writable = false;
         array_remove_range_ordered(&conn->outgoing, 0, bytes_sent);
     } else {
@@ -78,8 +78,8 @@ void GameSrv_Free(GameSrv *srv)
 
 GmItem* GameSrv_AllocateItem(GameSrv *srv)
 {
-    if (srv->free_items_slots.size == 0) {
-        size_t item_count = srv->items.size;
+    if (srv->free_items_slots.len == 0) {
+        size_t item_count = srv->items.len;
         size_t new_size = size_t_max(item_count * 2, 64);
         array_resize(&srv->items, new_size);
         if (item_count == 0) {
@@ -93,8 +93,8 @@ GmItem* GameSrv_AllocateItem(GameSrv *srv)
     }
 
     uint32_t item_id = array_pop(&srv->free_items_slots);
-    srv->items.data[item_id].item_id = item_id;
-    return &srv->items.data[item_id];
+    srv->items.ptr[item_id].item_id = item_id;
+    return &srv->items.ptr[item_id];
 }
 
 GameConnection* GameSrv_GetConnection(GameSrv *srv, uintptr_t token)
@@ -142,12 +142,12 @@ void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id)
 {
     assert(item_id != 0);
 
-    if (srv->items.size <= item_id) {
-        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.size);
+    if (srv->items.len <= item_id) {
+        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.len);
         return;
     }
 
-    memset(&srv->items.data[item_id], 0, sizeof(srv->items.data[item_id]));
+    memset(&srv->items.ptr[item_id], 0, sizeof(srv->items.ptr[item_id]));
     array_add(&srv->free_items_slots, item_id);
 }
 
@@ -178,8 +178,8 @@ void GameSrv_FreeBagItems(GameSrv *srv, GmPlayer *player, GmBag *bag)
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
 {
     size_t player_idx = player_id - 1;
-    if ((player_idx < srv->players.size) && (srv->players.data[player_idx].player_id == player_id)) {
-        return &srv->players.data[player_idx];
+    if ((player_idx < srv->players.len) && (srv->players.ptr[player_idx].player_id == player_id)) {
+        return &srv->players.ptr[player_idx];
     } else {
         return NULL;
     }
@@ -915,9 +915,9 @@ void GameSrv_GetMessages(GameSrv *srv, GameConnection *conn)
     uint16_t header;
     size_t total_consumed = 0;
 
-    while (sizeof(header) <= (conn->incoming.size - total_consumed)) {
-        const uint8_t *input = &conn->incoming.data[total_consumed];
-        size_t size = conn->incoming.size - total_consumed;
+    while (sizeof(header) <= (conn->incoming.len - total_consumed)) {
+        const uint8_t *input = &conn->incoming.ptr[total_consumed];
+        size_t size = conn->incoming.len - total_consumed;
 
         header = le16dec(input) & ~GAME_CMSG_MASK;
         if (ARRAY_SIZE(GAME_CMSG_FORMATS) <= header) {
@@ -982,7 +982,7 @@ void GameSrv_ProcessEvent(GameSrv *srv, Event event)
         for (;;) {
             uint8_t *buffer;
 
-            const size_t size_at_starts = conn->incoming.size;
+            const size_t size_at_starts = conn->incoming.len;
             if ((buffer = array_push(&conn->incoming, GAME_SRV_READ_CHUNK_SIZE)) == NULL) {
                 log_error("Out of memory will reading from socket");
                 break;
@@ -1039,14 +1039,14 @@ void GameSrv_CreatePlayer(GameSrv *srv, AdminMsg_TransferUser *msg, uint32_t *re
         (void) array_push(&srv->players, 1);
         player_idx = array_size(&srv->players) - 1;
     } else {
-        for (player_idx = 0; player_idx < srv->players.size; ++player_idx) {
-            if (srv->players.data[player_idx].player_id == 0) {
+        for (player_idx = 0; player_idx < srv->players.len; ++player_idx) {
+            if (srv->players.ptr[player_idx].player_id == 0) {
                 break;
             }
         }
     }
 
-    GmPlayer *player = &srv->players.data[player_idx];
+    GmPlayer *player = &srv->players.ptr[player_idx];
     player->player_id = (uint32_t) (player_idx + 1);
     player->conn_token = msg->token;
     player->account_id = msg->account_id;
@@ -1058,32 +1058,32 @@ void GameSrv_CreatePlayer(GameSrv *srv, AdminMsg_TransferUser *msg, uint32_t *re
 
 GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id)
 {
-    assert(agent_id != 0 && agent_id < srv->agents.size);
-    return &srv->agents.data[agent_id];
+    assert(agent_id != 0 && agent_id < srv->agents.len);
+    return &srv->agents.ptr[agent_id];
 }
 
 uint32_t GameSrv_AllocAgent(GameSrv *srv)
 {
-    if (srv->free_agents_slots.size == 0) {
+    if (srv->free_agents_slots.len == 0) {
         size_t new_size, idx;
-        if (srv->agents.capacity == 0) {
+        if (srv->agents.cap == 0) {
             new_size = 32;
             idx = 1; // skip the first slot
         } else {
-            new_size = srv->agents.size * 2;
-            idx = srv->agents.size;
+            new_size = srv->agents.len * 2;
+            idx = srv->agents.len;
         }
 
         array_resize(&srv->agents, new_size);
-        array_reserve(&srv->free_agents_slots, srv->agents.size - new_size);
+        array_reserve(&srv->free_agents_slots, srv->agents.len - new_size);
         for (; idx < new_size; ++idx) {
             array_add(&srv->free_agents_slots, (uint32_t) idx);
         }
     }
 
     uint32_t agent_id = array_pop(&srv->free_agents_slots);
-    memset(&srv->agents.data[agent_id], 0, sizeof(srv->agents.data[agent_id]));
-    srv->agents.data[agent_id].agent_id = 0;
+    memset(&srv->agents.ptr[agent_id], 0, sizeof(srv->agents.ptr[agent_id]));
+    srv->agents.ptr[agent_id].agent_id = 0;
     return agent_id;
 }
 
@@ -1242,8 +1242,8 @@ void GameSrv_ProcessInternalMessages(GameSrv *srv)
     memset(&srv->admin_messages, 0, sizeof(srv->admin_messages));
     sys_mutex_unlock(&srv->mtx);
 
-    for (size_t idx = 0; idx < messages.size; ++idx) {
-        AdminMsg *msg = &messages.data[idx];
+    for (size_t idx = 0; idx < messages.len; ++idx) {
+        AdminMsg *msg = &messages.ptr[idx];
         switch (msg->cmd) {
         case AdminCmd_Quit:
             srv->quit_signaled = true;
@@ -1399,10 +1399,10 @@ int GetBagSlotForItemType(ItemType item_type, EquippedItemSlot *result)
 
 GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
 {
-    if (srv->items.size <= item_id) {
+    if (srv->items.len <= item_id) {
         return NULL;
     }
-    GmItem *result = &srv->items.data[item_id];
+    GmItem *result = &srv->items.ptr[item_id];
     if (result->item_id == 0) {
         return NULL;
     }
@@ -1626,8 +1626,8 @@ void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id)
 {
     // nothing to free in GmPlayer
     size_t player_idx = player_id - 1;
-    assert(player_idx < srv->players.size);
-    memset(&srv->players.data[player_idx], 0, sizeof(srv->players.data[player_idx]));
+    assert(player_idx < srv->players.len);
+    memset(&srv->players.ptr[player_idx], 0, sizeof(srv->players.ptr[player_idx]));
     --srv->player_count;
 }
 
@@ -1698,15 +1698,15 @@ void GameSrv_Update(GameSrv *srv)
     GameSrv_ProcessInternalMessages(srv);
     GameSrv_Poll(srv);
 
-    for (size_t idx = 0; idx < srv->events.size; ++idx) {
+    for (size_t idx = 0; idx < srv->events.len; ++idx) {
         Event event = array_at(&srv->events, idx);
         GameSrv_ProcessEvent(srv, event);
         array_add(&srv->connections_with_event, event.token);
     }
 
     GamePlayerMsgArray msgs = srv->player_messages;
-    for (size_t idx = 0; idx < msgs.size; ++idx) {
-        GamePlayerMsg *msg = &msgs.data[idx];
+    for (size_t idx = 0; idx < msgs.len; ++idx) {
+        GamePlayerMsg *msg = &msgs.ptr[idx];
         GameSrv_ProcessPlayerMessage(srv, msg->player_id, &msg->msg);
     }
     array_clear(&srv->player_messages);
@@ -1731,13 +1731,13 @@ void GameSrv_Update(GameSrv *srv)
         }
     }
 
-    for (size_t idx = 0; idx < srv->connections_to_remove.size; ++idx) {
+    for (size_t idx = 0; idx < srv->connections_to_remove.len; ++idx) {
         uintptr_t token = array_at(&srv->connections_to_remove, idx);
         GameSrv_RemoveConnection(srv, token);
     }
     array_clear(&srv->connections_to_remove);
 
-    for (size_t idx = 0; idx < srv->connections_with_event.size; ++idx) {
+    for (size_t idx = 0; idx < srv->connections_with_event.len; ++idx) {
         GameConnection *conn;
         uintptr_t token = array_at(&srv->connections_with_event, idx);
         if ((conn = GameSrv_GetConnection(srv, token)) == NULL) {

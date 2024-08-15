@@ -1,14 +1,14 @@
 #pragma once
 
-#ifndef ARRAY_MIN_CAPACITY
-# define ARRAY_MIN_CAPACITY 8
+#ifndef ARRAY_MIN_cap
+# define ARRAY_MIN_cap 8
 #endif
 
 #define ARRAY_ALLOC_ZERO 1
 
-size_t array_max(size_t a, size_t b)
+size_t array_max(size_t left, size_t right)
 {
-    return b < a ? a : b;
+    return right < left ? left : right;
 }
 
 void *msdn_realloc(void *addr, size_t size)
@@ -20,151 +20,162 @@ void *msdn_realloc(void *addr, size_t size)
     }
 }
 
-void _array_init(array_void_t *a)
+void _array_init(array_void_t *array)
 {
-    assert(a);
-    a->capacity = 0;
-    a->size = 0;
-    a->data = NULL;
+    assert(array);
+    array->cap = 0;
+    array->len = 0;
+    array->ptr = NULL;
 }
 
-void _array_free(array_void_t *a)
+void _array_free(array_void_t *array)
 {
-    a->size = 0;
-    a->capacity = 0;
-    if (a->data) free(a->data);
-    a->data = NULL;
+    array->len = 0;
+    array->cap = 0;
+    if (array->ptr) {
+        free(array->ptr);
+    }
+    array->ptr = NULL;
 }
 
-int _array_grow_to(array_void_t *a, size_t new_capacity, const size_t elem_size)
+void _array_reset(array_void_t *array)
 {
-    assert(a && elem_size > 0);
+    _array_free(array);
+    _array_init(array);
+}
 
-    new_capacity = array_max(new_capacity, ARRAY_MIN_CAPACITY);
-    size_t new_size = new_capacity * elem_size;
-    assert((new_size / elem_size) == new_capacity);
+int _array_grow_to(array_void_t *array, size_t new_cap, const size_t elem_size)
+{
+    assert(array && elem_size != 0);
 
-    void *data = msdn_realloc(a->data, new_size);
-    if (!data) return 0;
+    new_cap = array_max(new_cap, ARRAY_MIN_cap);
+    size_t new_size = new_cap * elem_size;
+    assert((new_size / elem_size) == new_cap);
 
-    a->data = data;
+    void *ptr;
+    if ((ptr = msdn_realloc(array->ptr, new_size)) == NULL) {
+        return (array->err = ERR_OUT_OF_MEMORY);
+    }
+
+    array->ptr = ptr;
 #ifdef ARRAY_ALLOC_ZERO
-    if (new_capacity >= a->capacity) {
-        char *b = (char *)a->data + (a->capacity * elem_size);
-        memset(b, 0, (new_capacity - a->capacity) * elem_size);
+    if (array->cap <= new_cap) {
+        char *b = (char *)array->ptr + (array->cap * elem_size);
+        memset(b, 0, (new_cap - array->cap) * elem_size);
     }
 #endif
 
-    a->size = (a->size > new_capacity) ? new_capacity : a->size;
-    a->capacity = new_capacity;
-    return 1;
+    array->len = (array->len > new_cap) ? new_cap : array->len;
+    array->cap = new_cap;
+    return (array->err = ERR_OK);
 }
 
-int _array_resize(array_void_t *a, size_t size, const size_t elem_size)
+int _array_resize(array_void_t *array, size_t size, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
+    assert(array && elem_size != 0);
 
-    if (a->capacity < size) {
-        int ret;
-        if ((ret = _array_reserve(a, size, elem_size)) != 1)
-            return ret;
+    if (array->cap < size) {
+        if ((array->err = _array_reserve(array, size, elem_size)) != 0)
+            return array->err;
     }
 
-    a->size = size;
-    return 1;
+    array->len = size;
+    return (array->err = ERR_OK);
 }
 
-void _array_shrink(array_void_t *a, size_t size)
+void _array_shrink(array_void_t *array, size_t size)
 {
-    assert(size <= a->size);
-    a->size = size;
+    assert(size <= array->len);
+    array->len = size;
 }
 
-int _array_reserve(array_void_t *a, size_t count, const size_t elem_size)
+int _array_reserve(array_void_t *array, size_t count, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
-    if (a->capacity - a->size < count) {
-        size_t new_capacity = a->capacity * 2;
-        if (new_capacity < a->size + count)
-            new_capacity = a->size + count;
-        return _array_grow_to(a, new_capacity, elem_size);
+    assert(array && elem_size != 0);
+    if (array->cap - array->len < count) {
+        size_t new_cap = array->cap * 2;
+        if (new_cap < array->len + count)
+            new_cap = array->len + count;
+        return _array_grow_to(array, new_cap, elem_size);
     }
 
-    return 1;
+    return (array->err = ERR_OK);
 }
 
-void _array_remove(array_void_t *a, size_t index, const size_t elem_size)
+void _array_remove(array_void_t *array, size_t index, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
+    assert(array && elem_size != 0);
 
-    if (index >= a->size)
+    if (array->len <= index)
         return;
 
-    size_t new_size = a->size - 1;
+    size_t new_size = array->len - 1;
     if (index < new_size) {
         // if it's not the last element, we swap with the last.
-        char *dst = (char *)a->data + (index * elem_size);
-        char *src = (char *)a->data + (new_size * elem_size);
+        char *dst = (char *)array->ptr + (index * elem_size);
+        char *src = (char *)array->ptr + (new_size * elem_size);
         memcpy(dst, src, elem_size);
     }
-    a->size = new_size;
+    array->len = new_size;
 }
 
-int _array_insert(array_void_t *a, size_t count, const void *ptr, const size_t elem_size)
+int _array_insert(array_void_t *array, size_t count, const void *ptr, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
-    if (!count) return 1;
+    assert(array && elem_size != 0);
+    if (!count) {
+        return (array->err = ERR_OK);
+    }
 
-    if (!_array_reserve(a, count, elem_size))
-        return 0;
-    assert(a->size + count <= a->capacity);
+    if ((array->err = _array_reserve(array, count, elem_size)) != 0)
+        return array->err;
+    assert(array->len + count <= array->cap);
 
-    char *buff = (char *)a->data + (a->size * elem_size);
+    char *buff = (char *)array->ptr + (array->len * elem_size);
     memcpy(buff, ptr, count * elem_size);
-    a->size += count;
-    return 1;
+    array->len += count;
+    return (array->err = ERR_OK);
 }
 
 int _array_copy(array_void_t *dest, array_void_t *src, const size_t elem_size)
 {
     array_clear(dest);
-    return _array_insert(dest, src->size, src->data, elem_size);
+    return _array_insert(dest, src->len, src->ptr, elem_size);
 }
 
-void* _array_push(array_void_t *a, size_t n, const size_t elem_size)
+void* _array_push(array_void_t *array, size_t n, const size_t elem_size)
 {
-    if (!_array_reserve(a, n, elem_size))
+    if (_array_reserve(array, n, elem_size) != 0)
         return NULL;
-    void *ptr = (char *)a->data + (a->size * elem_size);
-    a->size += n;
-    assert(a->size <= a->capacity);
+    void *ptr = (char *)array->ptr + (array->len * elem_size);
+    array->len += n;
+    assert(array->len <= array->cap);
     return ptr;
 }
 
-void _array_remove_ordered(array_void_t *a, size_t i, const size_t elem_size)
+void _array_remove_ordered(array_void_t *array, size_t i, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
-    if (i >= a->size)
+    assert(array && elem_size != 0);
+    if (array->len <= i)
         return;
-    size_t rem = a->size - i;
+    size_t rem = array->len - i;
     if (rem) {
-        char *data = (char *)a->data + (i * elem_size);
-        memmove(data, data + elem_size, rem * elem_size);
+        char *ptr = (char *)array->ptr + (i * elem_size);
+        memmove(ptr, ptr + elem_size, rem * elem_size);
     }
-    a->size -= 1;
+    array->len -= 1;
 }
 
-void _array_remove_range_ordered(array_void_t *a, size_t index, size_t count, const size_t elem_size)
+void _array_remove_range_ordered(array_void_t *array, size_t index, size_t count, const size_t elem_size)
 {
-    assert(a && elem_size > 0);
-    if (a->size <= index)
+    assert(array && elem_size != 0);
+    if (array->len <= index)
         return;
-    if (a->size < (index + count))
-        count = a->size - index;
-    size_t rem = a->size - count;
+    if (array->len < (index + count))
+        count = array->len - index;
+    size_t rem = array->len - count;
     if (rem) {
-        char *data = (char *)a->data + (index * elem_size);
-        memmove(data, data + (count * elem_size), rem * elem_size);
+        char *ptr = (char *)array->ptr + (index * elem_size);
+        memmove(ptr, ptr + (count * elem_size), rem * elem_size);
     }
-    a->size -= count;
+    array->len -= count;
 }

@@ -177,7 +177,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "sessions", DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
     appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_session, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_session, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -186,7 +186,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, "FROM accounts WHERE account_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_account, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_account, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -195,7 +195,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_account_characters, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_account_characters, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -204,7 +204,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ? AND char_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -215,7 +215,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, "FROM characters JOIN accounts ON accounts.account_id = characters.account_id WHERE characters.account_id = ? AND characters.char_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character_and_account, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character_and_account, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -224,7 +224,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "bags", DbBagColsName, ARRAY_SIZE(DbBagColsName));
     appendf(&builder, "FROM bags WHERE account_id = ? AND (char_id IS NULL OR char_id = ?);");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.data, (int)builder.size, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -240,7 +240,13 @@ int Db_Open(Database *result, const char *path)
 
     return ERR_OK;
 exit_on_error:
-    log_error("Failed to create a prepared statement '%s', err: %d (%s)", builder.data, err, sqlite3_errstr(err));
+    log_error(
+        "Failed to create a prepared statement '%.*s', err: %d (%s)",
+        (int)builder.len,
+        builder.ptr,
+        err,
+        sqlite3_errstr(err)
+    );
     array_free(&builder);
     return ERR_UNSUCCESSFUL;
 }

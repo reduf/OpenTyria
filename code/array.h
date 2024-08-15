@@ -3,18 +3,20 @@
 #define array_npos ((size_t)(-1))
 
 typedef struct array_void_t {
-    size_t capacity;
-    size_t size;
-    void  *data;
+    size_t cap;
+    size_t len;
+    void  *ptr;
+    int    err;
 } array_void_t;
 
 #define array(T)                \
 union {                         \
     array_void_t base;          \
     struct {                    \
-        size_t capacity;        \
-        size_t size;            \
-        T     *data;            \
+        size_t cap;             \
+        size_t len;             \
+        T     *ptr;             \
+        int    err;             \
     };                          \
 }
 
@@ -28,40 +30,40 @@ typedef array(uintptr_t) array_uintptr_t;
 #define array_init(a)           _array_init(&(a)->base)
 #define array_free(a)           _array_free(&(a)->base);
 
-#define array_reserve(a, s)     _array_reserve(&(a)->base, (s), sizeof(*(a)->data))
-#define array_resize(a, s)      _array_resize(&(a)->base, (s), sizeof(*(a)->data))
+#define array_reserve(a, s)     _array_reserve(&(a)->base, (s), sizeof(*(a)->ptr))
+#define array_resize(a, s)      _array_resize(&(a)->base, (s), sizeof(*(a)->ptr))
 #define array_shrink(a, s)      _array_shrink(&(a)->base, (s));
-#define array_remove(a, i)      _array_remove(&(a)->base, (i), sizeof(*(a)->data))
-#define array_insert(a, c, p)   _array_insert(&(a)->base, (c), (p), sizeof(*(a)->data))
-#define array_copy(d, s)        _array_copy(&(d)->base, &(s)->base, sizeof(*(s)->data))
-#define array_push(a, n)        _array_push(&(a)->base, (n), sizeof(*(a)->data))
+#define array_remove(a, i)      _array_remove(&(a)->base, (i), sizeof(*(a)->ptr))
+#define array_insert(a, c, p)   _array_insert(&(a)->base, (c), (p), sizeof(*(a)->ptr))
+#define array_copy(d, s)        _array_copy(&(d)->base, &(s)->base, sizeof(*(s)->ptr))
+#define array_push(a, n)        _array_push(&(a)->base, (n), sizeof(*(a)->ptr))
 
-#define array_remove_ordered(a, i) _array_remove_range_ordered(&(a)->base, (i), 1, sizeof(*(a)->data))
-#define array_remove_range_ordered(a, i, c) _array_remove_range_ordered(&(a)->base, (i), (c), sizeof(*(a)->data))
+#define array_remove_ordered(a, i) _array_remove_range_ordered(&(a)->base, (i), 1, sizeof(*(a)->ptr))
+#define array_remove_range_ordered(a, i, c) _array_remove_range_ordered(&(a)->base, (i), (c), sizeof(*(a)->ptr))
 
-#define array_add(a, e)         (array_reserve(a, 1) && (((a)->data[(a)->size++] = (e)), 1))
-#define array_set(a, i, e)      (array_inside(a, i)  && (((a)->data[(i)] = (e)), 1))
-#define array_pop(a)            ((a)->data[(a)->size ? --(a)->size : 0])
-#define array_at(a, i)          ((a)->data[(i)])
+#define array_add(a, e)         ((array_reserve(a, 1) == 0) && (((a)->ptr[(a)->len++] = (e)), 1), (a)->err)
+#define array_set(a, i, e)      (array_inside(a, i) && (((a)->ptr[(i)] = (e)), 1))
+#define array_pop(a)            ((a)->ptr[(a)->len ? --(a)->len : 0])
+#define array_at(a, i)          ((a)->ptr[(i)])
 
-#define array_front(a)          ((a)->data[0])
-#define array_back(a)           ((a)->data[(a)->size - 1])
-#define array_peek(a)           ((a)->data[(a)->size - 1])
+#define array_front(a)          ((a)->ptr[0])
+#define array_back(a)           ((a)->ptr[(a)->len - 1])
+#define array_peek(a)           ((a)->ptr[(a)->len - 1])
 
-#define array_size(a)           ((a)->size)
-#define array_data(a)           ((a)->data)
-#define array_capacity(a)       ((a)->capacity)
+#define array_size(a)           ((a)->len)
+#define array_data(a)           ((a)->ptr)
+#define array_capacity(a)       ((a)->cap)
 
-#define array_inside(a, i)      (0 <= (i) && (size_t)(i) < (a)->size)
-#define array_full(a)           ((a)->size == (a)->capacity)
-#define array_empty(a)          ((a)->size == 0)
-#define array_clear(a)          ((void)((a)->size =  0))
+#define array_inside(a, i)      (0 <= (i) && (size_t)(i) < (a)->len)
+#define array_full(a)           ((a)->len == (a)->cap)
+#define array_empty(a)          ((a)->len == 0)
+#define array_clear(a)          ((void)((a)->len =  0))
 
-#define array_begin(a)          ((a)->data)
-#define array_end(a)            ((a)->data + (a)->size)
+#define array_begin(a)          ((a)->ptr)
+#define array_end(a)            ((a)->ptr + (a)->len)
 
-#define array_rbegin(a)         ((a)->data + (a)->size - 1)
-#define array_rend(a)           ((a)->data - 1)
+#define array_rbegin(a)         ((a)->ptr + (a)->len - 1)
+#define array_rend(a)           ((a)->ptr - 1)
 
 #define array_foreach(it, a) \
     for (it = array_begin(a); it != array_end(a); ++it)
@@ -74,11 +76,12 @@ typedef array(uintptr_t) array_uintptr_t;
 # define array_for_reverse(a)   array_foreach_reverse(it, a)
 #endif
 
-void _array_init(array_void_t *a);
-void _array_free(array_void_t *a);
+void  _array_init(array_void_t *a);
+void  _array_free(array_void_t *a);
+void  _array_reset(array_void_t *a);
 
-int   _array_resize(array_void_t *a, size_t size, const size_t elem_size);
-void  _array_shrink(array_void_t *a, size_t size);
+int   _array_resize(array_void_t *a, size_t len, const size_t elem_size);
+void  _array_shrink(array_void_t *a, size_t len);
 int   _array_reserve(array_void_t *a, size_t count, const size_t elem_size);
 void  _array_remove(array_void_t *a, size_t index, const size_t elem_size);
 int   _array_insert(array_void_t *a, size_t count, const void *ptr, const size_t elem_size);
