@@ -49,7 +49,7 @@ void appendv(array_char_t *buffer, const char *fmt, va_list args)
 
     // We need to allocate one more bytes, because  of `vsnprintf`.
     // We will pop this "\0" byte later.
-    uint8_t *write_ptr = array_push(buffer, (size_t)ret + 1);
+    char *write_ptr = array_push(buffer, (size_t)ret + 1);
     vsnprintf((char *)write_ptr, (size_t)ret + 1, fmt, args_copy);
     (void)array_pop(buffer);
     va_end(args_copy);

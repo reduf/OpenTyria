@@ -54,7 +54,7 @@ int _array_grow_to(array_void_t *array, size_t new_cap, const size_t elem_size)
 
     void *ptr;
     if ((ptr = msdn_realloc(array->ptr, new_size)) == NULL) {
-        return (array->err = ERR_OUT_OF_MEMORY);
+        return ERR_OUT_OF_MEMORY;
     }
 
     array->ptr = ptr;
@@ -67,20 +67,20 @@ int _array_grow_to(array_void_t *array, size_t new_cap, const size_t elem_size)
 
     array->len = (array->len > new_cap) ? new_cap : array->len;
     array->cap = new_cap;
-    return (array->err = ERR_OK);
+    return ERR_OK;
 }
 
 int _array_resize(array_void_t *array, size_t size, const size_t elem_size)
 {
     assert(array && elem_size != 0);
 
-    if (array->cap < size) {
-        if ((array->err = _array_reserve(array, size, elem_size)) != 0)
-            return array->err;
+    int err;
+    if ((array->cap < size) && (err = _array_reserve(array, size, elem_size)) != 0) {
+        return err;
     }
 
     array->len = size;
-    return (array->err = ERR_OK);
+    return ERR_OK;
 }
 
 void _array_shrink(array_void_t *array, size_t size)
@@ -96,10 +96,12 @@ int _array_reserve(array_void_t *array, size_t count, const size_t elem_size)
         size_t new_cap = array->cap * 2;
         if (new_cap < array->len + count)
             new_cap = array->len + count;
-        return _array_grow_to(array, new_cap, elem_size);
+        array->tmp = _array_grow_to(array, new_cap, elem_size);
+        return array->tmp;
     }
 
-    return (array->err = ERR_OK);
+    array->tmp = ERR_OK;
+    return array->tmp;
 }
 
 void _array_remove(array_void_t *array, size_t index, const size_t elem_size)
@@ -123,17 +125,18 @@ int _array_insert(array_void_t *array, size_t count, const void *ptr, const size
 {
     assert(array && elem_size != 0);
     if (!count) {
-        return (array->err = ERR_OK);
+        return ERR_OK;
     }
 
-    if ((array->err = _array_reserve(array, count, elem_size)) != 0)
-        return array->err;
+    int err;
+    if ((err = _array_reserve(array, count, elem_size)) != 0)
+        return err;
     assert(array->len + count <= array->cap);
 
     char *buff = (char *)array->ptr + (array->len * elem_size);
     memcpy(buff, ptr, count * elem_size);
     array->len += count;
-    return (array->err = ERR_OK);
+    return ERR_OK;
 }
 
 int _array_copy(array_void_t *dest, array_void_t *src, const size_t elem_size)
@@ -142,14 +145,14 @@ int _array_copy(array_void_t *dest, array_void_t *src, const size_t elem_size)
     return _array_insert(dest, src->len, src->ptr, elem_size);
 }
 
-void* _array_push(array_void_t *array, size_t n, const size_t elem_size)
+int _array_push(array_void_t *array, size_t n, const size_t elem_size)
 {
-    if (_array_reserve(array, n, elem_size) != 0)
-        return NULL;
-    void *ptr = (char *)array->ptr + (array->len * elem_size);
+    int err;
+    if ((err = _array_reserve(array, n, elem_size)) != 0)
+        return err;
+    array->tmp = (int)array->len;
     array->len += n;
-    assert(array->len <= array->cap);
-    return ptr;
+    return ERR_OK;
 }
 
 void _array_remove_ordered(array_void_t *array, size_t i, const size_t elem_size)

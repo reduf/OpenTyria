@@ -6,7 +6,7 @@ typedef struct array_void_t {
     size_t cap;
     size_t len;
     void  *ptr;
-    int    err;
+    int    tmp;
 } array_void_t;
 
 #define array(T)                \
@@ -16,7 +16,7 @@ union {                         \
         size_t cap;             \
         size_t len;             \
         T     *ptr;             \
-        int    err;             \
+        int    tmp;             \
     };                          \
 }
 
@@ -36,12 +36,12 @@ typedef array(uintptr_t) array_uintptr_t;
 #define array_remove(a, i)      _array_remove(&(a)->base, (i), sizeof(*(a)->ptr))
 #define array_insert(a, c, p)   _array_insert(&(a)->base, (c), (p), sizeof(*(a)->ptr))
 #define array_copy(d, s)        _array_copy(&(d)->base, &(s)->base, sizeof(*(s)->ptr))
-#define array_push(a, n)        _array_push(&(a)->base, (n), sizeof(*(a)->ptr))
+#define array_push(a, n)        (_array_push(&(a)->base, (n), sizeof(*(a)->ptr)) == 0 ? &(a)->ptr[(size_t)(a)->tmp] : NULL)
 
 #define array_remove_ordered(a, i) _array_remove_range_ordered(&(a)->base, (i), 1, sizeof(*(a)->ptr))
 #define array_remove_range_ordered(a, i, c) _array_remove_range_ordered(&(a)->base, (i), (c), sizeof(*(a)->ptr))
 
-#define array_add(a, e)         ((array_reserve(a, 1) == 0) && (((a)->ptr[(a)->len++] = (e)), 1), (a)->err)
+#define array_add(a, e)         ((array_reserve(a, 1) == 0) && (((a)->ptr[(a)->len++] = (e)), 1), (a)->tmp)
 #define array_set(a, i, e)      (array_inside(a, i) && (((a)->ptr[(i)] = (e)), 1))
 #define array_pop(a)            ((a)->ptr[(a)->len ? --(a)->len : 0])
 #define array_at(a, i)          ((a)->ptr[(i)])
@@ -86,6 +86,6 @@ int   _array_reserve(array_void_t *a, size_t count, const size_t elem_size);
 void  _array_remove(array_void_t *a, size_t index, const size_t elem_size);
 int   _array_insert(array_void_t *a, size_t count, const void *ptr, const size_t elem_size);
 int   _array_copy(array_void_t *dest, array_void_t *src, const size_t elem_size);
-void* _array_push(array_void_t *a, size_t n, const size_t elem_size);
+int   _array_push(array_void_t *a, size_t n, const size_t elem_size);
 void  _array_remove_ordered(array_void_t *a, size_t index, const size_t elem_size);
 void  _array_remove_range_ordered(array_void_t *a, size_t index, size_t count, const size_t elem_size);
