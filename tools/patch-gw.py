@@ -41,7 +41,7 @@ def main(args):
             break
 
     if not text_section:
-        print("Couldn't find '.text' section in executable '%s'" % input_path)
+        print(f"Couldn't find '.text' section in executable '{input_path}'")
         sys.exit(1)
 
     text_sec_data = text_section.get_data()
@@ -68,20 +68,37 @@ def main(args):
     print('[+] jmp_rva is:', hex(jmp_rva))
     jmp_file_pos = gw_pe.get_offset_from_rva(jmp_rva)
 
+    print('[+] Searching for mutex name')
+    for section in gw_pe.sections:
+        if b'.rdata' in section.Name:
+            rdata_section = section
+    if not rdata_section:
+        print(f"Couldn't find the '.rdata' section in executable '{input_path}'")
+        sys.exit(1)
+
+    rdata_section_data = rdata_section.get_data()
+    mutex_name_file_pos = rdata_section_data.find(b'AN-Mutex-Window')
+    if mutex_name_file_pos < 0:
+        print("Couldn't find the mutex name in .rdata")
+        sys.exit(1)
+    mutex_name_file_pos += rdata_section.PointerToRawData
+    print(f'[+] mutex_name_file_pos is 0x{mutex_name_file_pos:X}')
+
     gw_pe.close()
 
     print('[+] Patching executable...')
     with open(input_path, 'rb') as f:
         data = f.read()
 
-    data_list = list(data)
-    data_list[key_file_pos:key_file_pos+4]      = prim_root.to_bytes(4, byteorder='little')
-    data_list[key_file_pos+4:key_file_pos+68]   = prime_mod.to_bytes(64, byteorder='little')
-    data_list[key_file_pos+68:key_file_pos+132] = public_key.to_bytes(64, byteorder='little')
+    data_mut = list(data)
+    data_mut[key_file_pos:key_file_pos+4]      = prim_root.to_bytes(4, byteorder='little')
+    data_mut[key_file_pos+4:key_file_pos+68]   = prime_mod.to_bytes(64, byteorder='little')
+    data_mut[key_file_pos+68:key_file_pos+132] = public_key.to_bytes(64, byteorder='little')
 
-    data_list[jmp_file_pos:jmp_file_pos+1]      = b'\x31'
+    data_mut[jmp_file_pos:jmp_file_pos+1]      = b'\x31'
+    data_mut[mutex_name_file_pos:mutex_name_file_pos+len(b'AN-Futex')] = b'AN-Futex'
 
-    data = bytes(data_list)
+    data = bytes(data_mut)
     with open(out_path, 'wb') as f:
         f.write(data)
 
