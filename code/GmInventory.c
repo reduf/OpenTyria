@@ -46,10 +46,14 @@ void GmBag_InitStorage(GmBagArray *bags, BagModelId model_id, uint16_t bag_id)
     bags->bags[model_id].slot_count = 25;
 }
 
-void GmBagSetItem(GmBag *bag, size_t slot, uint32_t item_id)
+void GmBag_SetItem(GmBag *bag, size_t slot, uint32_t item_id)
 {
     assert(slot < ARRAY_SIZE(bag->items));
     assert(bag->items[slot] == 0);
     bag->items[slot] = item_id;
 }
 
+bool GmBag_IsVolatile(BagModelId model_id)
+{
+    return model_id == BagModelId_UnclaimedItems;
+}

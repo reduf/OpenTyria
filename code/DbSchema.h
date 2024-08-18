@@ -104,6 +104,8 @@ typedef array(DbCharacter) DbCharacterArray;
 #define DbBagColumnsDef \
     X(struct uuid, account_id) \
     X(struct uuid, char_id) \
+    X(int64_t, created_at) \
+    X(int64_t, updated_at) \
     X(uint8_t, bag_model_id) \
     X(uint8_t, bag_type) \
     X(uint8_t, slot_count) \
@@ -125,3 +127,40 @@ static const char *DbBagColsName[] = {
     DbBagColumnsDef
     #undef X
 };
+
+typedef array(DbBag) DbBagArray;
+
+#define DbItemColumnsDef \
+    X(struct uuid, account_id) \
+    X(struct uuid, char_id) \
+    X(uint8_t, bag_model_id) \
+    X(uint16_t, slot) \
+    X(int64_t, created_at) \
+    X(int64_t, updated_at) \
+    X(uint16_t, quantity) \
+    X(uint8_t, dye_color) \
+    X(uint8_t, item_type) \
+    X(uint8_t, profession) \
+    X(uint32_t, model_id) \
+    X(uint32_t, file_id) \
+    X(uint32_t, flags) \
+
+typedef struct DbItem {
+    #define X(T, N) T N;
+    DbItemColumnsDef
+    #undef X
+} DbItem;
+
+typedef enum DbItemCols {
+    #define X(T, N) DbItemCols_ ## N,
+    DbItemColumnsDef
+    #undef X
+} DbItemCols;
+
+static const char *DbItemColsName[] = {
+    #define X(T, N) #N,
+    DbItemColumnsDef
+    #undef X
+};
+
+typedef array(DbItem) DbItemArray;

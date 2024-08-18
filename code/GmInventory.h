@@ -140,4 +140,5 @@ void GmBag_InitUnclaimedItems(GmBag *bag, uint16_t bag_id);
 void GmBag_InitEquippedItems(GmBag *bag, uint16_t bag_id);
 void GmBag_InitMaterialStorage(GmBag *bag, uint16_t bag_id);
 void GmBag_InitStorage(GmBagArray *bags, BagModelId model_id, uint16_t bag_id);
-void GmBagSetItem(GmBag *bag, size_t slot, uint32_t item_id);
+void GmBag_SetItem(GmBag *bag, size_t slot, uint32_t item_id);
+bool GmBag_IsVolatile(BagModelId model_id);

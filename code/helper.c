@@ -44,6 +44,14 @@ uint32_t uint32_t_min(uint32_t left, uint32_t right)
     return left < right ? left : right;
 }
 
+uint16_t u16cast(uint32_t value)
+{
+    if (UINT16_MAX < value) {
+        abort();
+    }
+    return (uint16_t) value;
+}
+
 bool s16_from_ascii(uint16_t *dst, size_t size, const char *src)
 {
     size_t len = strlen(src);

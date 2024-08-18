@@ -185,6 +185,18 @@ GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
     }
 }
 
+GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
+{
+    if (srv->items.len <= item_id) {
+        return NULL;
+    }
+    GmItem *result = &srv->items.ptr[item_id];
+    if (result->item_id == 0) {
+        return NULL;
+    }
+    return result;
+}
+
 void GameSrv_SendPing(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PING_REQUEST);
@@ -1198,6 +1210,73 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
     }
 }
 
+int GameSrv_CreatePlayerBags(GameSrv *srv, GmPlayer *player)
+{
+    int err;
+
+    size_t count = 0;
+    DbBag bags[BagModelId_Count] = {0};
+    DbItemArray items = {0};
+
+    for (size_t idx = 0; idx < BagModelId_Count; ++idx) {
+        GmBag *bag = &player->bags.bags[idx];
+        if (bag->bag_id == 0) {
+            continue;
+        }
+
+        if (GmBag_IsVolatile(bag->bag_model_id)) {
+            continue;
+        }
+
+        DbBag *dst = &bags[++count];
+        dst->account_id = player->account_id;
+        dst->char_id = player->char_id;
+        dst->bag_model_id = bag->bag_model_id;
+        dst->bag_type = bag->bag_type;
+        dst->slot_count = bag->slot_count;
+
+        for (uint8_t slot = 0; slot < bag->slot_count; ++slot) {
+            uint32_t item_id = bag->items[slot];
+            if (item_id == 0) {
+                continue;
+            }
+
+            GmItem *item;
+            if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
+                continue;
+            }
+
+            DbItem *dbitem = array_push(&items, 1);
+            dbitem->account_id = player->account_id;
+            dbitem->char_id = player->char_id;
+            dbitem->bag_model_id = bag->bag_model_id;
+            dbitem->slot = slot;
+            dbitem->file_id = item->file_id;
+            dbitem->model_id = item->model_id;
+            dbitem->item_type = item->item_type;
+            dbitem->dye_color = item->dye_color;
+            dbitem->quantity = u16cast(item->quantity);
+            dbitem->flags = item->flags;
+            dbitem->profession = item->profession;
+        }
+    }
+
+    if ((err = Db_CreateBags(&srv->database, bags, count)) != 0) {
+        log_error("Failed to create %zu bags", count);
+        array_free(&items);
+        return err;
+    }
+
+    if ((err = Db_CreateItems(&srv->database, items.ptr, items.len)) != 0) {
+        log_error("Failed to create %zu items", items.len);
+        array_free(&items);
+        return err;
+    }
+
+    array_free(&items);
+    return ERR_OK;
+}
+
 void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
 {
     GameConnection conn = {0};
@@ -1405,18 +1484,6 @@ int GetBagSlotForItemType(ItemType item_type, EquippedItemSlot *result)
     }
 }
 
-GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
-{
-    if (srv->items.len <= item_id) {
-        return NULL;
-    }
-    GmItem *result = &srv->items.ptr[item_id];
-    if (result->item_id == 0) {
-        return NULL;
-    }
-    return result;
-}
-
 void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_GENERAL_INFO);
@@ -1519,7 +1586,7 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         *item = *item_def;
         item->item_id = item_id;
 
-        GmBagSetItem(bag, item_slot, item_id);
+        GmBag_SetItem(bag, item_slot, item_id);
     }
 
     GameConnection *conn;
@@ -1588,8 +1655,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
         settings.pieces[pos].col1 = item->dye_color;
     }
 
-    struct uuid char_id;
-    random_get_bytes(&srv->random, &char_id, sizeof(char_id));
+    random_get_bytes(&srv->random, &player->char_id, sizeof(player->char_id));
 
     GameConnection *conn;
     if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
@@ -1597,7 +1663,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     }
 
     GameSrvMsg *buffer;
-    if ((err = Db_CreateCharacter(&srv->database, player->account_id, char_id, msg->n_name, msg->name, &settings)) != 0) {
+    if ((err = Db_CreateCharacter(&srv->database, player->account_id, player->char_id, msg->n_name, msg->name, &settings)) != 0) {
         log_error("Failed to insert character in database");
 
         buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_ERROR);
@@ -1607,9 +1673,14 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
         return ERR_OK;
     }
 
+    // save bags
+    if ((err = GameSrv_CreatePlayerBags(srv, player)) != 0) {
+        log_error("Failed to create the player bags in database");
+    }
+
     buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_SUCCESS);
     GameSrv_CharCreationSuccess *result = &buffer->char_creation_success;
-    uuid_enc_le(result->char_id, &char_id);
+    uuid_enc_le(result->char_id, &player->char_id);
     STATIC_ASSERT(sizeof(result->n_name) <= sizeof(msg->n_name));
     result->n_name = msg->n_name;
     memcpy_u16(result->name, msg->name, msg->n_name);

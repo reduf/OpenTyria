@@ -91,11 +91,15 @@ CREATE TABLE items (
     char_id      VARCHAR(36),
     bag_model_id INTEGER NOT NULL,
     slot         INTEGER NOT NULL,
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
     quantity     INTEGER NOT NULL,
     dye_color    INTEGER NOT NULL,
-    model        INTEGER NOT NULL,
+    model_id     INTEGER NOT NULL,
     file_id      INTEGER NOT NULL,
     flags        INTEGER NOT NULL,
+    item_type    INTEGER NOT NULL,
+    profession   INTEGER DEFAULT 0,
 
     PRIMARY KEY (account_id, char_id, bag_model_id, slot)
 );
@@ -104,6 +108,8 @@ DROP TABLE IF EXISTS bags;
 CREATE TABLE bags (
     account_id   VARCHAR(36),
     char_id      VARCHAR(36),
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
     bag_model_id INTEGER NOT NULL,
     bag_type     INTEGER NOT NULL,
     slot_count   INTEGER NOT NULL,

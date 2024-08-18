@@ -124,6 +124,21 @@ int sqlite3_bind_uuid(sqlite3_stmt *stmt, int iCol, struct uuid uid)
     return sqlite3_bind_text(stmt, iCol, buffer, UUID_STRING_LEN, SQLITE_TRANSIENT);
 }
 
+int sqlite3_bind_u8(sqlite3_stmt *stmt, int iCol, uint8_t val)
+{
+    return sqlite3_bind_int(stmt, iCol, (int)val);
+}
+
+int sqlite3_bind_u16(sqlite3_stmt *stmt, int iCol, uint16_t val)
+{
+    return sqlite3_bind_int(stmt, iCol, (int)val);
+}
+
+int sqlite3_bind_u32(sqlite3_stmt *stmt, int iCol, uint32_t val)
+{
+    return sqlite3_bind_int64(stmt, iCol, (int64_t)val);
+}
+
 int sqlite3_bind_u16_array(sqlite3_stmt *stmt, int iCol, size_t len, const uint16_t *ptr)
 {
     return sqlite3_bind_blob64(stmt, iCol, ptr, len * 2, NULL);
@@ -238,6 +253,16 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
+    sql = "INSERT INTO bags (account_id, char_id, bag_model_id, bag_type, slot_count) VALUES (?, ?, ?, ?, ?);";
+    if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_create_bag, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
+    sql = "INSERT INTO items (account_id, char_id, bag_model_id, slot, quantity, dye_color, model_id, file_id, flags, item_type, profession) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_create_item, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
     return ERR_OK;
 exit_on_error:
     log_error(
@@ -289,6 +314,14 @@ void Db_Close(Database *database)
 
     if ((err = sqlite3_finalize(database->stmt_delete_character)) != SQLITE_OK) {
         log_error("Failed to finalize 'stmt_delete_character', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_create_bag)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_create_bag', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_create_item)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_create_item', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_close_v2(database->conn)) != SQLITE_OK) {
@@ -599,4 +632,88 @@ int Db_DeleteCharacter(Database *database, struct uuid account_id, struct uuid c
         log_error("Failed to delete a character, err: %d (%s)", err, sqlite3_errstr(err));
         return_close(ERR_UNSUCCESSFUL, stmt);
     }
+}
+
+int Db_CreateBag(Database *database, DbBag *bag)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_create_bag;
+    if ((err = sqlite3_bind_uuid(stmt, 1, bag->account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, bag->char_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 3, bag->bag_model_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 4, bag->bag_type)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 5, bag->slot_count)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind values to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        return_close(ERR_SERVER_ERROR, stmt);
+    }
+
+    if ((err = sqlite3_step(stmt)) == SQLITE_DONE) {
+        return_close(ERR_OK, stmt);
+    } else {
+        log_error("Failed to create a bag, err: %d (%s)", err, sqlite3_errstr(err));
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    }
+}
+
+int Db_CreateBags(Database *database, DbBag *bags, size_t count)
+{
+    int err;
+    for (size_t idx = 0; idx < count; ++idx) {
+        if ((err = Db_CreateBag(database, &bags[idx])) != 0) {
+            return err;
+        }
+    }
+
+    return ERR_OK;
+}
+
+int Db_CreateItem(Database *database, DbItem *item)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_create_item;
+    if ((err = sqlite3_bind_uuid(stmt, 1, item->account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, item->char_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 3, item->bag_model_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 4, item->slot)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 5, item->quantity)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 6, item->dye_color)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 7, item->model_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 8, item->file_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 9, item->flags)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 10, item->item_type)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 11, item->profession)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind values to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        return_close(ERR_SERVER_ERROR, stmt);
+    }
+
+    if ((err = sqlite3_step(stmt)) == SQLITE_DONE) {
+        return_close(ERR_OK, stmt);
+    } else {
+        log_error("Failed to create a bag, err: %d (%s)", err, sqlite3_errstr(err));
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    }
+}
+
+int Db_CreateItems(Database *database, DbItem *items, size_t count)
+{
+    int err;
+    for (size_t idx = 0; idx < count; ++idx) {
+        if ((err = Db_CreateItem(database, &items[idx])) != 0) {
+            return err;
+        }
+    }
+
+    return ERR_OK;
 }
