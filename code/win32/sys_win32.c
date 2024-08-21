@@ -99,7 +99,7 @@ int sys_accept(uintptr_t *result, uintptr_t fd, struct sockaddr *addr, int *addr
 int sys_recv(uintptr_t fd, uint8_t *buffer, size_t size, size_t *result)
 {
     int ret;
-    int isize = (int)size_t_min(size, INT_MAX);
+    int isize = (int)min_size_t(size, INT_MAX);
     if ((ret = recv(fd, (char *) buffer, isize, 0)) == SOCKET_ERROR) {
         return WSAGetLastError();
     }
@@ -111,7 +111,7 @@ int sys_recv(uintptr_t fd, uint8_t *buffer, size_t size, size_t *result)
 int sys_send(uintptr_t fd, const uint8_t *buffer, size_t size, size_t *result)
 {
     int ret;
-    int isize = (int)size_t_min(size, INT_MAX);
+    int isize = (int)min_size_t(size, INT_MAX);
     if ((ret = send(fd, (const char *) buffer, isize, 0)) == SOCKET_ERROR) {
         return WSAGetLastError();
     }
@@ -148,7 +148,7 @@ bool sys_would_block(int err)
 int sys_getrandom(uint8_t *buffer, size_t size)
 {
     while (size != 0) {
-        ULONG cbBuffer = (ULONG)size_t_min(ULONG_MAX, size);
+        ULONG cbBuffer = (ULONG)min_size_t(ULONG_MAX, size);
         NTSTATUS status = BCryptGenRandom(
             NULL,
             buffer,

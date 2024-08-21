@@ -24,22 +24,22 @@ bool memeq_u16(uint16_t *dst, const uint16_t *src, size_t count)
     return memcmp_u16(dst, src, count) == 0;
 }
 
-size_t size_t_max(size_t left, size_t right)
+size_t max_size_t(size_t left, size_t right)
 {
     return left < right ? right : left;
 }
 
-size_t size_t_min(size_t left, size_t right)
+size_t min_size_t(size_t left, size_t right)
 {
     return left < right ? left : right;
 }
 
-uint32_t uint32_t_max(uint32_t left, uint32_t right)
+uint32_t max_uint32_t(uint32_t left, uint32_t right)
 {
     return left < right ? right : left;
 }
 
-uint32_t uint32_t_min(uint32_t left, uint32_t right)
+uint32_t min_uint32_t(uint32_t left, uint32_t right)
 {
     return left < right ? left : right;
 }

@@ -81,7 +81,7 @@ GmItem* GameSrv_AllocateItem(GameSrv *srv)
 {
     if (srv->free_items_slots.len == 0) {
         size_t item_count = srv->items.len;
-        size_t new_size = size_t_max(item_count * 2, 64);
+        size_t new_size = max_size_t(item_count * 2, 64);
         array_resize(&srv->items, new_size);
         if (item_count == 0) {
             ++item_count;
