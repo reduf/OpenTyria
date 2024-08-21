@@ -2,13 +2,13 @@
 
 typedef struct Database {
     sqlite3      *conn;
-    sqlite3_stmt *stmt_get_session;
-    sqlite3_stmt *stmt_get_account;
-    sqlite3_stmt *stmt_get_character_and_account;
-    sqlite3_stmt *stmt_get_account_characters;
-    sqlite3_stmt *stmt_get_character;
-    sqlite3_stmt *stmt_get_friendships;
-    sqlite3_stmt *stmt_get_character_bags;
+    sqlite3_stmt *stmt_select_session;
+    sqlite3_stmt *stmt_select_account;
+    sqlite3_stmt *stmt_select_character_and_account;
+    sqlite3_stmt *stmt_select_account_characters;
+    sqlite3_stmt *stmt_select_character;
+    sqlite3_stmt *stmt_select_friendships;
+    sqlite3_stmt *stmt_select_character_bags;
     sqlite3_stmt *stmt_insert_character;
     sqlite3_stmt *stmt_delete_character;
     sqlite3_stmt *stmt_create_bag;

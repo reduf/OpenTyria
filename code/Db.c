@@ -182,7 +182,7 @@ int Db_Open(Database *result, const char *path)
     sqlite3 *conn = result->conn;
 
     const char *SQL_GET_FRIENDS = "SELECT * FROM friendships WHERE account_id = ?;";
-    if ((err = sqlite3_prepare_v2(conn, SQL_GET_FRIENDS, -1, &result->stmt_get_friendships, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, SQL_GET_FRIENDS, -1, &result->stmt_select_friendships, 0)) != SQLITE_OK) {
         log_error("Failed to create the 'SQL_GET_FRIENDS' prepared statement, err: %d (%s)", err, sqlite3_errstr(err));
         return ERR_UNSUCCESSFUL;
     }
@@ -192,7 +192,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "sessions", DbSessionColsName, ARRAY_SIZE(DbSessionColsName));
     appendf(&builder, " FROM sessions WHERE user_id = ? AND session_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_session, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_session, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -201,7 +201,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, "FROM accounts WHERE account_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_account, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_account, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -210,7 +210,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_account_characters, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_account_characters, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -219,7 +219,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "characters", DbCharacterColsName, ARRAY_SIZE(DbCharacterColsName));
     appendf(&builder, "FROM characters WHERE account_id = ? AND char_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -230,7 +230,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "accounts", DbAccountColsName, ARRAY_SIZE(DbAccountColsName));
     appendf(&builder, "FROM characters JOIN accounts ON accounts.account_id = characters.account_id WHERE characters.account_id = ? AND characters.char_id = ?;");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character_and_account, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_character_and_account, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -239,7 +239,7 @@ int Db_Open(Database *result, const char *path)
     append_fields(&builder, "bags", DbBagColsName, ARRAY_SIZE(DbBagColsName));
     appendf(&builder, "FROM bags WHERE account_id = ? AND (char_id IS NULL OR char_id = ?);");
 
-    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_get_character_bags, 0)) != SQLITE_OK) {
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_character_bags, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
@@ -280,32 +280,32 @@ void Db_Close(Database *database)
 {
     int err;
 
-    if ((err = sqlite3_finalize(database->stmt_get_session)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_session', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_session)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_session', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_account)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_account', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_account)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_account', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_account_characters)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_account_characters', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_account_characters)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_account_characters', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_character)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_account_character', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_character)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_account_character', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_character_and_account)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_account_character_and_account', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_character_and_account)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_account_character_and_account', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_friendships)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_friendships', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_friendships)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_friendships', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
-    if ((err = sqlite3_finalize(database->stmt_get_character_bags)) != SQLITE_OK) {
-        log_error("Failed to finalize 'stmt_get_character_bags', err: %d (%s)", err, sqlite3_errstr(err));
+    if ((err = sqlite3_finalize(database->stmt_select_character_bags)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_character_bags', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_finalize(database->stmt_insert_character)) != SQLITE_OK) {
@@ -381,7 +381,7 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
 {
     int err;
 
-    sqlite3_stmt *stmt = database->stmt_get_session;
+    sqlite3_stmt *stmt = database->stmt_select_session;
     if ((err = sqlite3_bind_uuid(stmt, 1, user_id)) != SQLITE_OK) {
         log_error("Failed to bind user_id to a statement, err: %d (%s)", err, sqlite3_errstr(err));
         return_close(ERR_SERVER_ERROR, stmt);
@@ -415,7 +415,7 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
 {
     int err;
 
-    sqlite3_stmt *stmt = database->stmt_get_account;
+    sqlite3_stmt *stmt = database->stmt_select_account;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
         log_error(
             "Failed to bind account_id '%s' to a statement, err: %d (%s)",
@@ -443,7 +443,7 @@ int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char
 {
     int err;
 
-    sqlite3_stmt *stmt = database->stmt_get_character;
+    sqlite3_stmt *stmt = database->stmt_select_character;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
@@ -479,7 +479,7 @@ int Db_GetCharacterAndAccount(
 {
     int err;
 
-    sqlite3_stmt *stmt = database->stmt_get_character_and_account;
+    sqlite3_stmt *stmt = database->stmt_select_character_and_account;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
@@ -511,7 +511,7 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
 {
     int err;
 
-    sqlite3_stmt *stmt = database->stmt_get_account_characters;
+    sqlite3_stmt *stmt = database->stmt_select_account_characters;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
         log_error("Failed to bind account_id to a statement, err: %d (%s)",
             err,
@@ -539,7 +539,7 @@ int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid cha
 {
     int err;
     
-    sqlite3_stmt *stmt = database->stmt_get_character_bags;
+    sqlite3_stmt *stmt = database->stmt_select_character_bags;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
     {
