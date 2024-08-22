@@ -718,6 +718,23 @@ void GameSrv_SendPlayerHeroNameAndInfo(GameConnection *conn, GmPlayer *player)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
+void GameSrv_SendHardModeUnlocked(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_HARD_MODE_UNLOCKED);
+    GameSrv_HardModeUnlocked *msg = &buffer->hard_mode_unlocked;
+    msg->hard_mode_unlocked = true;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendUpdateCurrentMap(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_CURRENT_MAP);
+    GameSrv_UpdateCurrentMap *msg = &buffer->update_current_map;
+    msg->map_id = 449;
+    msg->unk = 0;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
 void GameSrv_SendPlayerHeroData(GameSrv *srv, GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_KURZICK);
@@ -742,7 +759,9 @@ void GameSrv_SendPlayerHeroData(GameSrv *srv, GameConnection *conn)
     }
 
     if (!uuid_is_null(&player->character.char_id)) {
+        GameSrv_SendHardModeUnlocked(conn);
         GameSrv_SendPlayerHeroNameAndInfo(conn, player);
+        GameSrv_SendUpdateCurrentMap(conn);
     }
 }
 

@@ -216,6 +216,7 @@
 #define GAME_SMSG_POST_PROCESS                      (0x006A) // 106
 #define GAME_SMSG_DUNGEON_REWARD                    (0x006B) // 107
 #define GAME_SMSG_NPC_UPDATE_WEAPONS                (0x006C) // 108
+#define GAME_SMSG_HARD_MODE_UNLOCKED                (0x006F) // 111
 #define GAME_SMSG_MERCENARY_INFO                    (0x0073) // 115
 #define GAME_SMSG_DIALOG_BUTTON                     (0x007D) // 125
 #define GAME_SMSG_DIALOG_BODY                       (0x007F) // 127
@@ -227,6 +228,7 @@
 #define GAME_SMSG_CARTOGRAPHY_DATA                  (0x0089) // 137
 #define GAME_SMSG_COMPASS_DRAWING                   (0x0090) // 144
 #define GAME_SMSG_MAPS_UNLOCKED                     (0x0093) // 147
+#define GAME_SMSG_UPDATE_CURRENT_MAP                (0x0098) // 152
 #define GAME_SMSG_AGENT_UPDATE_SCALE                (0x0099) // 153
 #define GAME_SMSG_AGENT_UPDATE_NPC_NAME             (0x009A) // 154
 #define GAME_SMSG_AGENT_DISPLAY_DIALOG              (0x009D) // 157

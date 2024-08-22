@@ -292,6 +292,17 @@ typedef struct GameSrv_PlayerHeroNameAndInfo {
     uint32_t h001C; // 2
 } GameSrv_PlayerHeroNameAndInfo;
 
+typedef struct GameSrv_HardModeUnlocked {
+    uint16_t header;
+    uint8_t  hard_mode_unlocked;
+} GameSrv_HardModeUnlocked;
+
+typedef struct GameSrv_UpdateCurrentMap {
+    uint16_t header;
+    uint16_t map_id;
+    uint32_t unk;
+} GameSrv_UpdateCurrentMap;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -339,5 +350,7 @@ typedef union GameSrvMsg {
     GameSrv_CharCreationError            char_creation_error;
     GameSrv_CharCreationSuccess          char_creation_success;
     GameSrv_PlayerHeroNameAndInfo        player_hero_name_and_info;
+    GameSrv_HardModeUnlocked             hard_mode_unlocked;
+    GameSrv_UpdateCurrentMap             update_current_map;
 } GameSrvMsg;
 #pragma pack(pop)
