@@ -730,7 +730,7 @@ void GameSrv_SendUpdateCurrentMap(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_CURRENT_MAP);
     GameSrv_UpdateCurrentMap *msg = &buffer->update_current_map;
-    msg->map_id = 449;
+    msg->map_id = MapId_KamadanJewelOfIstanOutpost;
     msg->unk = 0;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }

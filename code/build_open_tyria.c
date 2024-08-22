@@ -71,6 +71,7 @@
 #include "DbSchema.h"
 
 #include "GmErrors.h"
+#include "GmMaps.h"
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"

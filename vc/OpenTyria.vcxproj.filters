@@ -64,6 +64,7 @@
     <ClInclude Include="..\code\DbSchema.h" />
     <ClInclude Include="..\code\GmAgent.h" />
     <ClInclude Include="..\code\GmErrors.h" />
+    <ClInclude Include="..\code\GmMaps.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />
