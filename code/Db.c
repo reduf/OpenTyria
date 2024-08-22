@@ -263,6 +263,15 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
+    array_clear(&builder);
+    appendf(&builder, "SELECT ");
+    append_fields(&builder, "items", DbItemColsName, ARRAY_SIZE(DbItemColsName));
+    appendf(&builder, "FROM items WHERE account_id = ? AND (char_id IS NULL OR char_id = ?);");
+
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_select_character_items, 0)) != SQLITE_OK) {
+        goto exit_on_error;
+    }
+
     return ERR_OK;
 exit_on_error:
     log_error(
@@ -322,6 +331,10 @@ void Db_Close(Database *database)
 
     if ((err = sqlite3_finalize(database->stmt_create_item)) != SQLITE_OK) {
         log_error("Failed to finalize 'stmt_create_item', err: %d (%s)", err, sqlite3_errstr(err));
+    }
+
+    if ((err = sqlite3_finalize(database->stmt_select_character_items)) != SQLITE_OK) {
+        log_error("Failed to finalize 'stmt_select_character_items', err: %d (%s)", err, sqlite3_errstr(err));
     }
 
     if ((err = sqlite3_close_v2(database->conn)) != SQLITE_OK) {
@@ -418,7 +431,7 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
     sqlite3_stmt *stmt = database->stmt_select_account;
     if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK) {
         log_error(
-            "Failed to bind account_id '%s' to a statement, err: %d (%s)",
+            "Failed to bind account_id to a statement, err: %d (%s)",
             err,
             sqlite3_errstr(err)
         );
@@ -716,4 +729,61 @@ int Db_CreateItems(Database *database, DbItem *items, size_t count)
     }
 
     return ERR_OK;
+}
+
+int DbItem_from_stmt(sqlite3_stmt *stmt, int idx, DbItem *result)
+{
+    int err;
+    if (((err = sqlite3_column_uuid(stmt, idx + DbItemCols_account_id, &result->account_id)) != 0) ||
+        ((err = sqlite3_column_uuid(stmt, idx + DbItemCols_char_id, &result->char_id)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_bag_model_id, &result->bag_model_id)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbItemCols_slot, &result->slot)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbItemCols_created_at, &result->created_at)) != 0) ||
+        ((err = sqlite3_column_i64(stmt, idx + DbItemCols_updated_at, &result->updated_at)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbItemCols_quantity, &result->quantity)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_dye_color, &result->dye_color)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_item_type, &result->item_type)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_profession, &result->profession)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbItemCols_model_id, &result->model_id)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbItemCols_file_id, &result->file_id)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbItemCols_flags, &result->flags)) != 0)
+    ) {
+        return ERR_SERVER_ERROR;
+    }
+    return ERR_OK;
+}
+
+int Db_GetItems(Database *database, struct uuid account_id, struct uuid char_id, DbItemArray *results)
+{
+    int err;
+
+    sqlite3_stmt *stmt = database->stmt_select_character_items;
+    if ((err = sqlite3_bind_uuid(stmt, 1, account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 2, char_id)) != SQLITE_OK)
+    {
+        log_error(
+            "Failed to bind account_id to a statement, err: %d (%s)",
+            err,
+            sqlite3_errstr(err)
+        );
+        return_close(ERR_SERVER_ERROR, stmt);
+    }
+
+    while ((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+        DbItem *result;
+        if ((result = array_push(results, 1)) == NULL) {
+            return_close(ERR_UNSUCCESSFUL, stmt);
+        }
+
+        if (DbItem_from_stmt(stmt, 0, result) != 0) {
+            return_close(ERR_SERVER_ERROR, stmt);
+        }
+    }
+
+    if (err != SQLITE_DONE) {
+        log_warn("Query failed, err: %d (%s)", err, sqlite3_errstr(err));
+        return_close(ERR_UNSUCCESSFUL, stmt);
+    }
+
+    return_close(ERR_OK, stmt);
 }

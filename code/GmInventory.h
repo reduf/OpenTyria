@@ -1,6 +1,6 @@
 #pragma once
 
-#define GM_BAG_MAX_SLOT 30
+#define GM_BAG_MAX_SLOT 36
 
 typedef enum BagType {
     BagType_Bag          = 1,
@@ -82,6 +82,35 @@ int BagModelId_FromInt(int value, BagModelId *result)
         return ERR_OK;
     default:
         return ERR_UNSUCCESSFUL;
+    }
+}
+
+const char* BagModelId_ToString(BagModelId bag_model_id)
+{
+    switch (bag_model_id) {
+    case BagModelId_Backpack: return "BagModelId_Backpack";
+    case BagModelId_BeltPouch: return "BagModelId_BeltPouch";
+    case BagModelId_Bag1: return "BagModelId_Bag1";
+    case BagModelId_Bag2: return "BagModelId_Bag2";
+    case BagModelId_EquipmentPack: return "BagModelId_EquipmentPack";
+    case BagModelId_MaterialStorage: return "BagModelId_MaterialStorage";
+    case BagModelId_UnclaimedItems: return "BagModelId_UnclaimedItems";
+    case BagModelId_Storage1: return "BagModelId_Storage1";
+    case BagModelId_Storage2: return "BagModelId_Storage2";
+    case BagModelId_Storage3: return "BagModelId_Storage3";
+    case BagModelId_Storage4: return "BagModelId_Storage4";
+    case BagModelId_Storage5: return "BagModelId_Storage5";
+    case BagModelId_Storage6: return "BagModelId_Storage6";
+    case BagModelId_Storage7: return "BagModelId_Storage7";
+    case BagModelId_Storage8: return "BagModelId_Storage8";
+    case BagModelId_Storage9: return "BagModelId_Storage9";
+    case BagModelId_Storage10: return "BagModelId_Storage10";
+    case BagModelId_Storage11: return "BagModelId_Storage11";
+    case BagModelId_Storage12: return "BagModelId_Storage12";
+    case BagModelId_Storage13: return "BagModelId_Storage13";
+    case BagModelId_StorageAnniversary: return "BagModelId_StorageAnniversary";
+    case BagModelId_EquippedItems: return "BagModelId_EquippedItems";
+    default: abort();
     }
 }
 

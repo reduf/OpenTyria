@@ -104,6 +104,29 @@ typedef enum DyeColor {
     DyeColor_Pink = 13
 } DyeColor;
 
+int DyeColor_FromInt(int value, DyeColor *result)
+{
+    switch (value) {
+    case DyeColor_None:
+    case DyeColor_Blue:
+    case DyeColor_Green:
+    case DyeColor_Purple:
+    case DyeColor_Red:
+    case DyeColor_Yellow:
+    case DyeColor_Brown:
+    case DyeColor_Orange:
+    case DyeColor_Silver:
+    case DyeColor_Black:
+    case DyeColor_Gray:
+    case DyeColor_White:
+    case DyeColor_Pink:
+        *result = (DyeColor)value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
+    }
+}
+
 typedef struct Appearance {
     unsigned int sex                : 1;
     unsigned int height             : HEIGHT_BITS;

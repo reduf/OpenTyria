@@ -280,6 +280,18 @@ typedef struct GameSrv_CharCreationSuccess {
     uint8_t  settings[1024];
 } GameSrv_CharCreationSuccess;
 
+typedef struct GameSrv_PlayerHeroNameAndInfo {
+    uint16_t header;
+    uint32_t n_charname;
+    uint16_t charname[32];
+    uint32_t h0008; // 76
+    uint32_t h000C; // 76
+    uint32_t h0010; // 1083
+    uint32_t h0014; // 0
+    uint32_t h0018; // 0
+    uint32_t h001C; // 2
+} GameSrv_PlayerHeroNameAndInfo;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -326,5 +338,6 @@ typedef union GameSrvMsg {
     GameSrv_ItemMoveToLocation           item_move_to_location;
     GameSrv_CharCreationError            char_creation_error;
     GameSrv_CharCreationSuccess          char_creation_success;
+    GameSrv_PlayerHeroNameAndInfo        player_hero_name_and_info;
 } GameSrvMsg;
 #pragma pack(pop)

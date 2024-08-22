@@ -40,7 +40,7 @@ typedef enum ItemType {
     ItemType_CostumeHead   = 45,
 } ItemType;
 
-const char* ItemType_tostring(ItemType item_type)
+const char* ItemType_ToString(ItemType item_type)
 {
     switch (item_type) {
     case ItemType_Salvage: return "ItemType_Salvage";
@@ -81,6 +81,53 @@ const char* ItemType_tostring(ItemType item_type)
     case ItemType_CostumeBody: return "ItemType_CostumeBody";
     case ItemType_CostumeHead: return "ItemType_CostumeHead";
     default: abort();
+    }
+}
+
+int ItemType_FromInt(int value, ItemType *result)
+{
+    switch (value) {
+    case ItemType_Salvage:
+    case ItemType_Leadhand:
+    case ItemType_Axe:
+    case ItemType_Bag:
+    case ItemType_Feet:
+    case ItemType_Bow:
+    case ItemType_Bundle:
+    case ItemType_Chest:
+    case ItemType_Rune:
+    case ItemType_Consumable:
+    case ItemType_Dye:
+    case ItemType_Material:
+    case ItemType_Focus:
+    case ItemType_Arms:
+    case ItemType_Sigil:
+    case ItemType_Hammer:
+    case ItemType_Head:
+    case ItemType_SalvageItem:
+    case ItemType_Key:
+    case ItemType_Legs:
+    case ItemType_Coins:
+    case ItemType_QuestItem:
+    case ItemType_Wand:
+    case ItemType_Shield:
+    case ItemType_Staff:
+    case ItemType_Sword:
+    case ItemType_Kit:
+    case ItemType_Trophy:
+    case ItemType_Scroll:
+    case ItemType_Daggers:
+    case ItemType_Present:
+    case ItemType_Minipet:
+    case ItemType_Scythe:
+    case ItemType_Spear:
+    case ItemType_Handbook:
+    case ItemType_CostumeBody:
+    case ItemType_CostumeHead:
+        *result = (ItemType)value;
+        return ERR_OK;
+    default:
+        return ERR_UNSUCCESSFUL;
     }
 }
 

@@ -13,6 +13,7 @@ typedef struct Database {
     sqlite3_stmt *stmt_delete_character;
     sqlite3_stmt *stmt_create_bag;
     sqlite3_stmt *stmt_create_item;
+    sqlite3_stmt *stmt_select_character_items;
 } Database;
 
 int Db_Open(Database *result, const char *path);

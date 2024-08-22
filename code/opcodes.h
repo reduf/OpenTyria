@@ -179,6 +179,7 @@
 #define GAME_SMSG_AGENT_PLAYER_DIE                  (0x002D) // 45
 #define GAME_SMSG_AGENT_UPDATE_ROTATION             (0x002E) // 46
 #define GAME_SMSG_AGENT_UPDATE_ALLEGIANCE           (0x002F) // 47
+#define GAME_SMSG_PLAYER_HERO_NAME_AND_INFO         (0x0030) // 48
 #define GAME_SMSG_HERO_ACCOUNT_NAME                 (0x0031) // 49
 #define GAME_SMSG_MESSAGE_OF_THE_DAY                (0x0033) // 51
 #define GAME_SMSG_AGENT_PINGED                      (0x0034) // 52
