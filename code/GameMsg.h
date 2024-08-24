@@ -303,6 +303,24 @@ typedef struct GameSrv_UpdateCurrentMap {
     uint32_t unk;
 } GameSrv_UpdateCurrentMap;
 
+typedef struct GameSrv_InstanceManifestData {
+    uint16_t header;
+    uint16_t n_data;
+    uint8_t  data[1024];
+} GameSrv_InstanceManifestData;
+
+typedef struct GameSrv_InstanceManifestDone {
+    uint16_t header;
+    uint8_t  download_phase;
+    uint16_t map_id;
+    uint32_t unk;
+} GameSrv_InstanceManifestDone;
+
+typedef struct GameSrv_InstanceManifestPhase {
+    uint16_t header;
+    uint8_t  download_phase;
+} GameSrv_InstanceManifestPhase;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -352,5 +370,8 @@ typedef union GameSrvMsg {
     GameSrv_PlayerHeroNameAndInfo        player_hero_name_and_info;
     GameSrv_HardModeUnlocked             hard_mode_unlocked;
     GameSrv_UpdateCurrentMap             update_current_map;
+    GameSrv_InstanceManifestData         instance_manifest_data;
+    GameSrv_InstanceManifestDone         instance_manifest_done;
+    GameSrv_InstanceManifestPhase        instance_manifest_phase;
 } GameSrvMsg;
 #pragma pack(pop)

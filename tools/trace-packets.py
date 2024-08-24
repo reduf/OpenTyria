@@ -9,7 +9,7 @@ def main(args):
         print('Use a 32 bits version of Python')
         sys.exit(1)
 
-    proc, = GetProcesses('GwPriv.exe')
+    proc, = GetProcesses('Gw.exe')
     scanner = ProcessScanner(proc)
     smsg_addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
     cmsg_addr = scanner.find(b'\xC7\x47\x54\x01\x00\x00\x00\x1B\xC9\x81\xE1\x00\x80', -0xC5)
@@ -64,6 +64,15 @@ def main(args):
         if header == 152:
             a, b = proc.read(packet + 4, 'II')
             print(f'>> a = {a}, b = {b}')
+
+        if header == 405:
+            pass
+        if header == 406:
+            a, b, c = proc.read(packet + 4, 'III')
+            print(f'>> a = {a}, b = {b}, c = {c}')
+        if header == 407:
+            a = proc.read(packet + 4, 'I')
+            print(f'>> a = {a}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)

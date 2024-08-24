@@ -8,6 +8,13 @@
 // 7  = HA outpost
 // 11 = character creation
 
+typedef enum ManifestPhase {
+    ManifestPhase_Phase1 = 0,
+    ManifestPhase_Phase2 = 0,
+    ManifestPhase_Done   = 2,
+    ManifestPhase_Count
+} ManifestPhase;
+
 typedef enum MapType {
     MapType_MainTown = 0,
     MapType_MainExplorable = 1,

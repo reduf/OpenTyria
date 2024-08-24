@@ -776,6 +776,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
         return ERR_BAD_USER_DATA;
     }
 
+    req.map_id = u16cast(msg->map_id);
     req.district_number = msg->district;
 
     if (conn->characters.len != 0 && !(conn->selected_character_idx < conn->characters.len)) {

@@ -1,5 +1,23 @@
 #pragma once
 
+typedef enum FactionType {
+    FactionType_Experience = 0,
+    FactionType_KurzickCurrent = 1,
+    FactionType_KurzickTotal = 2,
+    FactionType_LuxonCurrent = 3,
+    FactionType_LuxonTotal = 4,
+    FactionType_ImperialCurrent = 5,
+    FactionType_ImperialTotal = 6,
+    FactionType_Value7 = 7,
+    FactionType_Value8 = 8,
+    FactionType_Value9 = 9,
+    FactionType_Value10 = 10,
+    FactionType_BalthazarCurrent = 11,
+    FactionType_BalthazarTotal = 12,
+    FactionType_SkillpointCurrent = 11,
+    FactionType_SkillpointTotal = 12,
+} FactionType;
+
 typedef struct GmPlayer {
     uint32_t     player_id;
     uint32_t     agent_id;

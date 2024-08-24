@@ -726,43 +726,32 @@ void GameSrv_SendHardModeUnlocked(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendUpdateCurrentMap(GameConnection *conn)
+void GameSrv_SendUpdateCurrentMap(GameSrv *srv, GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_CURRENT_MAP);
     GameSrv_UpdateCurrentMap *msg = &buffer->update_current_map;
-    msg->map_id = MapId_KamadanJewelOfIstanOutpost;
+    msg->map_id = srv->map_id;
     msg->unk = 0;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendPlayerHeroData(GameSrv *srv, GameConnection *conn)
+void GameSrv_SendPlayerFactions(GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_KURZICK);
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_KURZICK);
     buffer->kurzick_max.max_faction = 5000;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->kurzick_max));
 
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_LUXON);
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_LUXON);
     buffer->luxon_max.max_faction = 5000;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->luxon_max));
 
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_BALTHAZAR);
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_BALTHAZAR);
     buffer->balthazar_max.max_faction = 10000;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->balthazar_max));
 
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_MAX_IMPERIAL);
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_IMPERIAL);
     buffer->imperial_max.max_faction = 10000;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->imperial_max));
-
-    GmPlayer *player;
-    if ((player = GameSrv_GetPlayer(srv, conn->player_id)) == NULL) {
-        return;
-    }
-
-    if (!uuid_is_null(&player->character.char_id)) {
-        GameSrv_SendHardModeUnlocked(conn);
-        GameSrv_SendPlayerHeroNameAndInfo(conn, player);
-        GameSrv_SendUpdateCurrentMap(conn);
-    }
 }
 
 void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player)
@@ -939,6 +928,83 @@ void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_READY_FOR_MAP_SPAWN);
     GameSrv_ReadyForMapSpawn *msg = &buffer->ready_for_map_spawn;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendDownloadManifest(GameSrv *srv, GameConnection *conn)
+{
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_PHASE);
+        GameSrv_InstanceManifestPhase *msg = &buffer->instance_manifest_phase;
+        msg->download_phase = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DATA);
+        GameSrv_InstanceManifestData *msg = &buffer->instance_manifest_data;
+        msg->n_data = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_PHASE);
+        GameSrv_InstanceManifestPhase *msg = &buffer->instance_manifest_phase;
+        msg->download_phase = 1;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DATA);
+        GameSrv_InstanceManifestData *msg = &buffer->instance_manifest_data;
+        msg->n_data = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DONE);
+        GameSrv_InstanceManifestDone *msg = &buffer->instance_manifest_done;
+        msg->download_phase = ManifestPhase_Done;
+        msg->map_id = MapId_Count;
+        msg->unk = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_PHASE);
+        GameSrv_InstanceManifestPhase *msg = &buffer->instance_manifest_phase;
+        msg->download_phase = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DATA);
+        GameSrv_InstanceManifestData *msg = &buffer->instance_manifest_data;
+        msg->n_data = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_PHASE);
+        GameSrv_InstanceManifestPhase *msg = &buffer->instance_manifest_phase;
+        msg->download_phase = 1;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DATA);
+        GameSrv_InstanceManifestData *msg = &buffer->instance_manifest_data;
+        msg->n_data = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_MANIFEST_DONE);
+        GameSrv_InstanceManifestDone *msg = &buffer->instance_manifest_done;
+        msg->download_phase = ManifestPhase_Done;
+        msg->map_id = srv->map_id;
+        msg->unk = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
 }
 
 void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player, Profession prof, bool is_pvp)
@@ -1553,8 +1619,12 @@ int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameS
     GameSrv_SendWeaponSlots(conn);
     GameSrv_SendGoldStorage(srv, conn);
     // GameSrv_SendQuests(conn);
-    GameSrv_SendPlayerHeroData(srv, conn);
+    GameSrv_SendPlayerFactions(conn);
+    GameSrv_SendHardModeUnlocked(conn);
+    GameSrv_SendPlayerHeroNameAndInfo(conn, player);
+    GameSrv_SendUpdateCurrentMap(srv, conn);
     GameSrv_SendReadyForMapSpawn(conn);
+    GameSrv_SendDownloadManifest(srv, conn);
 
     return ERR_OK;
 }
@@ -1578,7 +1648,7 @@ int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
     GameSrv_SendUpdateActiveWeaponSet(conn);
     GameSrv_SendWeaponSlots(conn);
     GameSrv_SendGoldStorage(srv, conn);
-    GameSrv_SendPlayerHeroData(srv, conn);
+    GameSrv_SendPlayerFactions(conn);
     GameSrv_SendPlayerAgentAttributes(conn, player);
     GameSrv_SendPlayerProfession(conn, player, Profession_Warrior, 0);
     GameSrv_SendUnlockedProfession(conn, player);
@@ -1728,7 +1798,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     memcpy(&app, msg->config, 4);
 
     CharacterSettings settings = {6};
-    settings.last_outpost = 0;
+    settings.last_outpost = MapId_KamadanJewelOfIstanOutpost;
     settings.last_time_played = 0;
     settings.sex = app.sex;
     settings.height = app.height;
