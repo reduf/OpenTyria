@@ -57,25 +57,32 @@ def main(args):
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
 
-        if header == 48:
-            s, a, b, c, d, e, f = proc.read(packet + 4, '64sIIIIII')
-            s = s.decode('utf-16le')
-            print(f'>> s = {s}, a = {a}, b = {b}, c = {c}, d = {d}, e = {e}, f = {f}')
-        if header == 111:
-            value, = proc.read(packet + 4, 'I')
-            print(f'>> value = {value}')
-        if header == 152:
-            a, b = proc.read(packet + 4, 'II')
-            print(f'>> a = {a}, b = {b}')
+        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+            item_id, file_id, type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI256s')
+            n_name = len(name) // 2
+            name = struct.unpack(f'{n_name}H', name)
+            name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
+            modifier = struct.unpack('<64I', modifier)[:n_modifier]
+            modifier = '[' + ', '.join(f'0x{val:X}' for val in modifier) + ']'
+            print(f'item_id = {item_id}, file_id = 0x{file_id:X}, type = {type}, unk0 = {unk0}, dye_color = {dye_color}, materials = {materials}, unk1 = {unk1}, flags = 0x{flags:X}, value = {value}, model = {model}, quantity = {quantity}, name = {name}, modifier = {modifier}')
+        if name == 'GAME_SMSG_ITEM_UPDATE_CUSTOMIZED_NAME':
+            item_id, name = proc.read(packet + 4, 'I64s')
+            n_name = len(name) // 2
+            name = struct.unpack(f'{n_name}H', name)
+            name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
+            print(f'item_id = {item_id}, name = {name}')
 
-        if header == 405:
-            pass
-        if header == 406:
-            a, b, c = proc.read(packet + 4, 'III')
-            print(f'>> a = {a}, b = {b}, c = {c}')
-        if header == 407:
-            a = proc.read(packet + 4, 'I')
-            print(f'>> a = {a}')
+        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_DATA':
+        #     size, data = proc.read(packet + 4, 'I1024s')
+        #     print(size)
+        #     data = data[:size]
+        #     hexdump(data)
+        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_DONE':
+        #     phase, map_id, c = proc.read(packet + 4, 'III')
+        #     print(f'>> phase = {phase}, map_id = {map_id}, c = {c}')
+        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_PHASE':
+        #     phase = proc.read(packet + 4, 'I')
+        #     print(f'>> phase = {phase}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)

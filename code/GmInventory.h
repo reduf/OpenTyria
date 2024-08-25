@@ -132,6 +132,7 @@ typedef struct GmBag {
     uint16_t       bag_id;
     BagModelId     bag_model_id;
     BagType        bag_type;
+    uint32_t       bag_item_id;
     uint8_t        slot_count;
     uint32_t       items[GM_BAG_MAX_SLOT];
 } GmBag;

@@ -2826,6 +2826,21 @@ GmItemSlice g_DefaultPvpEquipments[] = {
     [Profession_Dervish] = { ARRAY_SIZE(g_DefDervishPvpEquipments), g_DefDervishPvpEquipments },
 };
 
+GmItem g_Backpack = {
+    .file_id = 0x8001B536,
+    .item_type = 3,
+    .unk0 = 1,
+    .dye_color = 0,
+    .materials = 0,
+    .unk1 = 0,
+    .flags = 0x20001000,
+    .value = 5,
+    .model_id = 32,
+    .quantity = 1,
+    .name = {4, {0x21A8, 0xD157, 0xB58F, 0x166F}},
+    .modifiers = {1, {0x24481400}},
+};
+
 GmItemSlice GetDefaultEquipments(CampaignType campaign, Profession prof)
 {
     switch (campaign) {

@@ -824,6 +824,18 @@ void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
+void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id)
+{
+    GmItem *item;
+    if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
+        log_error("Item %u doesn't exist", item_id);
+        return;
+    }
+
+    GameConnection_SendItemGeneralInfo(conn, item);
+    // @TODO: send customization and other stuff
+}
+
 void GameSrv_SendBagItems(GameSrv *srv, GameConnection *conn, GmBag *bag)
 {
     for (size_t idx = 0; idx < bag->slot_count; ++idx) {
@@ -873,6 +885,10 @@ void GameSrv_SendInventory(GameSrv *srv, GameConnection *conn, size_t player_id)
             continue;
         }
 
+        if (bag.bag_item_id != 0) {
+            GameSrv_SendItemById(srv, conn, bag.bag_item_id);
+        }
+
         GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INVENTORY_CREATE_BAG);
         GameSrv_InventoryCreateBag *msg = &buffer->inventory_create_bag;
         msg->stream_id = 1;
@@ -880,7 +896,7 @@ void GameSrv_SendInventory(GameSrv *srv, GameConnection *conn, size_t player_id)
         msg->bag_model_id = bag.bag_model_id;
         msg->bag_id = bag.bag_id;
         msg->slot_count = bag.slot_count;
-        msg->assoc_item_id = 0;
+        msg->assoc_item_id = bag.bag_item_id;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 
         GameSrv_SendBagItems(srv, conn, &bag);
@@ -1397,6 +1413,15 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
         bag->bag_type = bags[idx].bag_type;
         bag->slot_count = bags[idx].slot_count;
         memset(bag->items, 0, sizeof(bag->items));
+
+        if (bag_model_id == BagModelId_Backpack) {
+            GmItem* backpack_item = GameSrv_AllocateItem(srv);
+            if (backpack_item != NULL) {
+                bag->bag_item_id = backpack_item->item_id;
+                *backpack_item = g_Backpack;
+                backpack_item->item_id = bag->bag_item_id;
+            }
+        }
     }
 
     DbItemArray items = {0};

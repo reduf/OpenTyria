@@ -47,4 +47,6 @@ extern GmItem g_DefElementalistNightfallPvpEquipments[];
 extern GmItem g_DefParagonNightfallPvpEquipments[];
 extern GmItem g_DefDervishNightfallPvpEquipments[];
 
+extern GmItem g_Backpack;
+
 GmItemSlice GetDefaultEquipments(CampaignType campaign, Profession prof);

@@ -309,7 +309,7 @@
 #define GAME_SMSG_GUILD_CHANGE_PLAYER_TYPE          (0x012C) // 300
 #define GAME_SMSG_ITEM_UPDATE_OWNER                 (0x0134) // 308
 #define GAME_SMSG_ITEM_UPDATE_QUANTITY              (0x0138) // 312
-#define GAME_SMSG_ITEM_UPDATE_NAME                  (0x0139) // 313
+#define GAME_SMSG_ITEM_UPDATE_CUSTOMIZED_NAME       (0x0139) // 313
 #define GAME_SMSG_ITEM_MOVED_TO_LOCATION            (0x013D) // 317
 #define GAME_SMSG_INVENTORY_CREATE_BAG              (0x013E) // 318
 #define GAME_SMSG_UPDATE_GOLD_CHARACTER             (0x013F) // 319
