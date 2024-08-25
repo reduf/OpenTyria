@@ -1,15 +1,18 @@
 import sys
+import argparse
+
 from process import *
 from datetime import datetime
 from consts import *
 from msgs import *
+from hexdump import hexdump
 
 def main(args):
     if (2 ** 32) < sys.maxsize:
         print('Use a 32 bits version of Python')
         sys.exit(1)
 
-    proc, = GetProcesses('Gw.exe')
+    proc, = GetProcesses(args.proc)
     scanner = ProcessScanner(proc)
     smsg_addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
     cmsg_addr = scanner.find(b'\xC7\x47\x54\x01\x00\x00\x00\x1B\xC9\x81\xE1\x00\x80', -0xC5)
@@ -83,4 +86,8 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1::])
+    parser = argparse.ArgumentParser(description='Trace server and client messages', add_help=True)
+    parser.add_argument("--proc", type=str, default='Gw.exe',
+        help="Process name of the target Guild Wars instance.")
+    args = parser.parse_args()
+    main(args)

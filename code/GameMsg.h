@@ -305,7 +305,7 @@ typedef struct GameSrv_UpdateCurrentMap {
 
 typedef struct GameSrv_InstanceManifestData {
     uint16_t header;
-    uint16_t n_data;
+    uint32_t n_data;
     uint8_t  data[1024];
 } GameSrv_InstanceManifestData;
 
