@@ -32,12 +32,11 @@ typedef struct GmPlayer {
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;
 
-void GameSrv_CreatePlayer(
+GmPlayer* GameSrv_CreatePlayer(
     GameSrv *srv,
     uintptr_t token,
     struct uuid account_id,
-    struct uuid char_id,
-    uint32_t *result);
+    struct uuid char_id);
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id);
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id);
 void GameSrv_SendHardModeUnlocked(GameConnection *conn);

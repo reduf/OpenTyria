@@ -233,6 +233,7 @@
     <ClInclude Include="..\code\GmDefs.h" />
     <ClInclude Include="..\code\GmErrors.h" />
     <ClInclude Include="..\code\GmFriend.h" />
+    <ClInclude Include="..\code\GmIdTable.h" />
     <ClInclude Include="..\code\GmInventory.h" />
     <ClInclude Include="..\code\GmItem.h" />
     <ClInclude Include="..\code\GmMap.h" />

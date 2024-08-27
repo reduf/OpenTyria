@@ -68,6 +68,7 @@
     <ClInclude Include="..\code\GmMaps.h" />
     <ClInclude Include="..\code\deque.h" />
     <ClInclude Include="..\code\GmDefs.h" />
+    <ClInclude Include="..\code\GmIdTable.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />

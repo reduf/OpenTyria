@@ -942,8 +942,9 @@ void GameSrv_Poll(GameSrv *srv)
 
 void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
 {
-    player->agent_id = GameSrv_CreateAgent(srv);
-    GameSrv_GetAgentOrAbort(srv, player->agent_id)->player_id = player->player_id;
+    GmAgent *agent = GameSrv_CreateAgent(srv);
+    agent->player_id = player->player_id;
+    player->agent_id = agent->agent_id;
 }
 
 void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
@@ -1148,13 +1149,8 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
     }
 
     if (!msg->reconnection) {
-        GameSrv_CreatePlayer(srv, msg->token, msg->account_id, msg->char_id, &conn.player_id);
-
-        GmPlayer *player;
-        if ((player = GameSrv_GetPlayer(srv, conn.player_id)) == NULL) {
-            log_error("Can't load player from db non-existing player %zu", player->player_id);
-            return;
-        }
+        GmPlayer *player = GameSrv_CreatePlayer(srv, msg->token, msg->account_id, msg->char_id);
+        conn.player_id = player->player_id;
 
         GameSrv_LoadPlayerFromDatabase(srv, player);
         GameSrv_CreateDefaultBags(srv, player);

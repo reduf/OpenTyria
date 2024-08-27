@@ -72,6 +72,7 @@
 
 #include "GmDefs.h"
 #include "GmErrors.h"
+#include "GmIdTable.h"
 #include "GmMaps.h"
 #include "GmChar.h"
 #include "GmFriend.h"

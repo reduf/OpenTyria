@@ -1,30 +1,12 @@
 #pragma once
 
-void GameSrv_CreatePlayer(
+GmPlayer* GameSrv_CreatePlayer(
     GameSrv *srv,
     uintptr_t token,
     struct uuid account_id,
-    struct uuid char_id,
-    uint32_t *result)
+    struct uuid char_id)
 {
-    if (srv->free_players_slots.len == 0) {
-        size_t new_size, idx;
-        if (srv->players.len == 0) {
-            new_size = 32;
-            idx = 1;
-        } else {
-            new_size = srv->players.len * 2;
-            idx = srv->players.len;
-        }
-
-        array_resize(&srv->players, new_size);
-        array_reserve(&srv->free_players_slots, srv->players.len - new_size);
-        for (; idx < new_size; ++idx) {
-            array_add(&srv->free_players_slots, (uint32_t) idx);
-        }
-    }
-
-    uint32_t player_id = array_pop(&srv->free_players_slots);
+    uint32_t player_id = GmIdAllocate(&srv->free_players_slots, &srv->players.base, sizeof(srv->players.ptr[0]));
 
     GmPlayer *player = &srv->players.ptr[player_id];
     memset(player, 0, sizeof(*player));
@@ -34,7 +16,7 @@ void GameSrv_CreatePlayer(
     player->char_id = char_id;
 
     ++srv->player_count;
-    *result = player->player_id;
+    return player;
 }
 
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id)
