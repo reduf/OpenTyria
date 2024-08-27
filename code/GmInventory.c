@@ -33,7 +33,7 @@ void GmBag_InitMaterialStorage(GmBag *bag, uint16_t bag_id)
     bag->bag_id = bag_id;
     bag->bag_model_id = BagModelId_MaterialStorage;
     bag->bag_type = BagType_MatStorage;
-    bag->slot_count = 36;
+    bag->slot_count = 41;
 }
 
 void GmBag_InitStorage(GmBagArray *bags, BagModelId model_id, uint16_t bag_id)

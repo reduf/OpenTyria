@@ -1,5 +1,6 @@
 import sys
 import argparse
+import struct
 
 from process import *
 from datetime import datetime
@@ -31,16 +32,6 @@ def main(args):
             name = "unknown"
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'SendPacket: {header}, 0x{header:X}, {name}')
-        # if header == 94:
-        #     campaign_type, profession = proc.read(packet + 4, 'II')
-        #     if profession in professions:
-        #         profession = professions[profession]
-        #     if campaign_type in campaign_types:
-        #         campaign_type = campaign_types[campaign_type]
-        #     print(f'>> profession = {profession}, campaign_type = {campaign_type}')
-        # if header == 130:
-        #     param1, param2 = proc.read(packet + 4, 'II')
-        #     print(f'>> param1 = {param1}, param2 = {param2}')
 
     @Hook.rawcall
     def on_recv_packet(ctx):
@@ -57,32 +48,38 @@ def main(args):
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
 
-        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
-            item_id, file_id, type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI256s')
-            n_name = len(name) // 2
-            name = struct.unpack(f'{n_name}H', name)
-            name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
-            modifier = struct.unpack('<64I', modifier)[:n_modifier]
-            modifier = '[' + ', '.join(f'0x{val:X}' for val in modifier) + ']'
-            print(f'item_id = {item_id}, file_id = 0x{file_id:X}, type = {type}, unk0 = {unk0}, dye_color = {dye_color}, materials = {materials}, unk1 = {unk1}, flags = 0x{flags:X}, value = {value}, model = {model}, quantity = {quantity}, name = {name}, modifier = {modifier}')
-        if name == 'GAME_SMSG_ITEM_UPDATE_CUSTOMIZED_NAME':
-            item_id, name = proc.read(packet + 4, 'I64s')
-            n_name = len(name) // 2
-            name = struct.unpack(f'{n_name}H', name)
-            name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
-            print(f'item_id = {item_id}, name = {name}')
+        if name == 'GAME_SMSG_INSTANCE_MANIFEST_PHASE':
+            phase = proc.read(packet + 4, 'I')
+            print(f'phase = {phase}')
+        if name == 'GAME_SMSG_INSTANCE_MANIFEST_DONE':
+            phase, map_id, unk = proc.read(packet + 4, 'III')
+            print(f'phase = {phase}, map_id = {map_id}, unk = {unk}')
 
-        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_DATA':
-        #     size, data = proc.read(packet + 4, 'I1024s')
-        #     print(size)
-        #     data = data[:size]
-        #     hexdump(data)
-        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_DONE':
-        #     phase, map_id, c = proc.read(packet + 4, 'III')
-        #     print(f'>> phase = {phase}, map_id = {map_id}, c = {c}')
-        # if name == 'GAME_SMSG_INSTANCE_MANIFEST_PHASE':
-        #     phase = proc.read(packet + 4, 'I')
-        #     print(f'>> phase = {phase}')
+        # if name == 'GAME_SMSG_INVENTORY_CREATE_BAG':
+        #     stream_id, bag_type, bag_model_id, bag_id, slot_count, assoc_item_id = proc.read(packet + 4, 'IIIIII')
+        #     bag_type = bag_types[bag_type]
+        #     bag_model_id = bag_model_ids[bag_model_id]
+        #     print(f'stream_id = {stream_id}, bag_type = {bag_type}, bag_model_id = {bag_model_id}, bag_id = {bag_id}, slot_count = {slot_count}, assoc_item_id = {assoc_item_id}')
+        # if name == 'GAME_SMSG_PLAYER_HERO_NAME_AND_INFO':
+        #     name, *rem = proc.read(packet + 4, '64s6I')
+        #     # name = struct.unpack('<32H', name)
+        #     # name = ''.join(chr(cp) for cp in name)
+        #     print(name, *rem)
+
+        # if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+        #     item_id, file_id, type, unk0, dye_color, materials, unk1, flags, value, model, quantity, name, n_modifier, modifier = proc.read(packet + 4, 'IIIIIIIIIII128sI256s')
+        #     n_name = len(name) // 2
+        #     name = struct.unpack(f'{n_name}H', name)
+        #     name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
+        #     modifier = struct.unpack('<64I', modifier)[:n_modifier]
+        #     modifier = '[' + ', '.join(f'0x{val:X}' for val in modifier) + ']'
+        #     print(f'item_id = {item_id}, file_id = 0x{file_id:X}, type = {type}, unk0 = {unk0}, dye_color = {dye_color}, materials = {materials}, unk1 = {unk1}, flags = 0x{flags:X}, value = {value}, model = {model}, quantity = {quantity}, name = {name}, modifier = {modifier}')
+        # if name == 'GAME_SMSG_ITEM_UPDATE_CUSTOMIZED_NAME':
+        #     item_id, name = proc.read(packet + 4, 'I64s')
+        #     n_name = len(name) // 2
+        #     name = struct.unpack(f'{n_name}H', name)
+        #     name = '[' + ', '.join(f'0x{val:X}' for val in name) + ']'
+        #     print(f'item_id = {item_id}, name = {name}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)

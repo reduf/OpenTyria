@@ -1,6 +1,6 @@
 #pragma once
 
-#define GM_BAG_MAX_SLOT 36
+#define GM_BAG_MAX_SLOT 41
 
 typedef enum BagType {
     BagType_Bag          = 1,

@@ -2828,9 +2828,9 @@ GmItemSlice g_DefaultPvpEquipments[] = {
 
 GmItem g_Backpack = {
     .file_id = 0x8001B536,
-    .item_type = 3,
+    .item_type = ItemType_Bag,
     .unk0 = 1,
-    .dye_color = 0,
+    .dye_color = DyeColor_None,
     .materials = 0,
     .unk1 = 0,
     .flags = 0x20001000,

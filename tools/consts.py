@@ -74,3 +74,36 @@ campaign_types = {
     2: 'CampaignType_Faction',
     3: 'CampaignType_Nightfall',
 }
+
+bag_types = {
+    1: 'BagType_Bag',
+    2: 'BagType_Equipped',
+    3: 'BagType_NotCollected',
+    4: 'BagType_Storage',
+    5: 'BagType_MatStorage',
+}
+
+bag_model_ids = {
+    0: 'BagModelId_Backpack',
+    1: 'BagModelId_BeltPouch',
+    2: 'BagModelId_Bag1',
+    3: 'BagModelId_Bag2',
+    4: 'BagModelId_EquipmentPack',
+    5: 'BagModelId_MaterialStorage',
+    6: 'BagModelId_UnclaimedItems',
+    7: 'BagModelId_Storage1',
+    8: 'BagModelId_Storage2',
+    9: 'BagModelId_Storage3',
+    10: 'BagModelId_Storage4',
+    11: 'BagModelId_Storage5',
+    12: 'BagModelId_Storage6',
+    13: 'BagModelId_Storage7',
+    14: 'BagModelId_Storage8',
+    15: 'BagModelId_Storage9',
+    16: 'BagModelId_Storage10',
+    17: 'BagModelId_Storage11',
+    18: 'BagModelId_Storage12',
+    19: 'BagModelId_Storage13',
+    20: 'BagModelId_StorageAnniversary',
+    21: 'BagModelId_EquippedItems',
+}

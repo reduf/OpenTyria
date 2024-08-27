@@ -10,7 +10,7 @@
 
 typedef enum ManifestPhase {
     ManifestPhase_Phase1 = 0,
-    ManifestPhase_Phase2 = 0,
+    ManifestPhase_Phase2 = 1,
     ManifestPhase_Done   = 2,
     ManifestPhase_Count
 } ManifestPhase;
