@@ -70,6 +70,7 @@
 
 #include "DbSchema.h"
 
+#include "GmDefs.h"
 #include "GmErrors.h"
 #include "GmMaps.h"
 #include "GmChar.h"
@@ -105,6 +106,8 @@
 #include "GmAgent.c"
 #include "GmDefaultArmors.c"
 #include "GmInventory.c"
+#include "GmItem.c"
+#include "GmPlayer.c"
 #include "int.c"
 #include "logs.c"
 #include "msgdefs.c"

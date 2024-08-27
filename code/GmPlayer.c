@@ -1,3 +1,157 @@
 #pragma once
 
+void GameSrv_CreatePlayer(
+    GameSrv *srv,
+    uintptr_t token,
+    struct uuid account_id,
+    struct uuid char_id,
+    uint32_t *result)
+{
+    if (srv->free_players_slots.len == 0) {
+        size_t new_size, idx;
+        if (srv->players.len == 0) {
+            new_size = 32;
+            idx = 1;
+        } else {
+            new_size = srv->players.len * 2;
+            idx = srv->players.len;
+        }
 
+        array_resize(&srv->players, new_size);
+        array_reserve(&srv->free_players_slots, srv->players.len - new_size);
+        for (; idx < new_size; ++idx) {
+            array_add(&srv->free_players_slots, (uint32_t) idx);
+        }
+    }
+
+    uint32_t player_id = array_pop(&srv->free_players_slots);
+
+    GmPlayer *player = &srv->players.ptr[player_id];
+    memset(player, 0, sizeof(*player));
+    player->player_id = (uint32_t) player_id;
+    player->conn_token = token;
+    player->account_id = account_id;
+    player->char_id = char_id;
+
+    ++srv->player_count;
+    *result = player->player_id;
+}
+
+void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id)
+{
+    // nothing to free in GmPlayer
+    assert(player_id < srv->players.len);
+    memset(&srv->players.ptr[player_id], 0, sizeof(srv->players.ptr[player_id]));
+    --srv->player_count;
+}
+
+GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
+{
+    if ((player_id < srv->players.len) && (srv->players.ptr[player_id].player_id == player_id)) {
+        return &srv->players.ptr[player_id];
+    } else {
+        return NULL;
+    }
+}
+
+void GameSrv_SendHardModeUnlocked(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_HARD_MODE_UNLOCKED);
+    GameSrv_HardModeUnlocked *msg = &buffer->hard_mode_unlocked;
+    msg->hard_mode_unlocked = true;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerFactions(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_KURZICK);
+    buffer->kurzick_max.max_faction = 5000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->kurzick_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_LUXON);
+    buffer->luxon_max.max_faction = 5000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->luxon_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_BALTHAZAR);
+    buffer->balthazar_max.max_faction = 10000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->balthazar_max));
+
+    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_IMPERIAL);
+    buffer->imperial_max.max_faction = 10000;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->imperial_max));
+}
+
+void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
+    buffer->agent_create_attribute.agent_id = player->agent_id;
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->agent_create_attribute));
+}
+
+void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player)
+{
+    assert(!uuid_is_null(&player->character.char_id));
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_PLAYER_NAME);
+    GameSrv_InstancePlayerName *msg = &buffer->instance_player_name;
+    STATIC_ASSERT(ARRAY_SIZE(msg->name) <= ARRAY_SIZE(player->character.charname.buf));
+    msg->n_name = (uint32_t) player->character.charname.len;
+    memcpy_u16(msg->name, player->character.charname.buf, msg->n_name);
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendUnlockedProfession(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UNLOCKED_PROFESSION);
+    GameSrv_UnlockedProfession *msg = &buffer->unlocked_profession;
+    msg->agent_id = player->agent_id;
+    msg->unlocked = (1 << Profession_Count) - 1;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player)
+{
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_SET);
+        GameSrv_PlayerAttr *msg = &buffer->player_attr;
+        msg->experience = 10000;
+        msg->current_kurzick = 100;
+        msg->total_earned_kurzick = 100000;
+        msg->current_luxon = 100;
+        msg->total_earned_luxon = 100000;
+        msg->current_imperial = 500;
+        msg->total_earned_imperial = 15000;
+        msg->unk_faction4 = 0;
+        msg->unk_faction5 = 0;
+        msg->level = 0;
+        msg->morale = 0;
+        msg->current_balth = 200;
+        msg->total_earned_balth = 200000;
+        msg->current_skill_points = 0;
+        msg->total_earned_skill_points = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_INT);
+        GameSrv_AgentAttrUpdateInt *msg = &buffer->agent_attr_update_int;
+        msg->agent_id = player->agent_id;
+        msg->attr_id = 41;
+        msg->value = 20;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        msg->attr_id = 42;
+        msg->value = 100;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        msg->attr_id = 64;
+        msg->value = 0;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT);
+        GameSrv_AgentAttrUpdateFloat *msg = &buffer->agent_attr_update_float;
+        msg->agent_id = player->agent_id;
+        msg->attr_id = 43;
+        msg->value = 0.033f;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+}

@@ -31,3 +31,18 @@ typedef struct GmPlayer {
     Profession   char_creation_selected_prof;
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;
+
+void GameSrv_CreatePlayer(
+    GameSrv *srv,
+    uintptr_t token,
+    struct uuid account_id,
+    struct uuid char_id,
+    uint32_t *result);
+void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id);
+GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id);
+void GameSrv_SendHardModeUnlocked(GameConnection *conn);
+void GameSrv_SendPlayerFactions(GameConnection *conn);
+void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendUnlockedProfession(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player);

@@ -31,8 +31,8 @@ typedef struct GameSrv_InstanceInfo {
 } GameSrv_InstanceInfo;
 
 typedef struct GameSrv_InstanceLoaded {
-    uint16_t header; // = GAME_SMSG_INSTANCE_LOADED
-    uint32_t unk1;
+    uint16_t header;
+    uint32_t player_team_token;
 } GameSrv_InstanceLoaded;
 
 typedef struct GameSrv_ReadyForMapSpawn {
@@ -321,6 +321,16 @@ typedef struct GameSrv_InstanceManifestPhase {
     uint8_t  download_phase;
 } GameSrv_InstanceManifestPhase;
 
+typedef struct GameSrv_SpawnPoint {
+    uint16_t header;
+    uint32_t map_file_id;
+    Vec2f    pos;
+    uint16_t plane;
+    uint8_t  unk0;
+    uint8_t  is_cinematic;
+    uint8_t  unk1[8];
+} GameSrv_SpawnPoint;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -373,5 +383,7 @@ typedef union GameSrvMsg {
     GameSrv_InstanceManifestData         instance_manifest_data;
     GameSrv_InstanceManifestDone         instance_manifest_done;
     GameSrv_InstanceManifestPhase        instance_manifest_phase;
+    GameSrv_SpawnPoint                   spawn_point;
+    GameSrv_InstanceLoaded               instance_loaded;
 } GameSrvMsg;
 #pragma pack(pop)

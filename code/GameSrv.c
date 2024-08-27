@@ -77,27 +77,6 @@ void GameSrv_Free(GameSrv *srv)
     Db_Close(&srv->database);
 }
 
-GmItem* GameSrv_AllocateItem(GameSrv *srv)
-{
-    if (srv->free_items_slots.len == 0) {
-        size_t item_count = srv->items.len;
-        size_t new_size = max_size_t(item_count * 2, 64);
-        array_resize(&srv->items, new_size);
-        if (item_count == 0) {
-            ++item_count;
-        }
-        size_t added = new_size - item_count;
-        uint32_t *free_idxs = array_push(&srv->free_items_slots, added);
-        for (size_t idx = 0; idx < added; ++idx) {
-            free_idxs[idx] = (uint32_t)(item_count + idx);
-        }
-    }
-
-    uint32_t item_id = array_pop(&srv->free_items_slots);
-    srv->items.ptr[item_id].item_id = item_id;
-    return &srv->items.ptr[item_id];
-}
-
 GameConnection* GameSrv_GetConnection(GameSrv *srv, uintptr_t token)
 {
     ptrdiff_t idx;
@@ -137,64 +116,6 @@ int GameConnection_SendMessage(GameConnection *conn, GameSrvMsg *msg, size_t siz
     array_shrink(&conn->outgoing, size_before + written);
     arc4_crypt_inplace(&conn->cipher_enc, dst, written);
     return ERR_OK;
-}
-
-void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id)
-{
-    assert(item_id != 0);
-
-    if (srv->items.len <= item_id) {
-        log_warn("Can't free item id %" PRIu32 ", when the maximum is %zu", item_id, srv->items.len);
-        return;
-    }
-
-    memset(&srv->items.ptr[item_id], 0, sizeof(srv->items.ptr[item_id]));
-    array_add(&srv->free_items_slots, item_id);
-}
-
-void GameSrv_FreeBagItems(GameSrv *srv, GmPlayer *player, GmBag *bag)
-{
-    GameConnection *conn = GameSrv_GetConnection(srv, player->conn_token);
-
-    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
-        uint32_t item_id = bag->items[idx];
-        if (item_id == 0) {
-            continue;
-        }
-
-        if (conn != NULL) {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_REMOVE);
-            GameSrv_ItemRemove *msg = &buffer->item_remove;
-            msg->stream_id = 1;
-            msg->item_id = item_id;
-
-            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        }
-
-        GameSrv_FreeItemId(srv, item_id);
-    }
-    memset(bag->items, 0, sizeof(bag->items));
-}
-
-GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id)
-{
-    if ((player_id < srv->players.len) && (srv->players.ptr[player_id].player_id == player_id)) {
-        return &srv->players.ptr[player_id];
-    } else {
-        return NULL;
-    }
-}
-
-GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
-{
-    if (srv->items.len <= item_id) {
-        return NULL;
-    }
-    GmItem *result = &srv->items.ptr[item_id];
-    if (result->item_id == 0) {
-        return NULL;
-    }
-    return result;
 }
 
 void GameSrv_SendPing(GameConnection *conn)
@@ -713,14 +634,6 @@ void GameSrv_SendPlayerHeroNameAndInfo(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendHardModeUnlocked(GameConnection *conn)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_HARD_MODE_UNLOCKED);
-    GameSrv_HardModeUnlocked *msg = &buffer->hard_mode_unlocked;
-    msg->hard_mode_unlocked = true;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
 void GameSrv_SendUpdateCurrentMap(GameSrv *srv, GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_CURRENT_MAP);
@@ -730,47 +643,10 @@ void GameSrv_SendUpdateCurrentMap(GameSrv *srv, GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendPlayerFactions(GameConnection *conn)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_KURZICK);
-    buffer->kurzick_max.max_faction = 5000;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->kurzick_max));
-
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_LUXON);
-    buffer->luxon_max.max_faction = 5000;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->luxon_max));
-
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_BALTHAZAR);
-    buffer->balthazar_max.max_faction = 10000;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->balthazar_max));
-
-    buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_IMPERIAL);
-    buffer->imperial_max.max_faction = 10000;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->imperial_max));
-}
-
-void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
-    buffer->agent_create_attribute.agent_id = player->agent_id;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->agent_create_attribute));
-}
-
 void GameSrv_SendInstancePlayerDataStart(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_PLAYER_DATA_START);
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
-}
-
-void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player)
-{
-    assert(!uuid_is_null(&player->character.char_id));
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_PLAYER_NAME);
-    GameSrv_InstancePlayerName *msg = &buffer->instance_player_name;
-    STATIC_ASSERT(ARRAY_SIZE(msg->name) <= ARRAY_SIZE(player->character.charname.buf));
-    msg->n_name = (uint32_t) player->character.charname.len;
-    memcpy_u16(msg->name, player->character.charname.buf, msg->n_name);
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendInstanceLoadInfo(GameSrv *srv, GameConnection *conn, GmPlayer *player)
@@ -784,118 +660,6 @@ void GameSrv_SendInstanceLoadInfo(GameSrv *srv, GameConnection *conn, GmPlayer *
     msg->language = DistrictLanguage_ToInt(srv->language);
     msg->is_observer = 0;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameSrv_SendItemStreamCreate(GameConnection *conn)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_STREAM_CREATE);
-    GameSrv_ItemStreamCreate *msg = &buffer->item_stream_create;
-    msg->stream_id = 1;
-    msg->is_hero = 0;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameConnection_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_GENERAL_INFO);
-    GameSrv_ItemGeneralInfo *msg = &buffer->item_general_info;
-    msg->item_id = item->item_id;
-    msg->file_id = item->file_id;
-    msg->item_type = item->item_type;
-    msg->unk0 = item->unk0;
-    msg->dye_color = item->dye_color;
-    msg->materials = item->materials;
-    msg->unk1 = item->unk1;
-    msg->flags = item->flags;
-    msg->value = item->value;
-    msg->model_id = item->model_id;
-    msg->quantity = item->quantity;
-    msg->n_name = item->name.size;
-    STATIC_ASSERT(ARRAY_SIZE(msg->name) <= ARRAY_SIZE(item->name.data));
-    memcpy_u16(msg->name, item->name.data, item->name.size);
-    msg->n_modifiers = item->modifiers.size;
-    STATIC_ASSERT(ARRAY_SIZE(msg->modifiers) <= ARRAY_SIZE(item->modifiers.data));
-    memcpy_u32(msg->modifiers, item->modifiers.data, item->modifiers.size);
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id)
-{
-    GmItem *item;
-    if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
-        log_error("Item %u doesn't exist", item_id);
-        return;
-    }
-
-    GameConnection_SendItemGeneralInfo(conn, item);
-    // @TODO: send customization and other stuff
-}
-
-void GameSrv_SendBagItems(GameSrv *srv, GameConnection *conn, GmBag *bag)
-{
-    for (size_t idx = 0; idx < bag->slot_count; ++idx) {
-        uint32_t item_id = bag->items[idx];
-        if (item_id == 0) {
-            continue;
-        }
-
-        GmItem *item;
-        if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
-            log_warn("Player has non-existing item %" PRIu32 " in his inventory", item_id);
-            continue;
-        }
-
-        GameConnection_SendItemGeneralInfo(conn, item);
-
-        if (item->profession != Profession_None) {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_SET_PROFESSION);
-            GameSrv_ItemSetProfession *msg = &buffer->item_set_profession;
-            msg->item_id = item->item_id;
-            msg->profession = item->profession;
-            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        }
-
-        {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_MOVED_TO_LOCATION);
-            GameSrv_ItemMoveToLocation *msg = &buffer->item_move_to_location;
-            msg->stream_id = 1;
-            msg->item_id = item->item_id;
-            msg->bag_id = bag->bag_id;
-            msg->slot = (uint8_t)idx;
-            GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        }
-    }
-}
-
-void GameSrv_SendInventory(GameSrv *srv, GameConnection *conn, size_t player_id)
-{
-    GmPlayer *player;
-    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
-        return;
-    }
-
-    for (size_t idx = 0; idx < ARRAY_SIZE(player->bags.bags); ++idx) {
-        GmBag bag = player->bags.bags[idx];
-        if (bag.bag_id == 0) {
-            continue;
-        }
-
-        if (bag.bag_item_id != 0) {
-            GameSrv_SendItemById(srv, conn, bag.bag_item_id);
-        }
-
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INVENTORY_CREATE_BAG);
-        GameSrv_InventoryCreateBag *msg = &buffer->inventory_create_bag;
-        msg->stream_id = 1;
-        msg->bag_type = bag.bag_type;
-        msg->bag_model_id = bag.bag_model_id;
-        msg->bag_id = bag.bag_id;
-        msg->slot_count = bag.slot_count;
-        msg->assoc_item_id = bag.bag_item_id;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-
-        GameSrv_SendBagItems(srv, conn, &bag);
-    }
 }
 
 void GameSrv_SendUpdateActiveWeaponSet(GameConnection *conn)
@@ -938,6 +702,17 @@ void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_READY_FOR_MAP_SPAWN);
     GameSrv_ReadyForMapSpawn *msg = &buffer->ready_for_map_spawn;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendInstanceLoaded(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+{
+    UNREFERENCED_PARAMETER(srv);
+    UNREFERENCED_PARAMETER(player);
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOADED);
+    GameSrv_InstanceLoaded *msg = &buffer->instance_loaded;
+    msg->player_team_token = 0xBAADF00D;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -1018,15 +793,6 @@ void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player, Profes
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendUnlockedProfession(GameConnection *conn, GmPlayer *player)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UNLOCKED_PROFESSION);
-    GameSrv_UnlockedProfession *msg = &buffer->unlocked_profession;
-    msg->agent_id = player->agent_id;
-    msg->unlocked = (1 << Profession_Count) - 1;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
 void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_SKILLBAR_UPDATE);
@@ -1036,54 +802,6 @@ void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
     msg->n_pvp_masks = 8;
     msg->unk1 = 1;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player)
-{
-    {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_SET);
-        GameSrv_PlayerAttr *msg = &buffer->player_attr;
-        msg->experience = 10000;
-        msg->current_kurzick = 100;
-        msg->total_earned_kurzick = 100000;
-        msg->current_luxon = 100;
-        msg->total_earned_luxon = 100000;
-        msg->current_imperial = 500;
-        msg->total_earned_imperial = 15000;
-        msg->unk_faction4 = 0;
-        msg->unk_faction5 = 0;
-        msg->level = 0;
-        msg->morale = 0;
-        msg->current_balth = 200;
-        msg->total_earned_balth = 200000;
-        msg->current_skill_points = 0;
-        msg->total_earned_skill_points = 0;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-    }
-
-    {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_INT);
-        GameSrv_AgentAttrUpdateInt *msg = &buffer->agent_attr_update_int;
-        msg->agent_id = player->agent_id;
-        msg->attr_id = 41;
-        msg->value = 20;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        msg->attr_id = 42;
-        msg->value = 100;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        msg->attr_id = 64;
-        msg->value = 0;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-    }
-
-    {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT);
-        GameSrv_AgentAttrUpdateFloat *msg = &buffer->agent_attr_update_float;
-        msg->agent_id = player->agent_id;
-        msg->attr_id = 43;
-        msg->value = 0.033f;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-    }
 }
 
 void GameSrv_SendInitialPackets(GameSrv *srv, GameConnection *conn)
@@ -1222,121 +940,15 @@ void GameSrv_Poll(GameSrv *srv)
     }
 }
 
-void GameSrv_CreatePlayer(GameSrv *srv, AdminMsg_TransferUser *msg, uint32_t *result)
+void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
 {
-    if (srv->free_players_slots.len == 0) {
-        size_t new_size, idx;
-        if (srv->players.len == 0) {
-            new_size = 32;
-            idx = 1;
-        } else {
-            new_size = srv->players.len * 2;
-            idx = srv->players.len;
-        }
-
-        array_resize(&srv->players, new_size);
-        array_reserve(&srv->free_players_slots, srv->players.len - new_size);
-        for (; idx < new_size; ++idx) {
-            array_add(&srv->free_players_slots, (uint32_t) idx);
-        }
-    }
-
-    uint32_t player_id = array_pop(&srv->free_players_slots);
-
-    GmPlayer *player = &srv->players.ptr[player_id];
-    memset(player, 0, sizeof(*player));
-    player->player_id = (uint32_t) player_id;
-    player->conn_token = msg->token;
-    player->account_id = msg->account_id;
-    player->char_id = msg->char_id;
-
-    ++srv->player_count;
-    *result = player->player_id;
-}
-
-GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id)
-{
-    assert(agent_id != 0 && agent_id < srv->agents.len);
-    return &srv->agents.ptr[agent_id];
-}
-
-uint32_t GameSrv_CreateAgent(GameSrv *srv)
-{
-    if (srv->free_agents_slots.len == 0) {
-        size_t new_size, idx;
-        if (srv->agents.len == 0) {
-            new_size = 32;
-            idx = 1; // skip the first slot
-        } else {
-            new_size = srv->agents.len * 2;
-            idx = srv->agents.len;
-        }
-
-        array_resize(&srv->agents, new_size);
-        array_reserve(&srv->free_agents_slots, srv->agents.len - new_size);
-        for (; idx < new_size; ++idx) {
-            array_add(&srv->free_agents_slots, (uint32_t) idx);
-        }
-    }
-
-    uint32_t agent_id = array_pop(&srv->free_agents_slots);
-    memset(&srv->agents.ptr[agent_id], 0, sizeof(srv->agents.ptr[agent_id]));
-    srv->agents.ptr[agent_id].agent_id = 0;
-    return agent_id;
-}
-
-void GameSrv_CreateDefaultBags(GameSrv *srv, size_t player_id)
-{
-    GmPlayer *player;
-    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
-        log_error("Can't create the default bag for an non-existing player %zu", player_id);
-        return;
-    }
-
-    if (player->bags.backpack.bag_id == 0) {
-        GmBag_InitBackpack(&player->bags.backpack, ++srv->next_bag_id);
-    }
-
-    if (player->bags.material_storage.bag_id == 0) {
-        GmBag_InitMaterialStorage(&player->bags.material_storage, ++srv->next_bag_id);
-    }
-
-    if (player->bags.storage1.bag_id == 0) {
-        GmBag_InitStorage(&player->bags, BagModelId_Storage1, ++srv->next_bag_id);
-    }
-
-    if (player->bags.storage2.bag_id == 0) {
-        GmBag_InitStorage(&player->bags, BagModelId_Storage2, ++srv->next_bag_id);
-    }
-
-    if (player->bags.equipped_items.bag_id == 0) {
-        GmBag_InitEquippedItems(&player->bags.equipped_items, ++srv->next_bag_id);
-    }
-
-    GmBag_InitUnclaimedItems(&player->bags.unclaimed_items, ++srv->next_bag_id);
-}
-
-void GameSrv_CreatePlayerAgent(GameSrv *srv, uint32_t player_id)
-{
-    GmPlayer *player;
-    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
-        log_error("Can't create the default bag for an non-existing player %zu", player_id);
-        return;
-    }
-
     player->agent_id = GameSrv_CreateAgent(srv);
-    GameSrv_GetAgentOrAbort(srv, player->agent_id)->player_id = player_id;
+    GameSrv_GetAgentOrAbort(srv, player->agent_id)->player_id = player->player_id;
 }
 
-void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, size_t player_id)
+void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
 {
     int err;
-
-    GmPlayer *player;
-    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
-        log_error("Can't load player from db non-existing player %zu", player_id);
-        return;
-    }
 
     if (uuid_is_null(&player->char_id)) {
         if ((err = Db_GetAccount(
@@ -1536,10 +1148,17 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
     }
 
     if (!msg->reconnection) {
-        GameSrv_CreatePlayer(srv, msg, &conn.player_id);
-        GameSrv_LoadPlayerFromDatabase(srv, conn.player_id);
-        GameSrv_CreateDefaultBags(srv, conn.player_id);
-        GameSrv_CreatePlayerAgent(srv, conn.player_id);
+        GameSrv_CreatePlayer(srv, msg->token, msg->account_id, msg->char_id, &conn.player_id);
+
+        GmPlayer *player;
+        if ((player = GameSrv_GetPlayer(srv, conn.player_id)) == NULL) {
+            log_error("Can't load player from db non-existing player %zu", player->player_id);
+            return;
+        }
+
+        GameSrv_LoadPlayerFromDatabase(srv, player);
+        GameSrv_CreateDefaultBags(srv, player);
+        GameSrv_CreatePlayerAgent(srv, player);
     } else {
         abort();
     }
@@ -1587,24 +1206,64 @@ void GameSrv_ProcessInternalMessages(GameSrv *srv)
     }
 }
 
-int GameSrv_HandleInstanceLoadRequestSpawn(GameSrv *srv)
+int GameSrv_HandleInstanceLoadRequestSpawn(GameSrv *srv, size_t player_id)
 {
-    UNREFERENCED_PARAMETER(srv);
-    // GAME_SMSG_INSTANCE_LOAD_SPAWN_POINT
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Unknown player");
+        return ERR_OK;
+    }
+
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgent(srv, player->agent_id)) == NULL) {
+        log_error("Unknown agent %u", player->agent_id);
+        return ERR_OK;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        log_error("Failed to get player connection");
+        return ERR_OK;
+    }
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_SPAWN_POINT);
+    GameSrv_SpawnPoint *msg = &buffer->spawn_point;
+    msg->map_file_id = 0x345CC;
+    msg->pos.x = -9130;
+    msg->pos.y = 11105;
+    msg->plane = 0;
+    msg->unk0 = 0;
+    msg->is_cinematic = 0;
+    memset(msg->unk1, 0, sizeof(msg->unk1));
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+
     return ERR_OK;
 }
 
 int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, GameSrv_RequestPlayers *msg)
 {
-    UNREFERENCED_PARAMETER(srv);
-    UNREFERENCED_PARAMETER(player_id);
     UNREFERENCED_PARAMETER(msg);
-    // GAME_SMSG_ACCOUNT_CURRENCY
-    // ...
+
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Unknown player");
+        return ERR_OK;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        log_error("Failed to get player connection");
+        return ERR_OK;
+    }
+
+    GameSrv_SendUnlockedSkills(conn);
+    GameSrv_SendUnlockedPvpHeroes(conn);
+    GameSrv_SendPvpItems(conn);
+    GameSrv_SendAccountFeatures(conn);
     // GAME_SMSG_MAPS_UNLOCKED
     // GAME_SMSG_VANQUISH_PROGRESS
-    // GameSrv_SendInstanceLoaded(&conn)
-    // Send other stuff in the map
+    GameSrv_SendInstanceLoaded(srv, conn, player);
+
     return ERR_OK;
 }
 
@@ -1889,14 +1548,6 @@ void GameSrv_RemoveConnection(GameSrv *srv, uintptr_t token)
     stbds_hmdel(srv->connections, token);
 }
 
-void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id)
-{
-    // nothing to free in GmPlayer
-    assert(player_id < srv->players.len);
-    memset(&srv->players.ptr[player_id], 0, sizeof(srv->players.ptr[player_id]));
-    --srv->player_count;
-}
-
 void GameSrv_HandleDisconnect(GameSrv *srv, size_t player_id)
 {
     GmPlayer *player;
@@ -1918,8 +1569,7 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
     case GAME_CMSG_PING_REPLY:
         break;
     case GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN:
-        log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_SPAWN");
-        err = GameSrv_HandleInstanceLoadRequestSpawn(srv);
+        err = GameSrv_HandleInstanceLoadRequestSpawn(srv, player_id);
         break;
     case GAME_CMSG_INSTANCE_LOAD_REQUEST_PLAYERS:
         log_info("GAME_CMSG_INSTANCE_LOAD_REQUEST_PLAYERS");
