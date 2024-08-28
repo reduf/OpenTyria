@@ -76,9 +76,21 @@ static const char *DbAccountColsName[] = {
     X(uint32_t, experience) \
     X(uint16_t, gold) \
     X(uint8_t, active_weapon_set) \
-    X(uint8_t, current_item_slot) \
-    X(static_array(uint8_t, 128), unlocked_skills) \
+    X(static_array(uint32_t, 128), unlocked_skills) \
+    X(static_array(uint32_t, 32), unlocked_maps) \
+    X(static_array(uint32_t, 32), completed_missions_nm) \
+    X(static_array(uint32_t, 32), completed_bonuses_nm) \
+    X(static_array(uint32_t, 32), completed_missions_hm) \
+    X(static_array(uint32_t, 32), completed_bonuses_hm) \
     X(uint32_t, unlocked_professions) \
+    X(uint32_t, skill1) \
+    X(uint32_t, skill2) \
+    X(uint32_t, skill3) \
+    X(uint32_t, skill4) \
+    X(uint32_t, skill5) \
+    X(uint32_t, skill6) \
+    X(uint32_t, skill7) \
+    X(uint32_t, skill8) \
 
 typedef struct DbCharacter {
     #define X(T, N) T N;

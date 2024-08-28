@@ -45,3 +45,5 @@ void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedProfession(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendUnlockedMaps(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendUnlockedSkills(GameConnection *conn, GmPlayer *player);

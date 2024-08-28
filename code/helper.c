@@ -83,3 +83,12 @@ bool s16_to_ascii(char *dst, size_t size, const uint16_t *src, size_t srclen)
     dst[srclen] = 0;
     return true;
 }
+
+void copy_u32_safe_or_abort(uint32_t *dst, size_t dstlen, const uint32_t *src, size_t srclen)
+{
+    if (dstlen < srclen) {
+        abort();
+    }
+
+    memcpy_u32(dst, src, srclen);
+}

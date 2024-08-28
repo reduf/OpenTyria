@@ -161,17 +161,6 @@ void GameSrv_SendInstancePlayerDataDone(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
 }
 
-void GameSrv_SendUnlockedSkills(GameConnection *conn)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UNLOCKED_SKILLS);
-    GameSrv_UnlockedSkills *msg = &buffer->unlocked_skills;
-    msg->n_bit_map = ARRAY_SIZE(msg->bit_map);
-    for (size_t idx = 0; idx < ARRAY_SIZE(msg->bit_map); ++idx) {
-        msg->bit_map[idx] = 0xFFFFFFFF;
-    }
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
 void GameSrv_SendUnlockedPvpHeroes(GameConnection *conn)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UNLOCKED_PVP_HEROES);
@@ -1252,11 +1241,11 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
         return ERR_OK;
     }
 
-    GameSrv_SendUnlockedSkills(conn);
+    GameSrv_SendUnlockedSkills(conn, player);
     GameSrv_SendUnlockedPvpHeroes(conn);
     GameSrv_SendPvpItems(conn);
     GameSrv_SendAccountFeatures(conn);
-    // GAME_SMSG_MAPS_UNLOCKED
+    GameSrv_SendUnlockedMaps(conn, player);
     // GAME_SMSG_VANQUISH_PROGRESS
     GameSrv_SendInstanceLoaded(srv, conn, player);
 
@@ -1336,7 +1325,7 @@ int GameSrv_HandleCharCreationRequestArmors(GameSrv *srv, size_t player_id)
         return ERR_OK;
     }
 
-    GameSrv_SendUnlockedSkills(conn);
+    GameSrv_SendUnlockedSkills(conn, player);
     GameSrv_SendUnlockedPvpHeroes(conn);
     GameSrv_SendPvpItems(conn);
     GameSrv_SendAccountFeatures(conn);

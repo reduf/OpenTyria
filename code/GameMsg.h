@@ -132,8 +132,8 @@ typedef struct GameSrv_InventoryCreateBag {
 
 typedef struct GameSrv_UnlockedSkills {
     uint16_t header;
-    uint32_t n_bit_map;
-    uint32_t bit_map[128];
+    uint32_t unlocked_skills_len;
+    uint32_t unlocked_skills_buf[128];
 } GameSrv_UnlockedSkills;
 
 typedef struct GameSrv_UnlockedPvpHeroes {
@@ -331,6 +331,20 @@ typedef struct GameSrv_SpawnPoint {
     uint8_t  unk1[8];
 } GameSrv_SpawnPoint;
 
+typedef struct GameSrv_UnlockedMaps {
+    uint16_t header;
+    uint32_t completed_missions_nm_len;
+    uint32_t completed_missions_nm_buf[32];
+    uint32_t completed_bonuses_nm_len;
+    uint32_t completed_bonuses_nm_buf[32];
+    uint32_t completed_missions_hm_len;
+    uint32_t completed_missions_hm_buf[32];
+    uint32_t completed_bonuses_hm_len;
+    uint32_t completed_bonuses_hm_buf[32];
+    uint32_t unlocked_maps_len;
+    uint32_t unlocked_maps_buf[32];
+} GameSrv_UnlockedMaps;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -385,5 +399,6 @@ typedef union GameSrvMsg {
     GameSrv_InstanceManifestPhase        instance_manifest_phase;
     GameSrv_SpawnPoint                   spawn_point;
     GameSrv_InstanceLoaded               instance_loaded;
+    GameSrv_UnlockedMaps                 unlocked_maps;
 } GameSrvMsg;
 #pragma pack(pop)

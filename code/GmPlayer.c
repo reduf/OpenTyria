@@ -137,3 +137,47 @@ void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player)
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
     }
 }
+
+void GameSrv_SendUnlockedMaps(GameConnection *conn, GmPlayer *player)
+{
+    DbCharacter *ch = &player->character;
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UNLOCKED_MAPS);
+    GameSrv_UnlockedMaps *msg = &buffer->unlocked_maps;
+
+    STATIC_ASSERT(sizeof(msg->completed_missions_nm_buf) <= sizeof(ch->completed_missions_nm.buf));
+    copy_u32_safe_or_abort(msg->completed_missions_nm_buf, sizeof(msg->completed_missions_nm_buf), ch->completed_missions_nm.buf, ch->completed_missions_nm.len);
+    msg->completed_missions_nm_len = (uint32_t) ch->completed_missions_nm.len;
+
+    STATIC_ASSERT(sizeof(msg->completed_bonuses_nm_buf) <= sizeof(ch->completed_bonuses_nm.buf));
+    copy_u32_safe_or_abort(msg->completed_bonuses_nm_buf, sizeof(msg->completed_bonuses_nm_buf), ch->completed_bonuses_nm.buf, ch->completed_bonuses_nm.len);
+    msg->completed_bonuses_nm_len = (uint32_t) ch->completed_bonuses_nm.len;
+
+    STATIC_ASSERT(sizeof(msg->completed_missions_hm_buf) <= sizeof(ch->completed_missions_hm.buf));
+    copy_u32_safe_or_abort(msg->completed_missions_hm_buf, sizeof(msg->completed_missions_hm_buf), ch->completed_missions_hm.buf, ch->completed_missions_hm.len);
+    msg->completed_missions_hm_len = (uint32_t) ch->completed_missions_hm.len;
+
+    STATIC_ASSERT(sizeof(msg->completed_bonuses_hm_buf) <= sizeof(ch->completed_bonuses_hm.buf));
+    copy_u32_safe_or_abort(msg->completed_bonuses_hm_buf, sizeof(msg->completed_bonuses_hm_buf), ch->completed_bonuses_hm.buf, ch->completed_bonuses_hm.len);
+    msg->completed_bonuses_hm_len = (uint32_t) ch->completed_bonuses_hm.len;
+
+    STATIC_ASSERT(sizeof(msg->unlocked_maps_buf) <= sizeof(ch->unlocked_maps.buf));
+    copy_u32_safe_or_abort(msg->unlocked_maps_buf, sizeof(msg->unlocked_maps_buf), ch->unlocked_maps.buf, ch->unlocked_maps.len);
+    msg->unlocked_maps_len = (uint32_t) ch->unlocked_maps.len;
+
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendUnlockedSkills(GameConnection *conn, GmPlayer *player)
+{
+    DbCharacter *ch = &player->character;
+
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UNLOCKED_SKILLS);
+    GameSrv_UnlockedSkills *msg = &buffer->unlocked_skills;
+
+    STATIC_ASSERT(sizeof(msg->unlocked_skills_buf) <= sizeof(ch->unlocked_skills.buf));
+    copy_u32_safe_or_abort(msg->unlocked_skills_buf, sizeof(msg->unlocked_skills_buf), ch->unlocked_skills.buf, ch->unlocked_skills.len);
+    msg->unlocked_skills_len = (uint32_t) ch->unlocked_skills.len;
+
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}

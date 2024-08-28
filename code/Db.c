@@ -56,6 +56,31 @@ int sqlite3_column_u16_array(sqlite3_stmt *stmt, int iCol, uint16_t *buffer, siz
     return ERR_OK;
 }
 
+int sqlite3_column_u32_array(sqlite3_stmt *stmt, int iCol, uint32_t *buffer, size_t size, size_t *ret)
+{
+    int err;
+
+    if ((err = sqlite3_column_bytes(stmt, iCol)) < 0) {
+        log_warn("sqlite3_column_bytes returned a value less than 0 (%d)", err);
+        return ERR_UNSUCCESSFUL;
+    }
+
+    size_t length = (size_t)err / 4;
+    if (size < length) {
+        return ERR_BUFFER_TOO_SMALL;
+    }
+
+    const uint32_t *blob;
+    if ((blob = sqlite3_column_blob(stmt, iCol)) == NULL) {
+        *ret = 0;
+        return ERR_OK;
+    }
+
+    *ret = length;
+    memcpy_u32(buffer, blob, length);
+    return ERR_OK;
+}
+
 int sqlite3_column_u8_array(sqlite3_stmt *stmt, int iCol, uint8_t *buffer, size_t size, size_t *ret)
 {
     int err;
@@ -70,7 +95,7 @@ int sqlite3_column_u8_array(sqlite3_stmt *stmt, int iCol, uint8_t *buffer, size_
         return ERR_BUFFER_TOO_SMALL;
     }
 
-    const uint16_t *blob;
+    const uint8_t *blob;
     if ((blob = sqlite3_column_blob(stmt, iCol)) == NULL) {
         *ret = 0;
         return ERR_OK;
@@ -355,7 +380,22 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_experience, &result->experience)) != 0) ||
         ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_gold, &result->gold)) != 0) ||
-        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0)
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_unlocked_skills, result->unlocked_skills.buf, ARRAY_SIZE(result->unlocked_skills.buf), &result->unlocked_skills.len)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_unlocked_maps, result->unlocked_maps.buf, ARRAY_SIZE(result->unlocked_maps.buf), &result->unlocked_maps.len)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_completed_missions_nm, result->completed_missions_nm.buf, ARRAY_SIZE(result->completed_missions_nm.buf), &result->completed_missions_nm.len)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_completed_bonuses_nm, result->completed_bonuses_nm.buf, ARRAY_SIZE(result->completed_bonuses_nm.buf), &result->completed_bonuses_nm.len)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_completed_missions_hm, result->completed_missions_hm.buf, ARRAY_SIZE(result->completed_missions_hm.buf), &result->completed_missions_hm.len)) != 0) ||
+        ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_completed_bonuses_hm, result->completed_bonuses_hm.buf, ARRAY_SIZE(result->completed_bonuses_hm.buf), &result->completed_bonuses_hm.len)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_unlocked_professions, &result->unlocked_professions)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill1, &result->skill1)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill2, &result->skill2)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill3, &result->skill3)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill4, &result->skill4)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill5, &result->skill5)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill6, &result->skill6)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill7, &result->skill7)) != 0) ||
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill8, &result->skill8)) != 0)
     ) {
         return ERR_SERVER_ERROR;
     }
