@@ -1,0 +1,46 @@
+#pragma once
+
+extern TitleConstData g_TitleAsuran;
+extern TitleConstData g_TitleDeldrimor;
+extern TitleConstData g_TitleDrunkard;
+extern TitleConstData g_TitleKoaBD;
+extern TitleConstData g_TitleLightbringer;
+extern TitleConstData g_TitleMasterOfTheNorth;
+extern TitleConstData g_TitleNorn;
+extern TitleConstData g_TitleParty;
+extern TitleConstData g_TitleSunspear;
+extern TitleConstData g_TitleSurvivor;
+extern TitleConstData g_TitleSweets;
+extern TitleConstData g_TitleVanguard;
+extern TitleConstData g_TitleCanthanCarto;
+extern TitleConstData g_TitleElonianCarto;
+extern TitleConstData g_TitleTyrianCarto;
+extern TitleConstData g_TitleGuardianCantha;
+extern TitleConstData g_TitleGuardianElona;
+extern TitleConstData g_TitleGuardianTyria;
+extern TitleConstData g_TitleLegendaryCarto;
+extern TitleConstData g_TitleLegendaryGuardian;
+extern TitleConstData g_TitleLegendarySkillHunter;
+extern TitleConstData g_TitleLegendaryVanquisher;
+extern TitleConstData g_TitleProtectorCantha;
+extern TitleConstData g_TitleProtectorElona;
+extern TitleConstData g_TitleProtectorTyria;
+extern TitleConstData g_TitleSkillHunterCantha;
+extern TitleConstData g_TitleSkillHunterElona;
+extern TitleConstData g_TitleSkillHunterTyria;
+extern TitleConstData g_TitleVanquisherCantha;
+extern TitleConstData g_TitleVanquisherElona;
+extern TitleConstData g_TitleVanquisherTyria;
+extern TitleConstData g_TitleCodex;
+extern TitleConstData g_TitleGamer;
+extern TitleConstData g_TitleGladiator;
+extern TitleConstData g_TitleHero;
+extern TitleConstData g_TitleKurzick;
+extern TitleConstData g_TitleLucky;
+extern TitleConstData g_TitleLuxon;
+extern TitleConstData g_TitleTreasureHunter;
+extern TitleConstData g_TitleUnlucky;
+extern TitleConstData g_TitleWisdom;
+extern TitleConstData g_TitleZaishen;
+
+TitleConstData *g_TitleConstData[];

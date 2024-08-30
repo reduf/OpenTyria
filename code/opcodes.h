@@ -163,7 +163,7 @@
 #define GAME_SMSG_UNLOCKED_PVP_HEROES               (0x0018) // 24
 #define GAME_SMSG_PVP_ITEM_ADD_UNLOCK               (0x001A) // 26
 #define GAME_SMSG_PVP_ITEM_END                      (0x001B) // 27
-#define GAME_SMSG_UNLOCKED_SKILLS                   (0x001D) // 29
+#define GAME_SMSG_SKILL_UNLOCKED                    (0x001D) // 29
 #define GAME_SMSG_AGENT_MOVEMENT_TICK               (0x001E) // 30
 #define GAME_SMSG_AGENT_INSTANCE_TIMER              (0x001F) // 31
 #define GAME_SMSG_AGENT_SPAWNED                     (0x0020) // 32
@@ -256,7 +256,7 @@
 #define GAME_SMSG_TRANSACTION_DONE                  (0x00CB) // 203
 #define GAME_SMSG_SKILLBAR_UPDATE_SKILL             (0x00D8) // 216
 #define GAME_SMSG_SKILLBAR_UPDATE                   (0x00D9) // 217
-#define GAME_SMSG_SKILLS_UNLOCKED                   (0x00DA) // 218
+#define GAME_SMSG_UNLOCKED_SKILLS                   (0x00DA) // 218
 #define GAME_SMSG_SKILL_ADD_TO_WINDOW_COUNT         (0x00DB) // 219
 #define GAME_SMSG_SKILL_ADD_TO_WINDOWS_DATA         (0x00DF) // 223
 #define GAME_SMSG_SKILL_ADD_TO_WINDOWS_END          (0x00E0) // 224

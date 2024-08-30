@@ -57,6 +57,9 @@ CREATE TABLE characters (
     experience            INTEGER DEFAULT 0,
     gold                  INTEGER DEFAULT 0,
     active_weapon_set     INTEGER DEFAULT 0,
+    primary_profession    INTEGER DEFAULT 0,
+
+    secondary_profession  INTEGER DEFAULT 0,
     unlocked_skills       BLOB(128) DEFAULT '',
     unlocked_maps         BLOB(1024) DEFAULT '',
     completed_missions_nm BLOB(1024) DEFAULT '',
@@ -127,6 +130,19 @@ CREATE TABLE bags (
     slot_count   INTEGER NOT NULL,
 
     PRIMARY KEY (account_id, char_id, bag_model_id)
+);
+
+DROP TABLE IF EXISTS titles;
+CREATE TABLE titles (
+    account_id      VARCHAR(36),
+    char_id         VARCHAR(36),
+    title_id        INTEGER NOT NULL,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    current_rank    INTEGER DEFAULT 0,
+    current_points  INTEGER DEFAULT 0,
+
+    PRIMARY KEY (account_id, char_id, title_id)
 );
 
 INSERT INTO sessions (user_id, session_id, account_id) VALUES

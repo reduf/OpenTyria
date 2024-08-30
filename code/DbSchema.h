@@ -76,6 +76,8 @@ static const char *DbAccountColsName[] = {
     X(uint32_t, experience) \
     X(uint16_t, gold) \
     X(uint8_t, active_weapon_set) \
+    X(uint8_t, primary_profession) \
+    X(uint8_t, secondary_profession) \
     X(static_array(uint32_t, 128), unlocked_skills) \
     X(static_array(uint32_t, 32), unlocked_maps) \
     X(static_array(uint32_t, 32), completed_missions_nm) \

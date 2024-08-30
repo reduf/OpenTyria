@@ -268,7 +268,7 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
-    const char *sql = "INSERT INTO characters (char_id, account_id, charname, settings) VALUES (?, ?, ?, ?);";
+    const char *sql = "INSERT INTO characters (char_id, account_id, charname, settings, unlocked_professions) VALUES (?, ?, ?, ?, ?);";
     if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_insert_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
@@ -381,6 +381,8 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_experience, &result->experience)) != 0) ||
         ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_gold, &result->gold)) != 0) ||
         ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_active_weapon_set, &result->active_weapon_set)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_primary_profession, &result->primary_profession)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_secondary_profession, &result->secondary_profession)) != 0) ||
         ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_unlocked_skills, result->unlocked_skills.buf, ARRAY_SIZE(result->unlocked_skills.buf), &result->unlocked_skills.len)) != 0) ||
         ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_unlocked_maps, result->unlocked_maps.buf, ARRAY_SIZE(result->unlocked_maps.buf), &result->unlocked_maps.len)) != 0) ||
         ((err = sqlite3_column_u32_array(stmt, idx + DbCharacterCols_completed_missions_nm, result->completed_missions_nm.buf, ARRAY_SIZE(result->completed_missions_nm.buf), &result->completed_missions_nm.len)) != 0) ||
@@ -637,6 +639,7 @@ int Db_CreateCharacter(
     struct uuid account_id,
     struct uuid char_id,
     size_t n_name, const uint16_t *name,
+    uint32_t unlocked_professions,
     CharacterSettings *settings)
 {
     int err;
@@ -645,8 +648,9 @@ int Db_CreateCharacter(
     if ((err = sqlite3_bind_uuid(stmt, 1, char_id)) != SQLITE_OK ||
         (err = sqlite3_bind_uuid(stmt, 2, account_id)) != SQLITE_OK ||
         (err = sqlite3_bind_u16_array(stmt, 3, n_name, name)) != SQLITE_OK ||
-        (err = sqlite3_bind_u8_array(stmt, 4, sizeof(*settings), (const uint8_t *)settings)) != SQLITE_OK)
-    {
+        (err = sqlite3_bind_u8_array(stmt, 4, sizeof(*settings), (const uint8_t *)settings)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 5, unlocked_professions)) != SQLITE_OK
+    ) {
         log_error(
             "Failed to bind values to a statement, err: %d (%s)",
             err,

@@ -74,6 +74,7 @@
 #include "GmErrors.h"
 #include "GmIdTable.h"
 #include "GmMaps.h"
+#include "GmTitle.h"
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"
@@ -81,6 +82,8 @@
 #include "GmPlayer.h"
 #include "GmAgent.h"
 #include "GmItem.h"
+
+#include "GmTitleConstData.h"
 #include "GmDefaultArmors.h"
 
 #include "Db.h"
@@ -109,6 +112,7 @@
 #include "GmInventory.c"
 #include "GmItem.c"
 #include "GmPlayer.c"
+#include "GmTitleConstData.c"
 #include "int.c"
 #include "logs.c"
 #include "msgdefs.c"

@@ -30,6 +30,7 @@ int Db_CreateCharacter(
     struct uuid account_id,
     struct uuid char_id,
     size_t n_name, const uint16_t *name,
+    uint32_t unlocked_professions,
     CharacterSettings *settings);
 
 int Db_DeleteCharacter(Database *database, struct uuid account_id, struct uuid char_id);

@@ -694,11 +694,8 @@ void GameSrv_SendReadyForMapSpawn(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendInstanceLoaded(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+void GameSrv_SendInstanceLoaded(GameConnection *conn)
 {
-    UNREFERENCED_PARAMETER(srv);
-    UNREFERENCED_PARAMETER(player);
-
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOADED);
     GameSrv_InstanceLoaded *msg = &buffer->instance_loaded;
     msg->player_team_token = 0xBAADF00D;
@@ -772,13 +769,13 @@ void GameSrv_SendDownloadManifest(GameSrv *srv, GameConnection *conn)
     }
 }
 
-void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player, Profession prof, bool is_pvp)
+void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
     GameSrv_UpdateProfession *msg = &buffer->update_profession;
     msg->agent_id = player->agent_id;
-    msg->primary_profession = prof;
-    msg->is_pvp = is_pvp;
+    msg->primary_profession = player->character.primary_profession;
+    msg->is_pvp = false; // @Cleanup: use the character settings to fill this value
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -788,6 +785,14 @@ void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
     GameSrv_SkillbarUpdate *msg = &buffer->skillbar_update;
     msg->agent_id = player->agent_id;
     msg->n_skills = 8;
+    msg->skills[0] = player->character.skill1;
+    msg->skills[1] = player->character.skill2;
+    msg->skills[2] = player->character.skill3;
+    msg->skills[3] = player->character.skill4;
+    msg->skills[4] = player->character.skill5;
+    msg->skills[5] = player->character.skill6;
+    msg->skills[6] = player->character.skill7;
+    msg->skills[7] = player->character.skill8;
     msg->n_pvp_masks = 8;
     msg->unk1 = 1;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
@@ -1247,7 +1252,12 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendAccountFeatures(conn);
     GameSrv_SendUnlockedMaps(conn, player);
     // GAME_SMSG_VANQUISH_PROGRESS
-    GameSrv_SendInstanceLoaded(srv, conn, player);
+    GameSrv_SendInstanceLoaded(conn);
+    // RecvPacket (1DBB5790): 123, 0x7B, unknown
+    // RecvPacket (1DBB5790): 124, 0x7C, unknown
+    GameSrv_SendPlayerProfession(conn, player);
+    GameSrv_SendUnlockedProfessions(conn, player);
+    GameSrv_SendSkillbarUpdate(conn, player);
 
     return ERR_OK;
 }
@@ -1304,8 +1314,8 @@ int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
     GameSrv_SendGoldStorage(srv, conn);
     GameSrv_SendPlayerFactions(conn);
     GameSrv_SendPlayerAgentAttributes(conn, player);
-    GameSrv_SendPlayerProfession(conn, player, Profession_Warrior, 0);
-    GameSrv_SendUnlockedProfession(conn, player);
+    GameSrv_SendPlayerProfession(conn, player);
+    GameSrv_SendUnlockedProfessions(conn, player);
     GameSrv_SendSkillbarUpdate(conn, player);
     GameSrv_SendPlayerAgentAttribute(conn, player);
     GameSrv_SendInstancePlayerDataDone(conn);
@@ -1426,7 +1436,7 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return ERR_OK;
     }
 
-    GameSrv_SendPlayerProfession(conn, player, msg->profession, msg->campaign_type == CampaignType_Pvp);
+    GameSrv_SendPlayerProfession(conn, player);
     GameSrv_SendBagItems(srv, conn, &player->bags.equipped_items);
     return ERR_OK;
 }
@@ -1487,6 +1497,10 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
         settings.pieces[pos].col1 = item->dye_color;
     }
 
+    // @Cleanup: Add the unlocked profession and unlocked map
+    uint32_t unlocked_professions = 0;
+    unlocked_professions = 1 << app.primary_profession;
+
     random_get_bytes(&srv->random, &player->char_id, sizeof(player->char_id));
 
     GameConnection *conn;
@@ -1495,7 +1509,14 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     }
 
     GameSrvMsg *buffer;
-    if ((err = Db_CreateCharacter(&srv->database, player->account_id, player->char_id, msg->n_name, msg->name, &settings)) != 0) {
+    if ((err = Db_CreateCharacter(
+            &srv->database,
+            player->account_id,
+            player->char_id,
+            msg->n_name, msg->name,
+            unlocked_professions,
+            &settings)) != 0
+    ) {
         log_error("Failed to insert character in database");
 
         buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CHAR_CREATION_ERROR);

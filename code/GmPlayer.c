@@ -81,12 +81,12 @@ void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendUnlockedProfession(GameConnection *conn, GmPlayer *player)
+void GameSrv_SendUnlockedProfessions(GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UNLOCKED_PROFESSION);
     GameSrv_UnlockedProfession *msg = &buffer->unlocked_profession;
     msg->agent_id = player->agent_id;
-    msg->unlocked = (1 << Profession_Count) - 1;
+    msg->unlocked = player->character.unlocked_professions;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 

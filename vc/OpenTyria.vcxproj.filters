@@ -26,6 +26,7 @@
     <ClCompile Include="..\code\GmPlayer.c" />
     <ClCompile Include="..\code\GmAgent.c" />
     <ClCompile Include="..\code\GmItem.c" />
+    <ClCompile Include="..\code\GmTitleConstData.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\code\array.h" />
@@ -69,6 +70,8 @@
     <ClInclude Include="..\code\deque.h" />
     <ClInclude Include="..\code\GmDefs.h" />
     <ClInclude Include="..\code\GmIdTable.h" />
+    <ClInclude Include="..\code\GmTitle.h" />
+    <ClInclude Include="..\code\GmTitleConstData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />
