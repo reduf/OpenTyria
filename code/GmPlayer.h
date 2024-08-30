@@ -28,7 +28,7 @@ typedef struct GmPlayer {
     DbAccount    account;
     GmBagArray   bags;
     CampaignType char_creation_campaign_type;
-    Profession   char_creation_selected_prof;
+    Profession   primary_profession;
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;
 

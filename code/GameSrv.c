@@ -702,6 +702,12 @@ void GameSrv_SendInstanceLoaded(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
+void GameSrv_SendInstanceLoadFinish(GameConnection *conn)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INSTANCE_LOAD_FINISH);
+    GameConnection_SendMessage(conn, buffer, sizeof(buffer->header));
+}
+
 void GameSrv_SendManifest(GameConnection *conn, slice_uint8_t data)
 {
     GameSrv_InstanceManifestData *msg;
@@ -774,7 +780,7 @@ void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player)
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
     GameSrv_UpdateProfession *msg = &buffer->update_profession;
     msg->agent_id = player->agent_id;
-    msg->primary_profession = player->character.primary_profession;
+    msg->primary_profession = player->primary_profession;
     msg->is_pvp = false; // @Cleanup: use the character settings to fill this value
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
@@ -795,6 +801,17 @@ void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
     msg->skills[7] = player->character.skill8;
     msg->n_pvp_masks = 8;
     msg->unk1 = 1;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendAgentCreateAttributes(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
+    GameSrv_AgentCreateAttributes *msg = &buffer->agent_create_attributes;
+    msg->agent_id = player->agent_id;
+    msg->unused_points = 50;
+    msg->used_points = 50;
+
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -965,6 +982,8 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
             log_error("Could't load the character for this user from database");
             return;
         }
+
+        player->primary_profession = player->character.primary_profession;
     }
 
     size_t count;
@@ -1258,6 +1277,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerProfession(conn, player);
     GameSrv_SendUnlockedProfessions(conn, player);
     GameSrv_SendSkillbarUpdate(conn, player);
+    GameSrv_SendAgentCreateAttributes(conn, player);
 
     return ERR_OK;
 }
@@ -1305,6 +1325,8 @@ int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
     if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
         return ERR_OK;
     }
+
+    player->primary_profession = Profession_Warrior;
 
     GameSrv_SendInstancePlayerDataStart(conn);
     GameSrv_SendItemStreamCreate(conn);
@@ -1396,7 +1418,7 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return ERR_SERVER_ERROR;
     }
 
-    if ((err = Profession_FromInt(msg->profession, &player->char_creation_selected_prof)) != 0) {
+    if ((err = Profession_FromInt(msg->profession, &player->primary_profession)) != 0) {
         log_warn("Invalid `Profession` value %u", msg->profession);
         return err;
     }
@@ -1406,7 +1428,7 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return err;
     }
 
-    GmItemSlice items = GetDefaultEquipments(player->char_creation_campaign_type, player->char_creation_selected_prof);
+    GmItemSlice items = GetDefaultEquipments(player->char_creation_campaign_type, player->primary_profession);
     GmBag *bag = &player->bags.equipped_items;
     GameSrv_FreeBagItems(srv, player, bag);
 

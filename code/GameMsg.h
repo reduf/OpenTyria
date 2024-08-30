@@ -345,6 +345,13 @@ typedef struct GameSrv_UnlockedMaps {
     uint32_t unlocked_maps_buf[32];
 } GameSrv_UnlockedMaps;
 
+typedef struct GameSrv_AgentCreateAttributes {
+    uint16_t header;
+    uint32_t agent_id;
+    uint8_t  unused_points;
+    uint8_t  used_points;
+} GameSrv_AgentCreateAttributes;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -400,5 +407,6 @@ typedef union GameSrvMsg {
     GameSrv_SpawnPoint                   spawn_point;
     GameSrv_InstanceLoaded               instance_loaded;
     GameSrv_UnlockedMaps                 unlocked_maps;
+    GameSrv_AgentCreateAttributes        agent_create_attributes;
 } GameSrvMsg;
 #pragma pack(pop)
