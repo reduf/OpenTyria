@@ -73,8 +73,12 @@
 #include "GmDefs.h"
 #include "GmErrors.h"
 #include "GmIdTable.h"
+
 #include "GmMaps.h"
-#include "GmTitle.h"
+#include "GmTitles.h"
+#include "GmAgentProperties.h"
+#include "GmAttributes.h"
+
 #include "GmChar.h"
 #include "GmFriend.h"
 #include "GmMap.h"

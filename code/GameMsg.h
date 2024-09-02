@@ -176,13 +176,6 @@ typedef struct GameSrv_ImperialMax {
     uint32_t max_faction;
 } GameSrv_ImperialMax;
 
-typedef struct GameSrv_AgentCreateAttribute {
-    uint16_t header;
-    uint32_t agent_id;
-    uint8_t  unk1;
-    uint8_t  unk2;
-} GameSrv_AgentCreateAttribute;
-
 typedef struct GameSrv_SkillbarUpdate {
     uint16_t header;
     uint32_t agent_id;
@@ -193,21 +186,21 @@ typedef struct GameSrv_SkillbarUpdate {
     uint8_t  unk1;
 } GameSrv_SkillbarUpdate;
 
-typedef struct GameSrv_AgentAttrUpdateInt {
+typedef struct GameSrv_UpdateAgentIntProperty {
     uint16_t header;
-    uint32_t attr_id;
+    uint32_t prop_id;
     uint32_t agent_id;
     uint32_t value;
-} GameSrv_AgentAttrUpdateInt;
+} GameSrv_UpdateAgentIntProperty;
 
-typedef struct GameSrv_AgentAttrUpdateFloat {
+typedef struct GameSrv_UpdateAgentFloatProperty {
     uint16_t header;
-    uint32_t attr_id;
+    uint32_t prop_id;
     uint32_t agent_id;
     float    value;
-} GameSrv_AgentAttrUpdateFloat;
+} GameSrv_UpdateAgentFloatProperty;
 
-typedef struct GameSrv_PlayerAttr {
+typedef struct GameSrv_UpdatePlayerFactions {
     uint16_t header;
     uint32_t experience;
     uint32_t current_kurzick;
@@ -224,7 +217,7 @@ typedef struct GameSrv_PlayerAttr {
     uint32_t total_earned_balth;
     uint32_t current_skill_points;
     uint32_t total_earned_skill_points;
-} GameSrv_PlayerAttr;
+} GameSrv_UpdatePlayerFactions;
 
 typedef struct GameSrv_ItemGeneralInfo {
     uint16_t header;
@@ -345,12 +338,19 @@ typedef struct GameSrv_UnlockedMaps {
     uint32_t unlocked_maps_buf[32];
 } GameSrv_UnlockedMaps;
 
-typedef struct GameSrv_AgentCreateAttributes {
+typedef struct GameSrv_UpdateAgentAttributePoints {
     uint16_t header;
     uint32_t agent_id;
     uint8_t  unused_points;
     uint8_t  used_points;
-} GameSrv_AgentCreateAttributes;
+} GameSrv_UpdateAgentAttributePoints;
+
+typedef struct GameSrv_UpdateAgentAttributes {
+    uint32_t header;
+    uint32_t agent_id;
+    uint32_t data_len;
+    uint32_t data_buf[48];
+} GameSrv_UpdateAgentAttributes;
 
 typedef union GameCliMsg {
     uint16_t                             header;
@@ -387,11 +387,10 @@ typedef union GameSrvMsg {
     GameSrv_LuxonMax                     luxon_max;
     GameSrv_BalthazarMax                 balthazar_max;
     GameSrv_ImperialMax                  imperial_max;
-    GameSrv_AgentCreateAttribute         agent_create_attribute;
     GameSrv_SkillbarUpdate               skillbar_update;
-    GameSrv_AgentAttrUpdateInt           agent_attr_update_int;
-    GameSrv_AgentAttrUpdateFloat         agent_attr_update_float;
-    GameSrv_PlayerAttr                   player_attr;
+    GameSrv_UpdateAgentIntProperty       update_agent_int_property;
+    GameSrv_UpdateAgentFloatProperty     update_agent_float_property;
+    GameSrv_UpdatePlayerFactions         update_player_factions;
     GameSrv_ItemGeneralInfo              item_general_info;
     GameSrv_ItemRemove                   item_remove;
     GameSrv_ItemSetProfession            item_set_profession;
@@ -407,6 +406,7 @@ typedef union GameSrvMsg {
     GameSrv_SpawnPoint                   spawn_point;
     GameSrv_InstanceLoaded               instance_loaded;
     GameSrv_UnlockedMaps                 unlocked_maps;
-    GameSrv_AgentCreateAttributes        agent_create_attributes;
+    GameSrv_UpdateAgentAttributePoints   update_agent_attribute_points;
+    GameSrv_UpdateAgentAttributes        update_agent_attributes;
 } GameSrvMsg;
 #pragma pack(pop)

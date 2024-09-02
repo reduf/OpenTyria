@@ -397,7 +397,8 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill5, &result->skill5)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill6, &result->skill6)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill7, &result->skill7)) != 0) ||
-        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill8, &result->skill8)) != 0)
+        ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill8, &result->skill8)) != 0) ||
+        ((err != 0))
     ) {
         return ERR_SERVER_ERROR;
     }

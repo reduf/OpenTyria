@@ -72,6 +72,8 @@
     <ClInclude Include="..\code\GmIdTable.h" />
     <ClInclude Include="..\code\GmTitle.h" />
     <ClInclude Include="..\code\GmTitleConstData.h" />
+    <ClInclude Include="..\code\GmAgentProperties.h" />
+    <ClInclude Include="..\code\GmTitles.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />

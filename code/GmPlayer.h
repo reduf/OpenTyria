@@ -37,13 +37,19 @@ GmPlayer* GameSrv_CreatePlayer(
     uintptr_t token,
     struct uuid account_id,
     struct uuid char_id);
+
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id);
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id);
 void GameSrv_SendHardModeUnlocked(GameConnection *conn);
-void GameSrv_SendPlayerFactions(GameConnection *conn);
-void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerMaxFactions(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendAgentAttributePoints(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedProfessions(GameConnection *conn, GmPlayer *player);
-void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendSkillsAndAttributes(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerFactions(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerHealthEnergy(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedMaps(GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedSkills(GameConnection *conn, GmPlayer *player);
+void GameSrv_SendPlayerAttributes(GameConnection *conn, GmPlayer *player);

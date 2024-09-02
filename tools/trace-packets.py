@@ -54,22 +54,14 @@ def main(args):
         if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION', 'GAME_SMSG_AGENT_MOVE_TO_POINT', 'GAME_SMSG_AGENT_UPDATE_SPEED', 'GAME_SMSG_AGENT_UPDATE_ROTATION', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
             return
 
-        # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+        print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+        if name == 'GAME_SMSG_UPDATE_AGENT_INT_PROPERTY':
+            prop_id, agent_id, value = proc.read(packet + 4, 'III')
+            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
-        if name == 'GAME_SMSG_TITLE_TRACK_INFO':
-            title_id, group_id, current_points, current_rank, points_needed_to_reach_current_rank, next_title_rank_id, points_needed_to_reach_next_rank, max_rank, max_rank_id, point_name, description = proc.read(packet + 4, 'IIIIIIIII16s16s')
-            title_id = titles[title_id]
-            point_name = game_str_from_bytes(point_name)
-            point_name = ', '.join(f'0x{cp:04X}' for cp in point_name)
-            description = game_str_from_bytes(description)
-            description = ', '.join(f'0x{cp:04X}' for cp in description)
-            print(f'title_id = {title_id}, group_id = {group_id}, current_points = {current_points}, current_rank = {current_rank}, points_needed_to_reach_current_rank = {points_needed_to_reach_current_rank}, next_title_rank_id = {next_title_rank_id}, points_needed_to_reach_next_rank = {points_needed_to_reach_next_rank}, max_rank = {max_rank}, max_rank_id = {max_rank_id}, point_name = {point_name}, description = {description}')
-
-        if name == 'GAME_SMSG_TITLE_RANK_DATA':
-            rank_id, unk0, rank = proc.read(packet + 4, 'III')
-            print(f'rank_id = {rank_id}, unk0 = {unk0}, rank = {rank}')
-            # name
+        if name == 'GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY':
+            prop_id, agent_id, value = proc.read(packet + 4, 'IIf')
+            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)

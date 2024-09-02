@@ -236,6 +236,7 @@
     <ClInclude Include="..\code\GameMsg.h" />
     <ClInclude Include="..\code\GameSrv.h" />
     <ClInclude Include="..\code\GmAgent.h" />
+    <ClInclude Include="..\code\GmAgentProperties.h" />
     <ClInclude Include="..\code\GmChar.h" />
     <ClInclude Include="..\code\GmDefaultArmors.h" />
     <ClInclude Include="..\code\GmDefs.h" />
@@ -249,6 +250,7 @@
     <ClInclude Include="..\code\GmPlayer.h" />
     <ClInclude Include="..\code\GmTitle.h" />
     <ClInclude Include="..\code\GmTitleConstData.h" />
+    <ClInclude Include="..\code\GmTitles.h" />
     <ClInclude Include="..\code\int.h" />
     <ClInclude Include="..\code\iocp.h" />
     <ClInclude Include="..\code\logs.h" />

@@ -754,6 +754,7 @@ class ProcessDebugger(object):
         # Before stopping to debug the remote process we need to process all
         # debug events, because otherwise we might crash the remote process.
         self.poll(0)
+        print(len(self.single_step_breakpoints))
         _DebugActiveProcessStop(self.proc.id)
 
     def __repr__(self):

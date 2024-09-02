@@ -775,46 +775,6 @@ void GameSrv_SendDownloadManifest(GameSrv *srv, GameConnection *conn)
     }
 }
 
-void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
-    GameSrv_UpdateProfession *msg = &buffer->update_profession;
-    msg->agent_id = player->agent_id;
-    msg->primary_profession = player->primary_profession;
-    msg->is_pvp = false; // @Cleanup: use the character settings to fill this value
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_SKILLBAR_UPDATE);
-    GameSrv_SkillbarUpdate *msg = &buffer->skillbar_update;
-    msg->agent_id = player->agent_id;
-    msg->n_skills = 8;
-    msg->skills[0] = player->character.skill1;
-    msg->skills[1] = player->character.skill2;
-    msg->skills[2] = player->character.skill3;
-    msg->skills[3] = player->character.skill4;
-    msg->skills[4] = player->character.skill5;
-    msg->skills[5] = player->character.skill6;
-    msg->skills[6] = player->character.skill7;
-    msg->skills[7] = player->character.skill8;
-    msg->n_pvp_masks = 8;
-    msg->unk1 = 1;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
-void GameSrv_SendAgentCreateAttributes(GameConnection *conn, GmPlayer *player)
-{
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
-    GameSrv_AgentCreateAttributes *msg = &buffer->agent_create_attributes;
-    msg->agent_id = player->agent_id;
-    msg->unused_points = 50;
-    msg->used_points = 50;
-
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-}
-
 void GameSrv_SendInitialPackets(GameSrv *srv, GameConnection *conn)
 {
     GmPlayer *player;
@@ -1274,10 +1234,11 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendInstanceLoaded(conn);
     // RecvPacket (1DBB5790): 123, 0x7B, unknown
     // RecvPacket (1DBB5790): 124, 0x7C, unknown
-    GameSrv_SendPlayerProfession(conn, player);
-    GameSrv_SendUnlockedProfessions(conn, player);
-    GameSrv_SendSkillbarUpdate(conn, player);
-    GameSrv_SendAgentCreateAttributes(conn, player);
+    GameSrv_SendSkillsAndAttributes(conn, player);
+    // GameSrv_SendCartographyData
+    GameSrv_SendPlayerFactions(conn, player);
+    // GameSrv_SendPlayerTitles
+    GameSrv_SendPlayerAttributes(conn, player);
 
     return ERR_OK;
 }
@@ -1303,7 +1264,7 @@ int GameSrv_HandleInstanceLoadRequestItems(GameSrv *srv, size_t player_id, GameS
     GameSrv_SendWeaponSlots(conn);
     GameSrv_SendGoldStorage(srv, conn);
     // GameSrv_SendQuests(conn);
-    GameSrv_SendPlayerFactions(conn);
+    GameSrv_SendPlayerMaxFactions(conn, player);
     GameSrv_SendHardModeUnlocked(conn);
     GameSrv_SendPlayerHeroNameAndInfo(conn);
     GameSrv_SendUpdateCurrentMap(srv, conn);
@@ -1334,13 +1295,12 @@ int GameSrv_HandleCharCreationRequestPlayer(GameSrv *srv, size_t player_id)
     GameSrv_SendUpdateActiveWeaponSet(conn);
     GameSrv_SendWeaponSlots(conn);
     GameSrv_SendGoldStorage(srv, conn);
-    GameSrv_SendPlayerFactions(conn);
-    GameSrv_SendPlayerAgentAttributes(conn, player);
-    GameSrv_SendPlayerProfession(conn, player);
-    GameSrv_SendUnlockedProfessions(conn, player);
-    GameSrv_SendSkillbarUpdate(conn, player);
-    GameSrv_SendPlayerAgentAttribute(conn, player);
+    GameSrv_SendPlayerMaxFactions(conn, player);
+    GameSrv_SendSkillsAndAttributes(conn, player);
+    GameSrv_SendPlayerFactions(conn, player);
+    GameSrv_SendPlayerHealthEnergy(conn, player);
     GameSrv_SendInstancePlayerDataDone(conn);
+
     return ERR_OK;
 }
 
@@ -1638,6 +1598,7 @@ void GameSrv_Update(GameSrv *srv)
     int err;
 
     uint64_t current_time = sys_get_monotonic_time_ms();
+    srv->current_frame_time = current_time;
 
     GameSrv_ProcessInternalMessages(srv);
     GameSrv_Poll(srv);

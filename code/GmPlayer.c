@@ -44,30 +44,45 @@ void GameSrv_SendHardModeUnlocked(GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendPlayerFactions(GameConnection *conn)
+void GameSrv_SendPlayerMaxFactions(GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_KURZICK);
-    buffer->kurzick_max.max_faction = 5000;
+    buffer->kurzick_max.max_faction = player->account.kurzick_points_max;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->kurzick_max));
 
     buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_LUXON);
-    buffer->luxon_max.max_faction = 5000;
+    buffer->luxon_max.max_faction = player->account.luxon_points_max;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->luxon_max));
 
     buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_BALTHAZAR);
-    buffer->balthazar_max.max_faction = 10000;
+    buffer->balthazar_max.max_faction = player->account.balthazar_points_max;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->balthazar_max));
 
     buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_FACTION_MAX_IMPERIAL);
-    buffer->imperial_max.max_faction = 10000;
+    buffer->imperial_max.max_faction = player->account.imperial_points_max;
     GameConnection_SendMessage(conn, buffer, sizeof(buffer->imperial_max));
 }
 
-void GameSrv_SendPlayerAgentAttributes(GameConnection *conn, GmPlayer *player)
+void GameSrv_SendPlayerFactions(GameConnection *conn, GmPlayer *player)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_CREATE_ATTRIBUTES);
-    buffer->agent_create_attribute.agent_id = player->agent_id;
-    GameConnection_SendMessage(conn, buffer, sizeof(buffer->agent_create_attribute));
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_FACTIONS);
+    GameSrv_UpdatePlayerFactions *msg = &buffer->update_player_factions;
+    msg->experience = player->character.experience;
+    msg->current_kurzick = player->account.kurzick_points_amount;
+    msg->total_earned_kurzick = player->account.kurzick_points_total;
+    msg->current_luxon = player->account.luxon_points_amount;
+    msg->total_earned_luxon = player->account.luxon_points_total;
+    msg->current_imperial = player->account.imperial_points_amount;
+    msg->total_earned_imperial = player->account.imperial_points_total;
+    msg->unk_faction4 = 0;
+    msg->unk_faction5 = 0;
+    msg->level = 0;
+    msg->morale = 0;
+    msg->current_balth = player->account.balthazar_points_amount;
+    msg->total_earned_balth = player->account.balthazar_points_total;
+    msg->current_skill_points = player->character.skill_points;
+    msg->total_earned_skill_points = player->character.skill_points_total;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player)
@@ -81,6 +96,27 @@ void GameSrv_SendInstanceLoadPlayerName(GameConnection *conn, GmPlayer *player)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
+void GameSrv_SendAgentAttributePoints(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_UPDATE_ATTRIBUTE_POINTS);
+    GameSrv_UpdateAgentAttributePoints *msg = &buffer->update_agent_attribute_points;
+    msg->agent_id = player->agent_id;
+    msg->unused_points = 50;
+    msg->used_points = 50;
+
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerProfession(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
+    GameSrv_UpdateProfession *msg = &buffer->update_profession;
+    msg->agent_id = player->agent_id;
+    msg->primary_profession = player->primary_profession;
+    msg->is_pvp = false; // @Cleanup: use the character settings to fill this value
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
 void GameSrv_SendUnlockedProfessions(GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_UNLOCKED_PROFESSION);
@@ -90,49 +126,55 @@ void GameSrv_SendUnlockedProfessions(GameConnection *conn, GmPlayer *player)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendPlayerAgentAttribute(GameConnection *conn, GmPlayer *player)
+void GameSrv_SendSkillbarUpdate(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_SKILLBAR_UPDATE);
+    GameSrv_SkillbarUpdate *msg = &buffer->skillbar_update;
+    msg->agent_id = player->agent_id;
+    msg->n_skills = 8;
+    msg->skills[0] = player->character.skill1;
+    msg->skills[1] = player->character.skill2;
+    msg->skills[2] = player->character.skill3;
+    msg->skills[3] = player->character.skill4;
+    msg->skills[4] = player->character.skill5;
+    msg->skills[5] = player->character.skill6;
+    msg->skills[6] = player->character.skill7;
+    msg->skills[7] = player->character.skill8;
+    msg->n_pvp_masks = 8;
+    msg->unk1 = 1;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendSkillsAndAttributes(GameConnection *conn, GmPlayer *player)
+{
+    GameSrv_SendAgentAttributePoints(conn, player);
+    GameSrv_SendPlayerProfession(conn, player);
+    GameSrv_SendUnlockedProfessions(conn, player);
+    GameSrv_SendSkillbarUpdate(conn, player);
+}
+
+void GameSrv_SendPlayerHealthEnergy(GameConnection *conn, GmPlayer *player)
 {
     {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_PLAYER_ATTR_SET);
-        GameSrv_PlayerAttr *msg = &buffer->player_attr;
-        msg->experience = 10000;
-        msg->current_kurzick = 100;
-        msg->total_earned_kurzick = 100000;
-        msg->current_luxon = 100;
-        msg->total_earned_luxon = 100000;
-        msg->current_imperial = 500;
-        msg->total_earned_imperial = 15000;
-        msg->unk_faction4 = 0;
-        msg->unk_faction5 = 0;
-        msg->level = 0;
-        msg->morale = 0;
-        msg->current_balth = 200;
-        msg->total_earned_balth = 200000;
-        msg->current_skill_points = 0;
-        msg->total_earned_skill_points = 0;
-        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-    }
-
-    {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_INT);
-        GameSrv_AgentAttrUpdateInt *msg = &buffer->agent_attr_update_int;
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_AGENT_INT_PROPERTY);
+        GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
         msg->agent_id = player->agent_id;
-        msg->attr_id = 41;
+        msg->prop_id = AgentProperty_Energy;
         msg->value = 20;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        msg->attr_id = 42;
+        msg->prop_id = AgentProperty_Health;
         msg->value = 100;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
-        msg->attr_id = 64;
+        msg->prop_id = AgentProperty_Value64;
         msg->value = 0;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
     }
 
     {
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_ATTR_UPDATE_FLOAT);
-        GameSrv_AgentAttrUpdateFloat *msg = &buffer->agent_attr_update_float;
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY);
+        GameSrv_UpdateAgentFloatProperty *msg = &buffer->update_agent_float_property;
         msg->agent_id = player->agent_id;
-        msg->attr_id = 43;
+        msg->prop_id = AgentProperty_EnergyRegen;
         msg->value = 0.033f;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
     }
@@ -179,5 +221,14 @@ void GameSrv_SendUnlockedSkills(GameConnection *conn, GmPlayer *player)
     copy_u32_safe_or_abort(msg->unlocked_skills_buf, sizeof(msg->unlocked_skills_buf), ch->unlocked_skills.buf, ch->unlocked_skills.len);
     msg->unlocked_skills_len = (uint32_t) ch->unlocked_skills.len;
 
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendPlayerAttributes(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_UPDATE_ATTRIBUTES);
+    GameSrv_UpdateAgentAttributes *msg = &buffer->update_agent_attributes;
+    msg->agent_id = player->agent_id;
+    msg->data_len = Attribute_Count;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }

@@ -4,6 +4,7 @@ typedef struct GmAgent {
     uint32_t agent_id;
     float    x;
     float    y;
+    uint32_t plane;
     uint32_t player_id;
 } GmAgent;
 typedef array(GmAgent) GmAgentArray;
@@ -11,3 +12,5 @@ typedef array(GmAgent) GmAgentArray;
 GmAgent* GameSrv_CreateAgent(GameSrv *srv);
 GmAgent* GameSrv_GetAgent(GameSrv *srv, uint32_t agent_id);
 GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id);
+
+void GameSrv_SendAgentHealthEnergy(GameConnection *conn, GmPlayer *player);
