@@ -106,8 +106,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Patch Gw executable with custom DHL keys', add_help=True)
-    parser.add_argument("--proc", type=str, default='Gw.exe',
-        help="Process name of the target Guild Wars instance.")
+    parser.add_argument('input')
     parser.add_argument('keys_file')
     parser.add_argument('--output', metavar='output', type=str, help='The output file', required=False)
 
