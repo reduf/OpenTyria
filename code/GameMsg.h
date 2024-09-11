@@ -346,7 +346,7 @@ typedef struct GameSrv_UpdateAgentAttributePoints {
 } GameSrv_UpdateAgentAttributePoints;
 
 typedef struct GameSrv_UpdateAgentAttributes {
-    uint32_t header;
+    uint16_t header;
     uint32_t agent_id;
     uint32_t data_len;
     uint32_t data_buf[48];
