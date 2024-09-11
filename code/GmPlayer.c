@@ -232,3 +232,19 @@ void GameSrv_SendPlayerAttributes(GameConnection *conn, GmPlayer *player)
     msg->data_len = Attribute_Count;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
+
+void GameSrv_SendUpdatePlayerAgent(GameConnection *conn, GmPlayer *player)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_PLAYER_AGENT);
+    GameSrv_UpdatePlayerAgent *msg = &buffer->update_player_agent;
+    msg->player_id = player->player_id;
+    msg->agent_id = player->agent_id;
+    memcpy(&msg->appearance, &player->char_settings.appearance, sizeof(msg->appearance));
+    msg->unk0 = 0;
+    msg->unk1 = 0;
+    msg->unk2 = 0;
+    STATIC_ASSERT(sizeof(player->character.charname.buf) <= sizeof(msg->name_buf));
+    msg->name_len = (uint16_t) player->character.charname.len;
+    memcpy_u16(msg->name_buf, player->character.charname.buf, msg->name_len);
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}

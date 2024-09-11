@@ -30,3 +30,78 @@ GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id)
     }
     return result;
 }
+
+void GameSrv_SendAgentHealthEnergy(GameConnection *conn, GmAgent *agent)
+{
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_AGENT_INT_PROPERTY);
+        GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
+        msg->agent_id = agent->agent_id;
+        msg->prop_id = AgentProperty_Energy;
+        msg->value = agent->energy;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+        msg->prop_id = AgentProperty_Health;
+        msg->value = agent->health;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+
+    {
+        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY);
+        GameSrv_UpdateAgentFloatProperty *msg = &buffer->update_agent_float_property;
+        msg->agent_id = agent->agent_id;
+        msg->prop_id = AgentProperty_EnergyRegen;
+        msg->value = agent->energy_per_sec;
+        GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    }
+}
+
+void GameSrv_SendAgentLevel(GameConnection *conn, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_UPDATE_AGENT_INT_PROPERTY);
+    GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
+    msg->agent_id = agent->agent_id;
+    msg->prop_id = AgentProperty_PublicLevel;
+    msg->value = agent->level;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendAgentLoadTime(GameConnection *conn, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_LOAD_TIME);
+    GameSrv_AgentLoadTime *msg = &buffer->agent_load_time;
+    msg->load_time = agent->load_time;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendCreateAgent(GameConnection *conn, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_CREATE_AGENT);
+    GameSrv_CreateAgentMsg *msg = &buffer->create_agent;
+    msg->agent_id = agent->agent_id;
+    msg->model_id = 0x30000023;
+    msg->agent_type = agent->agent_type;
+    msg->h000B = 5;
+    msg->pos = agent->pos;
+    msg->plane = agent->plane;
+    msg->direction = agent->direction;
+    msg->h001E = 1;
+    msg->speed_base = agent->speed_base;
+    msg->h0023 = 1.f;
+    msg->h0027 = 0x41400000;
+    msg->model_type = 0x706C6179;
+    msg->h003B = 0;
+    msg->h004B.x = HUGE_VALF;
+    msg->h004B.y = HUGE_VALF;
+    msg->h0059.x = HUGE_VALF;
+    msg->h0059.y = HUGE_VALF;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendAgentInitialEffects(GameConnection *conn, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_AGENT_INITIAL_EFFECTS);
+    GameSrv_InitialAgentEffects *msg = &buffer->initial_agent_effects;
+    msg->agent_id = agent->agent_id;
+    msg->effects = agent->effects;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}

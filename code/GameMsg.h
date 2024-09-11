@@ -352,6 +352,56 @@ typedef struct GameSrv_UpdateAgentAttributes {
     uint32_t data_buf[48];
 } GameSrv_UpdateAgentAttributes;
 
+typedef struct GameSrv_AgentLoadTime {
+    uint32_t header;
+    uint32_t load_time;
+} GameSrv_AgentLoadTime;
+
+typedef struct GameSrv_CreateAgentMsg {
+    uint32_t header;
+    uint32_t agent_id;
+    uint32_t model_id; // ho byte: 2=npc, 3=player
+    uint8_t  agent_type; // 1=living, 2=gadget, 4=item
+    uint8_t  h000B;
+    Vec2f    pos;
+    uint16_t plane;
+    Vec2f    direction;
+    uint8_t  h001E;
+    float    speed_base;
+    float    h0023;
+    uint32_t h0027;
+    uint32_t model_type;
+    uint32_t h002F;
+    uint32_t h0033;
+    uint32_t h0037;
+    uint32_t h003B;
+    uint32_t h003F;
+    Vec2f    h0043;
+    Vec2f    h004B;
+    uint16_t h0053;
+    uint32_t h0055;
+    Vec2f    h0059;
+    uint16_t h0061;
+} GameSrv_CreateAgentMsg;
+
+typedef struct GameSrv_UpdatePlayerAgent {
+    uint16_t header;
+    uint32_t player_id;
+    uint32_t agent_id;
+    uint32_t appearance;
+    uint8_t  unk0;
+    uint32_t unk1;
+    uint32_t unk2;
+    uint32_t name_len;
+    uint16_t name_buf[32];
+} GameSrv_UpdatePlayerAgent;
+
+typedef struct GameSrv_InitialAgentEffects {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t effects;
+} GameSrv_InitialAgentEffects;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -408,5 +458,9 @@ typedef union GameSrvMsg {
     GameSrv_UnlockedMaps                 unlocked_maps;
     GameSrv_UpdateAgentAttributePoints   update_agent_attribute_points;
     GameSrv_UpdateAgentAttributes        update_agent_attributes;
+    GameSrv_AgentLoadTime                agent_load_time;
+    GameSrv_CreateAgentMsg               create_agent;
+    GameSrv_UpdatePlayerAgent            update_player_agent;
+    GameSrv_InitialAgentEffects          initial_agent_effects;
 } GameSrvMsg;
 #pragma pack(pop)

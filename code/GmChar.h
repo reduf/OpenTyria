@@ -144,14 +144,7 @@ typedef struct CharacterSettings {
     uint16_t     version;           // currently it's always 6
     uint16_t     last_outpost;
     uint32_t     last_time_played;  // not sure what is the value, but it changes everytime you play and playing with the same character on the same day almost always result to the same id.
-    uint32_t     sex                  : 1;
-    uint32_t     height               : HEIGHT_BITS;
-    uint32_t     skin_color           : SKIN_COLOR_BITS;
-    uint32_t     hair_color           : HAIR_COLOR_BITS;
-    uint32_t     face_style           : FACE_STYLE_BITS;
-    uint32_t     primary_profession   : 4;
-    uint32_t     hair_style           : HAIR_STYLE_BITS;
-    uint32_t     campaign             : 2; // 0=prof, 1=faction, 2=nightfall
+    Appearance   appearance;
     uint8_t      guild_hall_id[16];
     uint16_t     campaign_type        : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
     uint16_t     level                : LEVEL_BITS;

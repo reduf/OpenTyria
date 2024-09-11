@@ -165,8 +165,8 @@
 #define GAME_SMSG_PVP_ITEM_END                          (0x001B) // 27
 #define GAME_SMSG_SKILL_UNLOCKED                        (0x001D) // 29
 #define GAME_SMSG_AGENT_MOVEMENT_TICK                   (0x001E) // 30
-#define GAME_SMSG_AGENT_INSTANCE_TIMER                  (0x001F) // 31
-#define GAME_SMSG_AGENT_SPAWNED                         (0x0020) // 32
+#define GAME_SMSG_AGENT_LOAD_TIME                       (0x001F) // 31
+#define GAME_SMSG_CREATE_AGENT                          (0x0020) // 32
 #define GAME_SMSG_AGENT_DESPAWNED                       (0x0021) // 33
 #define GAME_SMSG_AGENT_SET_PLAYER                      (0x0022) // 34
 #define GAME_SMSG_AGENT_UPDATE_DIRECTION                (0x0025) // 37
@@ -203,7 +203,7 @@
 #define GAME_SMSG_QUEST_UPDATE_NAME                     (0x0053) // 83
 #define GAME_SMSG_NPC_UPDATE_PROPERTIES                 (0x0055) // 85
 #define GAME_SMSG_NPC_UPDATE_MODEL                      (0x0056) // 86
-#define GAME_SMSG_AGENT_CREATE_PLAYER                   (0x0058) // 88
+#define GAME_SMSG_UPDATE_PLAYER_AGENT                   (0x0058) // 88
 #define GAME_SMSG_AGENT_DESTROY_PLAYER                  (0x0059) // 89
 #define GAME_SMSG_CHAT_MESSAGE_CORE                     (0x005C) // 92
 #define GAME_SMSG_CHAT_MESSAGE_SERVER                   (0x005D) // 93
@@ -216,6 +216,7 @@
 #define GAME_SMSG_POST_PROCESS                          (0x006A) // 106
 #define GAME_SMSG_DUNGEON_REWARD                        (0x006B) // 107
 #define GAME_SMSG_NPC_UPDATE_WEAPONS                    (0x006C) // 108
+#define GAME_SMSG_UPDATE_AGENT_EQUIPMENT_MODELS         (0x006D) // 109
 #define GAME_SMSG_HARD_MODE_UNLOCKED                    (0x006F) // 111
 #define GAME_SMSG_MERCENARY_INFO                        (0x0073) // 115
 #define GAME_SMSG_DIALOG_BUTTON                         (0x007D) // 125

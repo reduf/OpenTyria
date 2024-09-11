@@ -32,17 +32,6 @@ typedef struct MsgFormat {
     size_t    unpack_size;
 } MsgFormat;
 
-typedef struct Vec2f {
-    float x;
-    float y;
-} Vec2f;
-
-typedef struct Vec3f {
-    float x;
-    float y;
-    float z;
-} Vec3f;
-
 extern MsgFormat AUTH_CMSG_FORMATS[AUTH_CMSG_COUNT];
 extern MsgFormat AUTH_SMSG_FORMATS[AUTH_SMSG_COUNT];
 extern MsgFormat GAME_CMSG_FORMATS[GAME_CMSG_COUNT];

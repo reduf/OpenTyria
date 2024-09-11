@@ -55,6 +55,7 @@ int GameSrv_Setup(GameSrv *srv)
         return err;
     }
 
+    srv->creation_instance_time = sys_get_monotonic_time_ms();
     return ERR_OK;
 }
 
@@ -109,6 +110,7 @@ int GameConnection_SendMessage(GameConnection *conn, GameSrvMsg *msg, size_t siz
 
     size_t written;
     if ((err = pack_msg(format, &written, msg->buffer, size, dst, MSG_MAX_BUFFER_SIZE)) != 0) {
+        log_error("Failed to serialized message %u", msg->header);
         array_shrink(&conn->outgoing, size_before);
         return err;
     }
@@ -914,7 +916,14 @@ void GameSrv_Poll(GameSrv *srv)
 void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
 {
     GmAgent *agent = GameSrv_CreateAgent(srv);
+    agent->pos.x = -9067.f;
+    agent->pos.y = 13218.f;
+    agent->direction.x = 1.f;
+    agent->direction.y = 0.f;
     agent->player_id = player->player_id;
+    agent->agent_type = AgentType_Living;
+    agent->speed_base = 288.f;
+
     player->agent_id = agent->agent_id;
 }
 
@@ -944,6 +953,11 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
         }
 
         player->primary_profession = player->character.primary_profession;
+        if (player->character.settings.len <= sizeof(player->char_settings)) {
+            memcpy(&player->char_settings, player->character.settings.buf, player->character.settings.len);
+        } else {
+            log_warn("Invalid character settings len %zu", player->character.settings.len);
+        }
     }
 
     size_t count;
@@ -1225,6 +1239,14 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
         return ERR_OK;
     }
 
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgent(srv, player->agent_id)) == NULL) {
+        log_error("Unknown agent");
+        return ERR_OK;
+    }
+
+    agent->load_time = srv->current_instance_time;
+
     GameSrv_SendUnlockedSkills(conn, player);
     GameSrv_SendUnlockedPvpHeroes(conn);
     GameSrv_SendPvpItems(conn);
@@ -1239,6 +1261,16 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerFactions(conn, player);
     // GameSrv_SendPlayerTitles
     GameSrv_SendPlayerAttributes(conn, player);
+    GameSrv_SendAgentLoadTime(conn, agent);
+    // GAME_SMSG_AGENT_DISPLAY_CAPE
+    GameSrv_SendUpdatePlayerAgent(conn, player);
+    // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
+    // 176
+    GameSrv_SendPlayerProfession(conn, player);
+    GameSrv_SendAgentLevel(conn, agent);
+    // GAME_SMSG_TITLE_RANK_DISPLAY
+    GameSrv_SendAgentInitialEffects(conn, agent);
+    GameSrv_SendCreateAgent(conn, agent);
 
     return ERR_OK;
 }
@@ -1446,14 +1478,14 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     CharacterSettings settings = {6};
     settings.last_outpost = MapId_KamadanJewelOfIstanOutpost;
     settings.last_time_played = 0;
-    settings.sex = app.sex;
-    settings.height = app.height;
-    settings.skin_color = app.skin_color;
-    settings.hair_color = app.hair_color;
-    settings.face_style = app.face_style;
-    settings.primary_profession = app.primary_profession;
-    settings.hair_style = app.hair_style;
-    settings.campaign = app.campaign;
+    settings.appearance.sex = app.sex;
+    settings.appearance.height = app.height;
+    settings.appearance.skin_color = app.skin_color;
+    settings.appearance.hair_color = app.hair_color;
+    settings.appearance.face_style = app.face_style;
+    settings.appearance.primary_profession = app.primary_profession;
+    settings.appearance.hair_style = app.hair_style;
+    settings.appearance.campaign = app.campaign;
     settings.campaign_type = player->char_creation_campaign_type;
     settings.level = 1;
     settings.is_pvp = player->char_creation_campaign_type == CampaignType_Pvp;
@@ -1599,6 +1631,7 @@ void GameSrv_Update(GameSrv *srv)
 
     uint64_t current_time = sys_get_monotonic_time_ms();
     srv->current_frame_time = current_time;
+    srv->current_instance_time = (uint32_t)(srv->creation_instance_time - current_time);
 
     GameSrv_ProcessInternalMessages(srv);
     GameSrv_Poll(srv);
