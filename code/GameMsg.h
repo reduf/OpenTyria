@@ -402,6 +402,11 @@ typedef struct GameSrv_InitialAgentEffects {
     uint32_t effects;
 } GameSrv_InitialAgentEffects;
 
+typedef struct GameSrv_AgentRemove {
+    uint16_t header;
+    uint32_t agent_id;
+} GameSrv_AgentRemove;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -462,5 +467,6 @@ typedef union GameSrvMsg {
     GameSrv_CreateAgentMsg               create_agent;
     GameSrv_UpdatePlayerAgent            update_player_agent;
     GameSrv_InitialAgentEffects          initial_agent_effects;
+    GameSrv_AgentRemove                  agent_remove;
 } GameSrvMsg;
 #pragma pack(pop)

@@ -57,11 +57,11 @@ def main(args):
         print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
         if name == 'GAME_SMSG_UPDATE_AGENT_INT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'III')
-            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
+            # print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
         if name == 'GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'IIf')
-            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
+            # print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
         if name == 'GAME_SMSG_AGENT_SPAWNED':
             data = proc.read(packet + 4, 'IIIIffIffIffIIIIIIIffffIIffI')
@@ -93,11 +93,11 @@ def main(args):
             h0059_x = data[25]
             h0059_y = data[26]
             h0061 = data[27]
-            print(f'>> agent_id = {agent_id}, model_id = {model_id}, agent_type = {agent_type}, h000B = {h000B}, pos_x = {pos_x}, pos_y = {pos_y}, plane = {plane}, direction_x = {direction_x}, direction_y = {direction_y}, h001E = {h001E}, speed_base = {speed_base}, h0023 = {h0023}, h0027 = {h0027}, model_type = {model_type}, h002F = {h002F}, h0033 = {h0033}, h0037 = {h0037}, h003B = {h003B}, h003F = {h003F}, h0043_x = {h0043_x}, h0043_y = {h0043_y}, h004B_x = {h004B_x}, h004B_y = {h004B_y}, h0053 = {h0053}, h0055 = {h0055}, h0059_x = {h0059_x}, h0059_y = {h0059_y}, h0061 = {h0061}')
+            # print(f'>> agent_id = {agent_id}, model_id = {model_id}, agent_type = {agent_type}, h000B = {h000B}, pos_x = {pos_x}, pos_y = {pos_y}, plane = {plane}, direction_x = {direction_x}, direction_y = {direction_y}, h001E = {h001E}, speed_base = {speed_base}, h0023 = {h0023}, h0027 = {h0027}, model_type = {model_type}, h002F = {h002F}, h0033 = {h0033}, h0037 = {h0037}, h003B = {h003B}, h003F = {h003F}, h0043_x = {h0043_x}, h0043_y = {h0043_y}, h004B_x = {h004B_x}, h004B_y = {h004B_y}, h0053 = {h0053}, h0055 = {h0055}, h0059_x = {h0059_x}, h0059_y = {h0059_y}, h0061 = {h0061}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)
-        dbg.add_hook(cmsg_addr, on_send_packet)
+        # dbg.add_hook(cmsg_addr, on_send_packet)
         print(f'Start debugging process {proc.name}, {proc.id}')
         while running:
             dbg.poll(32)

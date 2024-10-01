@@ -22,15 +22,17 @@ typedef struct GmAgent {
     float     speed_base;
     uint32_t  level;
     uint32_t  effects;
+    uint32_t  party_id;
 } GmAgent;
 typedef array(GmAgent) GmAgentArray;
 
 GmAgent* GameSrv_CreateAgent(GameSrv *srv);
 GmAgent* GameSrv_GetAgent(GameSrv *srv, uint32_t agent_id);
 GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id);
+void     GameSrv_RemoveAgentById(GameSrv *srv, uint32_t agent_id);
 
-void GameSrv_SendAgentHealthEnergy(GameConnection *conn, GmAgent *agent);
-void GameSrv_SendAgentLevel(GameConnection *conn, GmAgent *agent);
-void GameSrv_SendAgentLoadTime(GameConnection *conn, GmAgent *agent);
-void GameSrv_SendCreateAgent(GameConnection *conn, GmAgent *agent);
-void GameSrv_SendAgentInitialEffects(GameConnection *conn, GmAgent *agent);
+void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendAgentLevel(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent);

@@ -46,18 +46,18 @@ GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id)
     return result;
 }
 
-void GameSrv_SendItemStreamCreate(GameConnection *conn)
+void GameSrv_SendItemStreamCreate(GameSrv *srv, GameConnection *conn)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_STREAM_CREATE);
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_STREAM_CREATE);
     GameSrv_ItemStreamCreate *msg = &buffer->item_stream_create;
     msg->stream_id = 1;
     msg->is_hero = 0;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendItemGeneralInfo(GameConnection *conn, GmItem *item)
+void GameSrv_SendItemGeneralInfo(GameSrv *srv, GameConnection *conn, GmItem *item)
 {
-    GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_GENERAL_INFO);
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_GENERAL_INFO);
     GameSrv_ItemGeneralInfo *msg = &buffer->item_general_info;
     msg->item_id = item->item_id;
     msg->file_id = item->file_id;
@@ -87,7 +87,7 @@ void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id)
         return;
     }
 
-    GameSrv_SendItemGeneralInfo(conn, item);
+    GameSrv_SendItemGeneralInfo(srv, conn, item);
     // @TODO: send customization and other stuff
 }
 

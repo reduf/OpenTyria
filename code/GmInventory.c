@@ -69,7 +69,7 @@ void GameSrv_FreeBagItems(GameSrv *srv, GmPlayer *player, GmBag *bag)
         }
 
         if (conn != NULL) {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_REMOVE);
+            GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_REMOVE);
             GameSrv_ItemRemove *msg = &buffer->item_remove;
             msg->stream_id = 1;
             msg->item_id = item_id;
@@ -121,10 +121,10 @@ void GameSrv_SendBagItems(GameSrv *srv, GameConnection *conn, GmBag *bag)
             continue;
         }
 
-        GameSrv_SendItemGeneralInfo(conn, item);
+        GameSrv_SendItemGeneralInfo(srv, conn, item);
 
         if (item->profession != Profession_None) {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_SET_PROFESSION);
+            GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_SET_PROFESSION);
             GameSrv_ItemSetProfession *msg = &buffer->item_set_profession;
             msg->item_id = item->item_id;
             msg->profession = item->profession;
@@ -132,7 +132,7 @@ void GameSrv_SendBagItems(GameSrv *srv, GameConnection *conn, GmBag *bag)
         }
 
         {
-            GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_ITEM_MOVED_TO_LOCATION);
+            GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_MOVED_TO_LOCATION);
             GameSrv_ItemMoveToLocation *msg = &buffer->item_move_to_location;
             msg->stream_id = 1;
             msg->item_id = item->item_id;
@@ -160,7 +160,7 @@ void GameSrv_SendInventory(GameSrv *srv, GameConnection *conn, size_t player_id)
             GameSrv_SendItemById(srv, conn, bag.bag_item_id);
         }
 
-        GameSrvMsg *buffer = GameConnection_BuildMsg(conn, GAME_SMSG_INVENTORY_CREATE_BAG);
+        GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_INVENTORY_CREATE_BAG);
         GameSrv_InventoryCreateBag *msg = &buffer->inventory_create_bag;
         msg->stream_id = 1;
         msg->bag_type = bag.bag_type;

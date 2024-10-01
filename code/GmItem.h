@@ -161,6 +161,6 @@ typedef slice(GmItem) GmItemSlice;
 GmItem* GameSrv_AllocateItem(GameSrv *srv);
 void GameSrv_FreeItemId(GameSrv *srv, uint32_t item_id);
 GmItem* GameSrv_GetItemById(GameSrv *srv, uint32_t item_id);
-void GameSrv_SendItemStreamCreate(GameConnection *conn);
-void GameSrv_SendItemGeneralInfo(GameConnection *conn, GmItem *item);
+void GameSrv_SendItemStreamCreate(GameSrv *srv, GameConnection *conn);
+void GameSrv_SendItemGeneralInfo(GameSrv *srv, GameConnection *conn, GmItem *item);
 void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id);

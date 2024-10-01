@@ -167,7 +167,7 @@
 #define GAME_SMSG_AGENT_MOVEMENT_TICK                   (0x001E) // 30
 #define GAME_SMSG_AGENT_LOAD_TIME                       (0x001F) // 31
 #define GAME_SMSG_CREATE_AGENT                          (0x0020) // 32
-#define GAME_SMSG_AGENT_DESPAWNED                       (0x0021) // 33
+#define GAME_SMSG_AGENT_REMOVE                          (0x0021) // 33
 #define GAME_SMSG_AGENT_SET_PLAYER                      (0x0022) // 34
 #define GAME_SMSG_AGENT_UPDATE_DIRECTION                (0x0025) // 37
 #define GAME_SMSG_AGENT_UPDATE_SPEED_BASE               (0x0027) // 39

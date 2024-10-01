@@ -745,6 +745,7 @@ class ProcessDebugger(object):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        l = len(self.breakpoints.values());
         # First we disable all the hooks which will restore the original
         # instructions.
         for breakpoint in self.breakpoints.values():
@@ -753,8 +754,7 @@ class ProcessDebugger(object):
 
         # Before stopping to debug the remote process we need to process all
         # debug events, because otherwise we might crash the remote process.
-        self.poll(0)
-        print(len(self.single_step_breakpoints))
+        self.poll(32)
         _DebugActiveProcessStop(self.proc.id)
 
     def __repr__(self):
@@ -903,8 +903,10 @@ class ProcessDebugger(object):
             return _DBG_EXCEPTION_NOT_HANDLED
         addr = info.ExceptionAddress
         if code == _EXCEPTION_SINGLE_STEP:
+            ctx = thread.context32()
             return self._on_single_step(thread, addr)
         if code == _EXCEPTION_BREAKPOINT:
+            ctx = thread.context32()
             return self._on_breakpoint(thread, addr)
         return _DBG_EXCEPTION_NOT_HANDLED
 
