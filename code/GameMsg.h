@@ -293,7 +293,7 @@ typedef struct GameSrv_HardModeUnlocked {
 typedef struct GameSrv_UpdateCurrentMap {
     uint16_t header;
     uint16_t map_id;
-    uint32_t unk;
+    uint8_t  unk;
 } GameSrv_UpdateCurrentMap;
 
 typedef struct GameSrv_InstanceManifestData {
@@ -353,14 +353,14 @@ typedef struct GameSrv_UpdateAgentAttributes {
 } GameSrv_UpdateAgentAttributes;
 
 typedef struct GameSrv_AgentLoadTime {
-    uint32_t header;
+    uint16_t header;
     uint32_t load_time;
 } GameSrv_AgentLoadTime;
 
 typedef struct GameSrv_CreateAgentMsg {
-    uint32_t header;
+    uint16_t header;
     uint32_t agent_id;
-    uint32_t model_id; // ho byte: 2=npc, 3=player
+    uint32_t model_id;   // ho byte: 2=npc, 3=player
     uint8_t  agent_type; // 1=living, 2=gadget, 4=item
     uint8_t  h000B;
     Vec2f    pos;

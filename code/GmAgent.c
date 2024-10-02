@@ -31,8 +31,6 @@ GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id)
     return result;
 }
 
-
-
 void GameSrv_RemoveAgentById(GameSrv *srv, uint32_t agent_id)
 {
     GmAgent *result;
@@ -97,7 +95,7 @@ void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_AGENT);
     GameSrv_CreateAgentMsg *msg = &buffer->create_agent;
     msg->agent_id = agent->agent_id;
-    msg->model_id = 0x30000023;
+    msg->model_id = 0x30000000 | (agent->player_id & 0x0FFFFFFF); // 0x20000000 is for npc, 0x30000000 is for player
     msg->agent_type = agent->agent_type;
     msg->h000B = 5;
     msg->pos = agent->pos;

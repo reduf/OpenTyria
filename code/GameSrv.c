@@ -101,6 +101,9 @@ int GameConnection_SendMessage(GameConnection *conn, GameSrvMsg *msg, size_t siz
     assert(msg->header < ARRAY_SIZE(GAME_SMSG_FORMATS));
     MsgFormat format = GAME_SMSG_FORMATS[msg->header];
 
+    assert(msg->header == format.header);
+    assert(size == format.unpack_size);
+
     size_t size_before = array_size(&conn->outgoing);
 
     uint8_t *dst;
@@ -1294,6 +1297,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     // GAME_SMSG_TITLE_RANK_DISPLAY
     GameSrv_SendAgentInitialEffects(srv, conn, agent);
     GameSrv_SendCreateAgent(srv, conn, agent);
+    GameSrv_SendInstanceLoadFinish(srv, conn);
 
     return ERR_OK;
 }
