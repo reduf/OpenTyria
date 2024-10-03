@@ -1297,6 +1297,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     // GAME_SMSG_TITLE_RANK_DISPLAY
     GameSrv_SendAgentInitialEffects(srv, conn, agent);
     GameSrv_SendCreateAgent(srv, conn, agent);
+    GameSrv_SendSetAgentStatus(srv, conn, agent);
     GameSrv_SendInstanceLoadFinish(srv, conn);
 
     return ERR_OK;

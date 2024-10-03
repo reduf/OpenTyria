@@ -95,7 +95,7 @@ void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_AGENT);
     GameSrv_CreateAgentMsg *msg = &buffer->create_agent;
     msg->agent_id = agent->agent_id;
-    msg->model_id = 0x30000000 | (agent->player_id & 0x0FFFFFFF); // 0x20000000 is for npc, 0x30000000 is for player
+    msg->model_id = CHAR_CLASS_PLAYER_BASE | (agent->player_id & ~CHAR_CLASS_BASE_MASK);
     msg->agent_type = agent->agent_type;
     msg->h000B = 5;
     msg->pos = agent->pos;
@@ -105,7 +105,7 @@ void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
     msg->speed_base = agent->speed_base;
     msg->h0023 = 1.f;
     msg->h0027 = 0x41400000;
-    msg->model_type = 0x706C6179;
+    msg->team_token = 0xBAADF00D;
     msg->h003B = 0;
     msg->h004B.x = HUGE_VALF;
     msg->h004B.y = HUGE_VALF;
@@ -120,5 +120,14 @@ void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent
     GameSrv_InitialAgentEffects *msg = &buffer->initial_agent_effects;
     msg->agent_id = agent->agent_id;
     msg->effects = agent->effects;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_SendSetAgentStatus(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_SET_PLAYER);
+    GameSrv_SetAgentStatus *msg = &buffer->set_agent_status;
+    msg->agent_id = agent->agent_id;
+    msg->unk0 = 3;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }

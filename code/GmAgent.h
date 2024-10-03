@@ -7,6 +7,10 @@ typedef enum AgentType {
     AgentType_Item   = 3,
 } AgentType;
 
+#define CHAR_CLASS_BASE_MASK    0xF0000000
+#define CHAR_CLASS_PLAYER_BASE  0x30000000
+#define CHAR_CLASS_MONSTER_BASE 0x20000000
+
 typedef struct GmAgent {
     uint32_t  agent_id;
     Vec2f     pos;
@@ -36,3 +40,4 @@ void GameSrv_SendAgentLevel(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendSetAgentStatus(GameSrv *srv, GameConnection *conn, GmAgent *agent);

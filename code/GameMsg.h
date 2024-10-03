@@ -370,7 +370,7 @@ typedef struct GameSrv_CreateAgentMsg {
     float    speed_base;
     float    h0023;
     uint32_t h0027;
-    uint32_t model_type;
+    uint32_t team_token;
     uint32_t h002F;
     uint32_t h0033;
     uint32_t h0037;
@@ -406,6 +406,12 @@ typedef struct GameSrv_AgentRemove {
     uint16_t header;
     uint32_t agent_id;
 } GameSrv_AgentRemove;
+
+typedef struct GameSrv_SetAgentStatus {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t unk0;
+} GameSrv_SetAgentStatus;
 
 typedef union GameCliMsg {
     uint16_t                             header;
@@ -468,5 +474,6 @@ typedef union GameSrvMsg {
     GameSrv_UpdatePlayerAgent            update_player_agent;
     GameSrv_InitialAgentEffects          initial_agent_effects;
     GameSrv_AgentRemove                  agent_remove;
+    GameSrv_SetAgentStatus               set_agent_status;
 } GameSrvMsg;
 #pragma pack(pop)
