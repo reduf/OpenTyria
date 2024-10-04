@@ -168,7 +168,7 @@
 #define GAME_SMSG_AGENT_LOAD_TIME                       (0x001F) // 31
 #define GAME_SMSG_CREATE_AGENT                          (0x0020) // 32
 #define GAME_SMSG_AGENT_REMOVE                          (0x0021) // 33
-#define GAME_SMSG_AGENT_SET_PLAYER                      (0x0022) // 34
+#define GAME_SMSG_UPDATE_PLAYER_AGENT                   (0x0022) // 34
 #define GAME_SMSG_AGENT_UPDATE_DIRECTION                (0x0025) // 37
 #define GAME_SMSG_AGENT_UPDATE_SPEED_BASE               (0x0027) // 39
 #define GAME_SMSG_AGENT_STOP_MOVING                     (0x0028) // 40
@@ -203,7 +203,7 @@
 #define GAME_SMSG_QUEST_UPDATE_NAME                     (0x0053) // 83
 #define GAME_SMSG_NPC_UPDATE_PROPERTIES                 (0x0055) // 85
 #define GAME_SMSG_NPC_UPDATE_MODEL                      (0x0056) // 86
-#define GAME_SMSG_UPDATE_PLAYER_AGENT                   (0x0058) // 88
+#define GAME_SMSG_UPDATE_PLAYER_INFO                    (0x0058) // 88
 #define GAME_SMSG_AGENT_DESTROY_PLAYER                  (0x0059) // 89
 #define GAME_SMSG_CHAT_MESSAGE_CORE                     (0x005C) // 92
 #define GAME_SMSG_CHAT_MESSAGE_SERVER                   (0x005D) // 93

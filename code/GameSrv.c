@@ -708,11 +708,11 @@ void GameSrv_SendReadyForMapSpawn(GameSrv *srv, GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendInstanceLoaded(GameSrv *srv, GameConnection *conn)
+void GameSrv_SendInstanceLoaded(GameSrv *srv, GameConnection *conn, GmPlayer *player)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_INSTANCE_LOADED);
     GameSrv_InstanceLoaded *msg = &buffer->instance_loaded;
-    msg->player_team_token = 0xBAADF00D;
+    msg->player_team_token = player->player_team_token;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
@@ -932,9 +932,10 @@ void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
     agent->pos.y = 13218.f;
     agent->direction.x = 1.f;
     agent->direction.y = 0.f;
-    agent->player_id = player->player_id;
+    agent->model_id = CHAR_CLASS_PLAYER_BASE | player->player_id;
     agent->agent_type = AgentType_Living;
     agent->speed_base = 288.f;
+    agent->player_team_token = player->player_team_token;
 
     player->agent_id = agent->agent_id;
 }
@@ -1164,6 +1165,7 @@ void GameSrv_HandleTransferUserCmd(GameSrv *srv, AdminMsg_TransferUser *msg)
         GmPlayer *player = GameSrv_CreatePlayer(srv, msg->token, msg->account_id, msg->char_id);
         conn.player_id = player->player_id;
 
+        player->player_team_token = 0xBAADF00D;
         GameSrv_LoadPlayerFromDatabase(srv, player);
         GameSrv_CreateDefaultBags(srv, player);
         GameSrv_CreatePlayerAgent(srv, player);
@@ -1279,7 +1281,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendAccountFeatures(srv, conn);
     GameSrv_SendUnlockedMaps(srv, conn, player);
     // GAME_SMSG_VANQUISH_PROGRESS
-    GameSrv_SendInstanceLoaded(srv, conn);
+    GameSrv_SendInstanceLoaded(srv, conn, player);
     // RecvPacket (1DBB5790): 123, 0x7B, unknown
     // RecvPacket (1DBB5790): 124, 0x7C, unknown
     GameSrv_SendSkillsAndAttributes(srv, conn, player);
@@ -1289,15 +1291,15 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerAttributes(srv, conn, player);
     GameSrv_SendAgentLoadTime(srv, conn, agent);
     // GAME_SMSG_AGENT_DISPLAY_CAPE
-    GameSrv_SendUpdatePlayerAgent(srv, conn, player);
+    GameSrv_BroadcastUpdatePlayerInfo(srv, player);
     // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
     // 176
     GameSrv_SendPlayerProfession(srv, conn, player);
-    GameSrv_SendAgentLevel(srv, conn, agent);
+    GameSrv_BroadcastAgentLevel(srv, agent);
     // GAME_SMSG_TITLE_RANK_DISPLAY
     GameSrv_SendAgentInitialEffects(srv, conn, agent);
-    GameSrv_SendCreateAgent(srv, conn, agent);
-    GameSrv_SendSetAgentStatus(srv, conn, agent);
+    GameSrv_BroadcastCreateAgent(srv, agent);
+    GameSrv_SendUpdatePlayerAgent(srv, conn, agent);
     GameSrv_SendInstanceLoadFinish(srv, conn);
 
     return ERR_OK;

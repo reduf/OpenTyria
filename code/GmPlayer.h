@@ -30,6 +30,7 @@ typedef struct GmPlayer {
     GmBagArray        bags;
     CampaignType      char_creation_campaign_type;
     Profession        primary_profession;
+    uint32_t          player_team_token;
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;
 
@@ -54,4 +55,4 @@ void GameSrv_SendPlayerHealthEnergy(GameSrv *srv, GameConnection *conn, GmPlayer
 void GameSrv_SendUnlockedMaps(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *player);
-void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player);

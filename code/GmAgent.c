@@ -72,14 +72,14 @@ void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *
     }
 }
 
-void GameSrv_SendAgentLevel(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_AGENT_INT_PROPERTY);
     GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
     msg->agent_id = agent->agent_id;
     msg->prop_id = AgentProperty_PublicLevel;
     msg->value = agent->level;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent)
@@ -90,12 +90,12 @@ void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agen
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_AGENT);
     GameSrv_CreateAgentMsg *msg = &buffer->create_agent;
     msg->agent_id = agent->agent_id;
-    msg->model_id = CHAR_CLASS_PLAYER_BASE | (agent->player_id & ~CHAR_CLASS_BASE_MASK);
+    msg->model_id = agent->model_id;
     msg->agent_type = agent->agent_type;
     msg->h000B = 5;
     msg->pos = agent->pos;
@@ -105,13 +105,13 @@ void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
     msg->speed_base = agent->speed_base;
     msg->h0023 = 1.f;
     msg->h0027 = 0x41400000;
-    msg->team_token = 0xBAADF00D;
+    msg->player_team_token = agent->player_team_token;
     msg->h003B = 0;
     msg->h004B.x = HUGE_VALF;
     msg->h004B.y = HUGE_VALF;
     msg->h0059.x = HUGE_VALF;
     msg->h0059.y = HUGE_VALF;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent)
@@ -123,10 +123,10 @@ void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendSetAgentStatus(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
 {
-    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_SET_PLAYER);
-    GameSrv_SetAgentStatus *msg = &buffer->set_agent_status;
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PLAYER_AGENT);
+    GameSrv_UpdatePlayerAgent *msg = &buffer->update_player_agent;
     msg->agent_id = agent->agent_id;
     msg->unk0 = 3;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));

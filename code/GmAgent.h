@@ -16,7 +16,7 @@ typedef struct GmAgent {
     Vec2f     pos;
     uint16_t  plane;
     Vec2f     direction;
-    uint32_t  player_id;
+    uint32_t  model_id;
     uint32_t  load_time;
     uint32_t  health;
     uint32_t  energy;
@@ -27,6 +27,7 @@ typedef struct GmAgent {
     uint32_t  level;
     uint32_t  effects;
     uint32_t  party_id;
+    uint32_t  player_team_token;
 } GmAgent;
 typedef array(GmAgent) GmAgentArray;
 
@@ -36,8 +37,8 @@ GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id);
 void     GameSrv_RemoveAgentById(GameSrv *srv, uint32_t agent_id);
 
 void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *agent);
-void GameSrv_SendAgentLevel(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent);
 void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent);
-void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent);
 void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent);
-void GameSrv_SendSetAgentStatus(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
