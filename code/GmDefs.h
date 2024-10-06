@@ -18,3 +18,5 @@ typedef struct GmAgent GmAgent;
 typedef struct GmBag GmBag;
 typedef struct GmItem GmItem;
 typedef struct GmPlayer GmPlayer;
+
+typedef struct GameSrv_ChatMessage GameSrv_ChatMessage;

@@ -39,6 +39,7 @@ GmAgent* GameSrv_CreateAgent(GameSrv *srv);
 GmAgent* GameSrv_GetAgent(GameSrv *srv, uint32_t agent_id);
 GmAgent* GameSrv_GetAgentOrAbort(GameSrv *srv, uint32_t agent_id);
 void     GameSrv_RemoveAgentById(GameSrv *srv, uint32_t agent_id);
+GmAgent* GameSrv_GetAgentByPlayerId(GameSrv *srv, uint32_t player_id);
 
 void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent);
@@ -47,4 +48,5 @@ void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent);
 void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent);
 void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags);
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_BroadcastAgentPosition(GameSrv *srv, GmAgent *agent);
 void GameSrv_WorldTick(GameSrv *srv);

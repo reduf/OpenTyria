@@ -81,6 +81,7 @@
 #include "GmAttributes.h"
 
 #include "GmChar.h"
+#include "GmChat.h"
 #include "GmFriend.h"
 #include "GmMap.h"
 #include "GmInventory.h"
@@ -114,6 +115,7 @@
 #include "Db.c"
 #include "GameSrv.c"
 #include "GmAgent.c"
+#include "GmChat.c"
 #include "GmDefaultArmors.c"
 #include "GmInventory.c"
 #include "GmItem.c"

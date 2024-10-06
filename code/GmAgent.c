@@ -48,6 +48,21 @@ void GameSrv_RemoveAgentById(GameSrv *srv, uint32_t agent_id)
     GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
+GmAgent* GameSrv_GetAgentByPlayerId(GameSrv *srv, uint32_t player_id)
+{
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        return NULL;
+    }
+
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgent(srv, player->agent_id)) == NULL) {
+        return NULL;
+    }
+
+    return agent;
+}
+
 void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *agent)
 {
     {
@@ -155,6 +170,17 @@ void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *
     msg->agent_id = agent->agent_id;
     msg->unk0 = 3;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_BroadcastAgentPosition(GameSrv *srv, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_UPDATE_POSITION);
+    GameSrv_UpdateAgentPostion *msg = &buffer->update_agent_position;
+    msg->agent_id = agent->agent_id;
+    msg->position = agent->position;
+    msg->plane = agent->plane;
+
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
 void GameSrv_BroadcastWorldSimulationTick(GameSrv *srv, uint32_t delta_ms)

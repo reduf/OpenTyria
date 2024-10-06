@@ -41,7 +41,7 @@ typedef struct GameConnection {
     bool                  writable;
     arc4_context          cipher_enc;
     arc4_context          cipher_dec;
-    uint32_t              player_id;
+    uint16_t              player_id;
 } GameConnection;
 
 typedef struct GameConnMap {
@@ -50,7 +50,7 @@ typedef struct GameConnMap {
 } GameConnMap;
 
 typedef struct GamePlayerMsg {
-    uint32_t   player_id;
+    uint16_t   player_id;
     GameCliMsg msg;
 } GamePlayerMsg;
 typedef array(GamePlayerMsg) GamePlayerMsgArray;

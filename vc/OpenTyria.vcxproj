@@ -84,6 +84,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\code\GmChat.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\code\GmDefaultArmors.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -246,6 +254,7 @@
     <ClInclude Include="..\code\GmAgent.h" />
     <ClInclude Include="..\code\GmAgentProperties.h" />
     <ClInclude Include="..\code\GmChar.h" />
+    <ClInclude Include="..\code\GmChat.h" />
     <ClInclude Include="..\code\GmDefaultArmors.h" />
     <ClInclude Include="..\code\GmDefs.h" />
     <ClInclude Include="..\code\GmErrors.h" />

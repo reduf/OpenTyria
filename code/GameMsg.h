@@ -100,6 +100,13 @@ typedef struct GameSrv_CharCreationConfirm {
     uint8_t  config[8];
 } GameSrv_CharCreationConfirm;
 
+typedef struct GameSrv_ChatMessage {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t message_len;
+    uint16_t message_buf[138];
+} GameSrv_ChatMessage;
+
 typedef struct GameSrv_UpdateProfession {
     uint16_t header;
     uint32_t agent_id;
@@ -484,6 +491,13 @@ typedef struct GameSrv_UpdateWorldSimulationTick {
     uint32_t delta_ms;
 } GameSrv_UpdateWorldSimulationTick;
 
+typedef struct GameSrv_UpdateAgentPostion {
+    uint16_t header;
+    uint32_t agent_id;
+    Vec2f    position;
+    uint16_t plane;
+} GameSrv_UpdateAgentPostion;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -493,6 +507,7 @@ typedef union GameCliMsg {
     GameSrv_CharCreationChangeProf       char_creation_change_prof;
     GameSrv_ChangeEquippedItemColor      change_equipped_item_color;
     GameSrv_CharCreationConfirm          char_creation_confirm;
+    GameSrv_ChatMessage                  chat_message;
 } GameCliMsg;
 
 typedef union GameSrvMsg {
@@ -555,5 +570,6 @@ typedef union GameSrvMsg {
     GameSrv_UpdateAgentVisualEquipment   update_agent_visual_equipment;
     GameSrv_CreateEquipmentItem          create_equipment_item;
     GameSrv_UpdateWorldSimulationTick    world_simulation_tick;
+    GameSrv_UpdateAgentPostion           update_agent_position;
 } GameSrvMsg;
 #pragma pack(pop)

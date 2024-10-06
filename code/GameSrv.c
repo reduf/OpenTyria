@@ -1621,7 +1621,7 @@ void GameSrv_HandleDisconnect(GameSrv *srv, size_t player_id)
     }
 }
 
-int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg)
+int GameSrv_ProcessPlayerMessage(GameSrv *srv, uint16_t player_id, GameCliMsg *msg)
 {
     int err = ERR_OK;
     switch (msg->header) {
@@ -1657,6 +1657,9 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, size_t player_id, GameCliMsg *msg
         break;
     case GAME_CMSG_CHAR_CREATION_CONFIRM:
         err = GameSrv_HandleCharCreationConfirm(srv, player_id, &msg->char_creation_confirm);
+        break;
+    case GAME_CMSG_SEND_CHAT_MESSAGE:
+        err = GameSrv_HandleChatMessage(srv, player_id, &msg->chat_message);
         break;
     default:
         log_warn(

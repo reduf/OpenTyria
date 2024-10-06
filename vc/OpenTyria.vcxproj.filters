@@ -28,6 +28,7 @@
     <ClCompile Include="..\code\GmItem.c" />
     <ClCompile Include="..\code\GmTitleConstData.c" />
     <ClCompile Include="..\code\GmParty.c" />
+    <ClCompile Include="..\code\GmChat.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\code\array.h" />
@@ -76,6 +77,7 @@
     <ClInclude Include="..\code\GmAgentProperties.h" />
     <ClInclude Include="..\code\GmTitles.h" />
     <ClInclude Include="..\code\GmParty.h" />
+    <ClInclude Include="..\code\GmChat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />
