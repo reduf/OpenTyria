@@ -13,17 +13,21 @@ typedef enum AgentType {
 
 typedef struct GmAgent {
     uint32_t  agent_id;
-    Vec2f     pos;
+    Vec2f     position;
     uint16_t  plane;
     Vec2f     direction;
+    Vec2f     destination;
     uint32_t  model_id;
     uint32_t  load_time;
-    uint32_t  health;
-    uint32_t  energy;
+    uint32_t  health_max;
+    uint32_t  energy_max;
     float     health_per_sec;
     float     energy_per_sec;
+    float     health;
+    float     energy;
     AgentType agent_type;
     float     speed_base;
+    float     speed;
     uint32_t  level;
     uint32_t  effects;
     uint16_t  party_id;
@@ -43,3 +47,4 @@ void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent);
 void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent);
 void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags);
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_WorldTick(GameSrv *srv);

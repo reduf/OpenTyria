@@ -2,6 +2,7 @@
 
 #define GAME_SRV_READ_CHUNK_SIZE 4096
 #define GAME_SRV_TIME_BETWEEN_PING_MS 5000
+#define GAME_SRV_MAX_TIME_BETWEEN_WORLD_TICK_MS 500
 
 void GameConnection_Free(GameConnection *conn)
 {
@@ -733,7 +734,7 @@ void GameSrv_SendManifest(GameSrv *srv, GameConnection *conn, slice_uint8_t data
 
         GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_INSTANCE_MANIFEST_DATA);
         msg = &buffer->instance_manifest_data;
-        msg->n_data = min_uint32_t((uint32_t)rem, sizeof(msg->data));
+        msg->n_data = min_u32((uint32_t)rem, sizeof(msg->data));
         memcpy(msg->data, data.ptr + offset, msg->n_data);
 
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
@@ -928,13 +929,15 @@ void GameSrv_Poll(GameSrv *srv)
 void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
 {
     GmAgent *agent = GameSrv_CreateAgent(srv);
-    agent->pos.x = -9067.f;
-    agent->pos.y = 13218.f;
+    agent->position.x = -9067.f;
+    agent->position.y = 13218.f;
     agent->direction.x = 1.f;
     agent->direction.y = 0.f;
     agent->model_id = CHAR_CLASS_PLAYER_BASE | player->player_id;
     agent->agent_type = AgentType_Living;
     agent->speed_base = 288.f;
+    agent->health_max = 400;
+    agent->energy_max = 25;
     agent->player_team_token = player->player_team_token;
 
     player->agent_id = agent->agent_id;
@@ -1242,8 +1245,8 @@ int GameSrv_HandleInstanceLoadRequestSpawn(GameSrv *srv, size_t player_id)
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_INSTANCE_LOAD_SPAWN_POINT);
     GameSrv_SpawnPoint *msg = &buffer->spawn_point;
     msg->map_file_id = 0x345CC;
-    msg->pos.x = -9130;
-    msg->pos.y = 11105;
+    msg->position.x = -9130;
+    msg->position.y = 11105;
     msg->plane = 0;
     msg->unk0 = 0;
     msg->is_cinematic = 0;
@@ -1300,6 +1303,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerProfession(srv, conn, player);
     // GAME_SMSG_TITLE_RANK_DISPLAY
     GameSrv_BroadcastCreateAgent(srv, agent);
+    GameSrv_SendAgentHealthEnergy(srv, conn, agent);
     GameSrv_BroadcastAgentLevel(srv, agent);
     GameSrv_BroadcastAgentInitialEffects(srv, agent);
     GameSrv_BroadcastUpdateAgentVisualEquipment(srv, agent, &player->bags);
@@ -1696,6 +1700,10 @@ void GameSrv_Update(GameSrv *srv)
             GameConnection *conn = &srv->connections[idx].value;
             GameSrv_SendPing(srv, conn);
         }
+    }
+
+    if (GAME_SRV_MAX_TIME_BETWEEN_WORLD_TICK_MS <= (current_time - srv->last_world_tick)) {
+        GameSrv_WorldTick(srv);
     }
 
     for (size_t idx = 0; idx < n_connections; ++idx) {

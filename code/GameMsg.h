@@ -63,7 +63,7 @@ typedef struct GameSrv_WeaponSet {
 typedef struct GameSrv_LoadSpawnPoint {
     uint16_t header;
     uint32_t map_file;
-    Vec2f    pos;
+    Vec2f    position;
     uint16_t plane;
     uint8_t  unk0;
     uint8_t  is_cinematic;
@@ -317,7 +317,7 @@ typedef struct GameSrv_InstanceManifestPhase {
 typedef struct GameSrv_SpawnPoint {
     uint16_t header;
     uint32_t map_file_id;
-    Vec2f    pos;
+    Vec2f    position;
     uint16_t plane;
     uint8_t  unk0;
     uint8_t  is_cinematic;
@@ -363,7 +363,7 @@ typedef struct GameSrv_CreateAgentMsg {
     uint32_t model_id;   // ho byte: 2=npc, 3=player
     uint8_t  agent_type; // 1=living, 2=gadget, 4=item
     uint8_t  h000B;
-    Vec2f    pos;
+    Vec2f    position;
     uint16_t plane;
     Vec2f    direction;
     uint8_t  h001E;
@@ -479,6 +479,11 @@ typedef struct GameSrv_UpdateAgentVisualEquipment {
     uint32_t costume_body_item_id;
 } GameSrv_UpdateAgentVisualEquipment;
 
+typedef struct GameSrv_UpdateWorldSimulationTick {
+    uint16_t header;
+    uint32_t delta_ms;
+} GameSrv_UpdateWorldSimulationTick;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -549,5 +554,6 @@ typedef union GameSrvMsg {
     GameSrv_PartyMemberStreamEnd         party_member_stream_end;
     GameSrv_UpdateAgentVisualEquipment   update_agent_visual_equipment;
     GameSrv_CreateEquipmentItem          create_equipment_item;
+    GameSrv_UpdateWorldSimulationTick    world_simulation_tick;
 } GameSrvMsg;
 #pragma pack(pop)

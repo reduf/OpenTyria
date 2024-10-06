@@ -34,12 +34,17 @@ size_t min_size_t(size_t left, size_t right)
     return left < right ? left : right;
 }
 
-uint32_t max_uint32_t(uint32_t left, uint32_t right)
+uint32_t max_u32(uint32_t left, uint32_t right)
 {
     return left < right ? right : left;
 }
 
-uint32_t min_uint32_t(uint32_t left, uint32_t right)
+int64_t max_i64(int64_t left, int64_t right)
+{
+    return left < right ? right : left;
+}
+
+uint32_t min_u32(uint32_t left, uint32_t right)
 {
     return left < right ? left : right;
 }
@@ -99,4 +104,16 @@ void copy_u32_safe_or_abort(uint32_t *dst, size_t dstlen, const uint32_t *src, s
     }
 
     memcpy_u32(dst, src, srclen);
+}
+
+float lerpf(float p1, float p2, float t)
+{
+    return t * p1 + (1 - t) * p2;
+}
+
+float clampf(float val, float min, float max)
+{
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
 }

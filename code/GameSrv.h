@@ -77,11 +77,11 @@ typedef struct GameSrv {
     array_uint32_t           free_players_slots;
     size_t                   player_count;
     GamePlayerMsgArray       player_messages;
-    uint32_t                 current_instance_time;
-    uint64_t                 creation_instance_time;
-    uint64_t                 current_frame_time;
-    uint64_t                 last_ping_request;
-    uint16_t                 next_bag_id;
+    int32_t                  current_instance_time;
+    int64_t                  creation_instance_time;
+    int64_t                  current_frame_time;
+    int64_t                  last_ping_request;
+    int16_t                  next_bag_id;
     GmItemArray              items;
     array_uint32_t           free_items_slots;
     GmAgentArray             agents;
@@ -90,6 +90,7 @@ typedef struct GameSrv {
     array_uint32_t           free_parties_slots;
     mbedtls_chacha20_context random;
     GameSrvMsg               srv_msg;
+    int64_t                  last_world_tick;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 

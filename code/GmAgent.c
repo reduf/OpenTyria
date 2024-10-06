@@ -55,10 +55,10 @@ void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *
         GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
         msg->agent_id = agent->agent_id;
         msg->prop_id = AgentProperty_Energy;
-        msg->value = agent->energy;
+        msg->value = agent->energy_max;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
         msg->prop_id = AgentProperty_Health;
-        msg->value = agent->health;
+        msg->value = agent->health_max;
         GameConnection_SendMessage(conn, buffer, sizeof(*msg));
     }
 
@@ -98,7 +98,7 @@ void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
     msg->model_id = agent->model_id;
     msg->agent_type = agent->agent_type;
     msg->h000B = 5;
-    msg->pos = agent->pos;
+    msg->position = agent->position;
     msg->plane = agent->plane;
     msg->direction = agent->direction;
     msg->h001E = 1;
@@ -155,4 +155,56 @@ void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *
     msg->agent_id = agent->agent_id;
     msg->unk0 = 3;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
+void GameSrv_BroadcastWorldSimulationTick(GameSrv *srv, uint32_t delta_ms)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_WORLD_SIMULATION_TICK);
+    GameSrv_UpdateWorldSimulationTick *msg = &buffer->world_simulation_tick;
+    assert(0 < delta_ms);
+    msg->delta_ms = delta_ms;
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+}
+
+void GameSrv_WorldTick(GameSrv *srv)
+{
+    int64_t delta_time = max_i64(0, srv->current_frame_time - srv->last_world_tick);
+    float delta = (float)delta_time / 1000.f;
+
+    GmAgentArray agents = srv->agents;
+    for (size_t idx = 0; idx < agents.len; ++idx) {
+        GmAgent *agent = &agents.ptr[idx];
+        if (agent->agent_id != idx) {
+            continue;
+        }
+
+        float dist = delta * agent->speed;
+        float dx = agent->direction.x * dist;
+        float dy = agent->direction.y * dist;
+
+        // Prevent overrunning the target position.
+        float max_dx = agent->destination.x - agent->position.x;
+        float max_dy = agent->destination.y - agent->position.y;
+
+        if (fabsf(max_dx) < fabsf(dx)) {
+            dx = max_dx;
+        }
+
+        if (fabsf(max_dy) < fabsf(dy)) {
+            dy = max_dy;
+        }
+
+        agent->position.x += dx;
+        agent->position.y += dy;
+
+        float health_diff = delta * agent->health_per_sec;
+        agent->health = clampf(agent->health + health_diff, 0.f, 1.f);
+        // @TODO: Check if the agent is dead!!!
+
+        float energy_diff = delta * agent->energy_per_sec;
+        agent->energy = clampf(agent->energy + energy_diff, 0.f, 1.f);
+    }
+
+    GameSrv_BroadcastWorldSimulationTick(srv, (uint32_t) delta_time);
+    srv->last_world_tick = srv->current_frame_time;
 }
