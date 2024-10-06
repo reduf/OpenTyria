@@ -41,32 +41,30 @@ int Profession_FromInt(int value, Profession *result)
     }
 }
 
-typedef enum CampaignType {
-    CampaignType_Pvp,
-    CampaignType_Prophecies,
-    CampaignType_Factions,
-    CampaignType_Nightfall,
-} CampaignType;
+typedef enum Campaign {
+    Campaign_None             = 0,
+    Campaign_Prophecies       = 1,
+    Campaign_Factions         = 2,
+    Campaign_Nightfall        = 3,
+    Campaign_EyeOfTheNorth    = 4,
+    Campaign_BonusMissionPack = 5,
+} Campaign;
 
-int CampaignType_FromInt(int value, CampaignType *result)
+int Campaign_FromInt(int value, Campaign *result)
 {
     switch (value) {
-    case CampaignType_Pvp:
-    case CampaignType_Prophecies:
-    case CampaignType_Factions:
-    case CampaignType_Nightfall:
-        *result = (CampaignType) value;
+    case Campaign_None:
+    case Campaign_Prophecies:
+    case Campaign_Factions:
+    case Campaign_Nightfall:
+    case Campaign_EyeOfTheNorth:
+    case Campaign_BonusMissionPack:
+        *result = (Campaign) value;
         return ERR_OK;
     default:
         return ERR_UNSUCCESSFUL;
     }
 }
-
-typedef enum Campaign {
-    Campaign_Prophecies,
-    Campaign_Factions,
-    Campaign_Nightfall,
-} Campaign;
 
 typedef enum HelmStatus {
     HelmStatus_None,
@@ -139,6 +137,8 @@ typedef struct Appearance {
 } Appearance;
 STATIC_ASSERT(sizeof(Appearance) == 4);
 
+#define CHARACTER_SETTINGS_VERSION 6
+
 #pragma pack(push, 1)
 typedef struct CharacterSettings {
     uint16_t     version;           // currently it's always 6
@@ -146,7 +146,7 @@ typedef struct CharacterSettings {
     uint32_t     last_time_played;  // not sure what is the value, but it changes everytime you play and playing with the same character on the same day almost always result to the same id.
     Appearance   appearance;
     uint8_t      guild_hall_id[16];
-    uint16_t     campaign_type        : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
+    uint16_t     campaign             : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
     uint16_t     level                : LEVEL_BITS;
     uint16_t     is_pvp               : 1;
     uint16_t     secondary_profession : 4;

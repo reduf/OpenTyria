@@ -83,7 +83,7 @@ typedef struct GameSrv_RequestItems {
 
 typedef struct GameSrv_CharCreationChangeProf {
     uint16_t header;
-    uint8_t  campaign_type;
+    uint8_t  campaign;
     uint8_t  profession;
 } GameSrv_CharCreationChangeProf;
 
@@ -224,8 +224,8 @@ typedef struct GameSrv_ItemGeneralInfo {
     uint32_t item_id;
     uint32_t file_id;
     uint8_t  item_type;
-    uint8_t  unk0;
-    uint16_t dye_color;
+    uint8_t  dye_tint;
+    uint16_t dye_colors;
     uint16_t materials;
     uint8_t  unk1;
     uint32_t flags; // interaction
@@ -413,6 +413,72 @@ typedef struct GameSrv_UpdatePlayerAgent {
     uint32_t unk0;
 } GameSrv_UpdatePlayerAgent;
 
+typedef struct GameSrv_CreatePartyMsg {
+    uint16_t header;
+    uint16_t party_id;
+} GameSrv_CreatePartyMsg;
+
+typedef struct GameSrv_AddPartyPlayer {
+    uint16_t header;
+    uint16_t party_id;
+    uint16_t player_id;
+    uint8_t  is_loaded;
+} GameSrv_AddPartyPlayer;
+
+typedef struct GameSrv_RemovePartyPlayer {
+    uint16_t header;
+    uint16_t party_id;
+    uint16_t player_id;
+} GameSrv_RemovePartyPlayer;
+
+typedef struct GameSrv_AddPartyHero {
+    uint16_t header;
+    uint16_t party_id;
+    uint16_t owner_player_id;
+    uint16_t agent_id;
+    uint8_t  hero_id;
+    uint8_t  level;
+} GameSrv_AddPartyHero;
+
+typedef struct GameSrv_RemovePartyHero {
+    uint16_t header;
+    uint16_t party_id;
+    uint16_t player_id;
+    uint16_t agent_id;
+} GameSrv_RemovePartyHero;
+
+typedef struct GameSrv_PartyMemberStreamEnd {
+    uint16_t header;
+    uint16_t party_id;
+} GameSrv_PartyMemberStreamEnd;
+
+typedef struct GameSrv_CreateEquipmentItem {
+    uint16_t header;
+    uint32_t item_id;
+    uint32_t model_id;
+    uint8_t  item_type;
+    uint8_t  dye_tint; // not sure
+    uint16_t color;
+    uint16_t unk1;
+    uint8_t  campaign;
+    uint32_t flags;
+    uint32_t value;
+} GameSrv_CreateEquipmentItem;
+
+typedef struct GameSrv_UpdateAgentVisualEquipment {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t weapon_item_id;
+    uint32_t offhand_item_id;
+    uint32_t body_item_id;
+    uint32_t boots_item_id;
+    uint32_t legs_item_id;
+    uint32_t gloves_item_id;
+    uint32_t head_item_id;
+    uint32_t costume_head_item_id;
+    uint32_t costume_body_item_id;
+} GameSrv_UpdateAgentVisualEquipment;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -475,5 +541,13 @@ typedef union GameSrvMsg {
     GameSrv_InitialAgentEffects          initial_agent_effects;
     GameSrv_AgentRemove                  agent_remove;
     GameSrv_UpdatePlayerAgent            update_player_agent;
+    GameSrv_CreatePartyMsg               create_party;
+    GameSrv_AddPartyPlayer               add_party_player;
+    GameSrv_RemovePartyPlayer            remove_party_player;
+    GameSrv_AddPartyHero                 add_party_hero;
+    GameSrv_RemovePartyHero              remove_party_hero;
+    GameSrv_PartyMemberStreamEnd         party_member_stream_end;
+    GameSrv_UpdateAgentVisualEquipment   update_agent_visual_equipment;
+    GameSrv_CreateEquipmentItem          create_equipment_item;
 } GameSrvMsg;
 #pragma pack(pop)

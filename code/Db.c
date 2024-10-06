@@ -283,7 +283,7 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
-    sql = "INSERT INTO items (account_id, char_id, bag_model_id, slot, quantity, dye_color, model_id, file_id, flags, item_type, profession) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    sql = "INSERT INTO items (account_id, char_id, bag_model_id, slot, quantity, dye_tint, dye_colors, model_id, file_id, flags, item_type, profession) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_create_item, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
@@ -741,12 +741,13 @@ int Db_CreateItem(Database *database, DbItem *item)
         (err = sqlite3_bind_u8(stmt, 3, item->bag_model_id)) != SQLITE_OK ||
         (err = sqlite3_bind_u16(stmt, 4, item->slot)) != SQLITE_OK ||
         (err = sqlite3_bind_u16(stmt, 5, item->quantity)) != SQLITE_OK ||
-        (err = sqlite3_bind_u8(stmt, 6, item->dye_color)) != SQLITE_OK ||
-        (err = sqlite3_bind_u32(stmt, 7, item->model_id)) != SQLITE_OK ||
-        (err = sqlite3_bind_u32(stmt, 8, item->file_id)) != SQLITE_OK ||
-        (err = sqlite3_bind_u32(stmt, 9, item->flags)) != SQLITE_OK ||
-        (err = sqlite3_bind_u8(stmt, 10, item->item_type)) != SQLITE_OK ||
-        (err = sqlite3_bind_u8(stmt, 11, item->profession)) != SQLITE_OK)
+        (err = sqlite3_bind_u8(stmt, 6, item->dye_tint)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 7, item->dye_colors)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 8, item->model_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 9, item->file_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 10, item->flags)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 11, item->item_type)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 12, item->profession)) != SQLITE_OK)
     {
         log_error(
             "Failed to bind values to a statement, err: %d (%s)",
@@ -786,7 +787,8 @@ int DbItem_from_stmt(sqlite3_stmt *stmt, int idx, DbItem *result)
         ((err = sqlite3_column_i64(stmt, idx + DbItemCols_created_at, &result->created_at)) != 0) ||
         ((err = sqlite3_column_i64(stmt, idx + DbItemCols_updated_at, &result->updated_at)) != 0) ||
         ((err = sqlite3_column_u16(stmt, idx + DbItemCols_quantity, &result->quantity)) != 0) ||
-        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_dye_color, &result->dye_color)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_dye_tint, &result->dye_tint)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbItemCols_dye_colors, &result->dye_colors)) != 0) ||
         ((err = sqlite3_column_u8(stmt, idx + DbItemCols_item_type, &result->item_type)) != 0) ||
         ((err = sqlite3_column_u8(stmt, idx + DbItemCols_profession, &result->profession)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbItemCols_model_id, &result->model_id)) != 0) ||

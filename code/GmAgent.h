@@ -26,7 +26,7 @@ typedef struct GmAgent {
     float     speed_base;
     uint32_t  level;
     uint32_t  effects;
-    uint32_t  party_id;
+    uint16_t  party_id;
     uint32_t  player_team_token;
 } GmAgent;
 typedef array(GmAgent) GmAgentArray;
@@ -40,5 +40,6 @@ void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *
 void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent);
 void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent);
-void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent);
+void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent);
+void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags);
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);

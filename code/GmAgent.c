@@ -114,13 +114,38 @@ void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
     GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_INITIAL_EFFECTS);
     GameSrv_InitialAgentEffects *msg = &buffer->initial_agent_effects;
     msg->agent_id = agent->agent_id;
     msg->effects = agent->effects;
-    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+}
+
+void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_AGENT_VISUAL_EQUIPMENT);
+    GameSrv_UpdateAgentVisualEquipment *msg = &buffer->update_agent_visual_equipment;
+
+    if (EquippedItemSlot_Count < bags->equipped_items.slot_count) {
+        log_error("Expected %u item in equipped item bag, but found %u", EquippedItemSlot_Count, bags->equipped_items.slot_count);
+        return;
+    }
+
+    uint32_t *items = bags->equipped_items.items;
+    msg->agent_id = agent->agent_id;
+    msg->weapon_item_id = items[EquippedItemSlot_Weapon];
+    msg->offhand_item_id = items[EquippedItemSlot_OffHand];
+    msg->body_item_id = items[EquippedItemSlot_Body];
+    msg->boots_item_id = items[EquippedItemSlot_Legs];
+    msg->legs_item_id = items[EquippedItemSlot_Head];
+    msg->gloves_item_id = items[EquippedItemSlot_Boots];
+    msg->head_item_id = items[EquippedItemSlot_Gloves];
+    msg->costume_head_item_id = items[EquippedItemSlot_CostumeBody];
+    msg->costume_body_item_id = items[EquippedItemSlot_CostumeHead];
+
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)

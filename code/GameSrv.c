@@ -1067,10 +1067,11 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
         gmitem->flags = dbitem->flags;
         gmitem->model_id = dbitem->model_id;
         gmitem->quantity = dbitem->quantity;
+        gmitem->dye_tint = dbitem->dye_tint;
 
         if ((err = Profession_FromInt(dbitem->profession, &gmitem->profession)) != 0 ||
             (err = ItemType_FromInt(dbitem->item_type, &gmitem->item_type)) != 0 ||
-            (err = DyeColor_FromInt(dbitem->dye_color, &gmitem->dye_color)) != 0)
+            (err = DyeColor_FromInt(dbitem->dye_colors, &gmitem->dye_colors)) != 0)
         {
             log_error("Failed to parse enum from the database");
             GameSrv_FreeItemId(srv, gmitem->item_id);
@@ -1125,8 +1126,9 @@ int GameSrv_CreatePlayerBags(GameSrv *srv, GmPlayer *player)
             dbitem->file_id = item->file_id;
             dbitem->model_id = item->model_id;
             dbitem->item_type = item->item_type;
-            dbitem->dye_color = item->dye_color;
-            dbitem->quantity = u16cast(item->quantity);
+            dbitem->dye_tint = item->dye_tint;
+            dbitem->dye_colors = item->dye_colors;
+            dbitem->quantity = cast_u16(item->quantity);
             dbitem->flags = item->flags;
             dbitem->profession = item->profession;
         }
@@ -1294,11 +1296,13 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_BroadcastUpdatePlayerInfo(srv, player);
     // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
     // 176
+    GameSrv_SendPlayerParty(srv, conn, agent->party_id);
     GameSrv_SendPlayerProfession(srv, conn, player);
-    GameSrv_BroadcastAgentLevel(srv, agent);
     // GAME_SMSG_TITLE_RANK_DISPLAY
-    GameSrv_SendAgentInitialEffects(srv, conn, agent);
     GameSrv_BroadcastCreateAgent(srv, agent);
+    GameSrv_BroadcastAgentLevel(srv, agent);
+    GameSrv_BroadcastAgentInitialEffects(srv, agent);
+    GameSrv_BroadcastUpdateAgentVisualEquipment(srv, agent, &player->bags);
     GameSrv_SendUpdatePlayerAgent(srv, conn, agent);
     GameSrv_SendInstanceLoadFinish(srv, conn);
 
@@ -1405,23 +1409,23 @@ int GetBagSlotForItemType(ItemType item_type, EquippedItemSlot *result)
     case ItemType_Shield:
         *result = EquippedItemSlot_OffHand;
         return ERR_OK;
-    case ItemType_Chest:
-        *result = EquippedItemSlot_Chest;
+    case ItemType_Body:
+        *result = EquippedItemSlot_Body;
         return ERR_OK;
-    case ItemType_Feet:
+    case ItemType_Boots:
         *result = EquippedItemSlot_Boots;
         return ERR_OK;
-    case ItemType_Arms:
+    case ItemType_Gloves:
         *result = EquippedItemSlot_Gloves;
         return ERR_OK;
     case ItemType_Head:
-        *result = EquippedItemSlot_Helm;
+        *result = EquippedItemSlot_Head;
         return ERR_OK;
     case ItemType_Legs:
         *result = EquippedItemSlot_Legs;
         return ERR_OK;
     case ItemType_CostumeBody:
-        *result = EquippedItemSlot_Costume;
+        *result = EquippedItemSlot_CostumeBody;
         return ERR_OK;
     case ItemType_CostumeHead:
         *result = EquippedItemSlot_CostumeHead;
@@ -1445,12 +1449,12 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return err;
     }
 
-    if ((err = CampaignType_FromInt(msg->campaign_type, &player->char_creation_campaign_type)) != 0) {
-        log_warn("Invalid `CampaignType` value %u", msg->campaign_type);
+    if ((err = Campaign_FromInt(msg->campaign, &player->char_creation_campaign)) != 0) {
+        log_warn("Invalid `Campaign` value %u", msg->campaign);
         return err;
     }
 
-    GmItemSlice items = GetDefaultEquipments(player->char_creation_campaign_type, player->primary_profession);
+    GmItemSlice items = GetDefaultEquipments(player->char_creation_campaign, player->primary_profession);
     GmBag *bag = &player->bags.equipped_items;
     GameSrv_FreeBagItems(srv, player, bag);
 
@@ -1505,7 +1509,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     Appearance app;
     memcpy(&app, msg->config, 4);
 
-    CharacterSettings settings = {6};
+    CharacterSettings settings = {CHARACTER_SETTINGS_VERSION};
     settings.last_outpost = MapId_KamadanJewelOfIstanOutpost;
     settings.last_time_played = 0;
     settings.appearance.sex = app.sex;
@@ -1516,16 +1520,16 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     settings.appearance.primary_profession = app.primary_profession;
     settings.appearance.hair_style = app.hair_style;
     settings.appearance.campaign = app.campaign;
-    settings.campaign_type = player->char_creation_campaign_type;
+    settings.campaign = player->char_creation_campaign;
     settings.level = 1;
-    settings.is_pvp = player->char_creation_campaign_type == CampaignType_Pvp;
+    settings.is_pvp = player->char_creation_campaign == Campaign_None;
     settings.secondary_profession = Profession_None;
     settings.helm_status = HelmStatus_Show;
     settings.number_of_pieces = 0;
 
     GmBag *bag = &player->bags.equipped_items;
     assert(EquippedItemSlot_Count <= bag->slot_count);
-    for (uint8_t idx = EquippedItemSlot_Chest; idx <= EquippedItemSlot_Gloves; ++idx) {
+    for (uint8_t idx = EquippedItemSlot_Body; idx <= EquippedItemSlot_Gloves; ++idx) {
         if (bag->items[idx] == 0) {
             continue;
         }
@@ -1538,7 +1542,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
 
         size_t pos = settings.number_of_pieces++;
         settings.pieces[pos].file_id = item->file_id & 0xFFFF;
-        settings.pieces[pos].col1 = item->dye_color;
+        settings.pieces[pos].col1 = item->dye_colors & 0xF;
     }
 
     // @Cleanup: Add the unlocked profession and unlocked map

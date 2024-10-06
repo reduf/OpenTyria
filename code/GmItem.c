@@ -62,8 +62,8 @@ void GameSrv_SendItemGeneralInfo(GameSrv *srv, GameConnection *conn, GmItem *ite
     msg->item_id = item->item_id;
     msg->file_id = item->file_id;
     msg->item_type = item->item_type;
-    msg->unk0 = item->unk0;
-    msg->dye_color = item->dye_color;
+    msg->dye_tint = item->dye_tint;
+    msg->dye_colors = item->dye_colors;
     msg->materials = item->materials;
     msg->unk1 = item->unk1;
     msg->flags = item->flags;

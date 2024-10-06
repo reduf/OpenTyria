@@ -19,7 +19,7 @@ typedef enum FactionType {
 } FactionType;
 
 typedef struct GmPlayer {
-    uint32_t          player_id;
+    uint16_t          player_id;
     uint32_t          agent_id;
     uintptr_t         conn_token;
     struct uuid       account_id;
@@ -28,7 +28,7 @@ typedef struct GmPlayer {
     DbAccount         account;
     CharacterSettings char_settings;
     GmBagArray        bags;
-    CampaignType      char_creation_campaign_type;
+    Campaign          char_creation_campaign;
     Profession        primary_profession;
     uint32_t          player_team_token;
 } GmPlayer;

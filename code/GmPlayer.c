@@ -10,7 +10,7 @@ GmPlayer* GameSrv_CreatePlayer(
 
     GmPlayer *player = &srv->players.ptr[player_id];
     memset(player, 0, sizeof(*player));
-    player->player_id = (uint32_t) player_id;
+    player->player_id = cast_u16(player_id);
     player->conn_token = token;
     player->account_id = account_id;
     player->char_id = char_id;

@@ -49,4 +49,4 @@ extern GmItem g_DefDervishNightfallPvpEquipments[];
 
 extern GmItem g_Backpack;
 
-GmItemSlice GetDefaultEquipments(CampaignType campaign, Profession prof);
+GmItemSlice GetDefaultEquipments(Campaign campaign, Profession prof);

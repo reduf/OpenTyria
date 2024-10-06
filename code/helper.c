@@ -44,7 +44,15 @@ uint32_t min_uint32_t(uint32_t left, uint32_t right)
     return left < right ? left : right;
 }
 
-uint16_t u16cast(uint32_t value)
+uint8_t cast_u8(uint32_t value)
+{
+    if (UINT8_MAX < value) {
+        abort();
+    }
+    return (uint8_t) value;
+}
+
+uint16_t cast_u16(uint32_t value)
 {
     if (UINT16_MAX < value) {
         abort();

@@ -5,16 +5,16 @@ typedef enum ItemType {
     ItemType_Leadhand      = 1,
     ItemType_Axe           = 2,
     ItemType_Bag           = 3,
-    ItemType_Feet          = 4,
+    ItemType_Boots         = 4,
     ItemType_Bow           = 5,
     ItemType_Bundle        = 6,
-    ItemType_Chest         = 7,
+    ItemType_Body          = 7,
     ItemType_Rune          = 8,
     ItemType_Consumable    = 9,
     ItemType_Dye           = 10,
     ItemType_Material      = 11,
     ItemType_Focus         = 12,
-    ItemType_Arms          = 13,
+    ItemType_Gloves        = 13,
     ItemType_Sigil         = 14,
     ItemType_Hammer        = 15,
     ItemType_Head          = 16,
@@ -47,16 +47,16 @@ const char* ItemType_ToString(ItemType item_type)
     case ItemType_Leadhand: return "ItemType_Leadhand";
     case ItemType_Axe: return "ItemType_Axe";
     case ItemType_Bag: return "ItemType_Bag";
-    case ItemType_Feet: return "ItemType_Feet";
+    case ItemType_Boots: return "ItemType_Boots";
     case ItemType_Bow: return "ItemType_Bow";
     case ItemType_Bundle: return "ItemType_Bundle";
-    case ItemType_Chest: return "ItemType_Chest";
+    case ItemType_Body: return "ItemType_Body";
     case ItemType_Rune: return "ItemType_Rune";
     case ItemType_Consumable: return "ItemType_Consumable";
     case ItemType_Dye: return "ItemType_Dye";
     case ItemType_Material: return "ItemType_Material";
     case ItemType_Focus: return "ItemType_Focus";
-    case ItemType_Arms: return "ItemType_Arms";
+    case ItemType_Gloves: return "ItemType_Gloves";
     case ItemType_Sigil: return "ItemType_Sigil";
     case ItemType_Hammer: return "ItemType_Hammer";
     case ItemType_Head: return "ItemType_Head";
@@ -91,16 +91,16 @@ int ItemType_FromInt(int value, ItemType *result)
     case ItemType_Leadhand:
     case ItemType_Axe:
     case ItemType_Bag:
-    case ItemType_Feet:
+    case ItemType_Boots:
     case ItemType_Bow:
     case ItemType_Bundle:
-    case ItemType_Chest:
+    case ItemType_Body:
     case ItemType_Rune:
     case ItemType_Consumable:
     case ItemType_Dye:
     case ItemType_Material:
     case ItemType_Focus:
-    case ItemType_Arms:
+    case ItemType_Gloves:
     case ItemType_Sigil:
     case ItemType_Hammer:
     case ItemType_Head:
@@ -135,8 +135,8 @@ typedef struct GmItem {
     uint32_t     item_id;
     uint32_t     file_id;
     ItemType     item_type;
-    uint8_t      unk0;
-    DyeColor     dye_color;
+    uint8_t      dye_tint;
+    DyeColor     dye_colors;
     uint16_t     materials;
     uint8_t      unk1;
     uint32_t     flags;

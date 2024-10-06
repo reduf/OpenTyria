@@ -152,7 +152,8 @@ typedef array(DbBag) DbBagArray;
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
     X(uint16_t, quantity) \
-    X(uint8_t, dye_color) \
+    X(uint8_t, dye_tint) \
+    X(uint8_t, dye_colors) \
     X(uint8_t, item_type) \
     X(uint8_t, profession) \
     X(uint32_t, model_id) \

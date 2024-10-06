@@ -117,12 +117,12 @@ const char* BagModelId_ToString(BagModelId bag_model_id)
 typedef enum EquippedItemSlot {
     EquippedItemSlot_Weapon      = 0,
     EquippedItemSlot_OffHand     = 1,
-    EquippedItemSlot_Chest       = 2,
+    EquippedItemSlot_Body        = 2,
     EquippedItemSlot_Legs        = 3,
-    EquippedItemSlot_Helm        = 4,
+    EquippedItemSlot_Head        = 4,
     EquippedItemSlot_Boots       = 5,
     EquippedItemSlot_Gloves      = 6,
-    EquippedItemSlot_Costume     = 7,
+    EquippedItemSlot_CostumeBody = 7,
     EquippedItemSlot_CostumeHead = 8,
 
     EquippedItemSlot_Count

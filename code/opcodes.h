@@ -216,7 +216,7 @@
 #define GAME_SMSG_POST_PROCESS                          (0x006A) // 106
 #define GAME_SMSG_DUNGEON_REWARD                        (0x006B) // 107
 #define GAME_SMSG_NPC_UPDATE_WEAPONS                    (0x006C) // 108
-#define GAME_SMSG_UPDATE_AGENT_EQUIPMENT_MODELS         (0x006D) // 109
+#define GAME_SMSG_UPDATE_AGENT_VISUAL_EQUIPMENT         (0x006D) // 109
 #define GAME_SMSG_HARD_MODE_UNLOCKED                    (0x006F) // 111
 #define GAME_SMSG_MERCENARY_INFO                        (0x0073) // 115
 #define GAME_SMSG_DIALOG_BUTTON                         (0x007D) // 125
