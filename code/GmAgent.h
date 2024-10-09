@@ -50,3 +50,5 @@ void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, G
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_BroadcastAgentPosition(GameSrv *srv, GmAgent *agent);
 void GameSrv_WorldTick(GameSrv *srv);
+
+int GameSrv_HandleMoveToCoord(GameSrv *srv, uint16_t player_id, GameSrv_MoveToCoord *msg);

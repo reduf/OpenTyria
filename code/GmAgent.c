@@ -204,24 +204,26 @@ void GameSrv_WorldTick(GameSrv *srv)
             continue;
         }
 
-        float dist = delta * agent->speed;
-        float dx = agent->direction.x * dist;
-        float dy = agent->direction.y * dist;
+        if (agent->speed != 0.f) {
+            float dist = delta * agent->speed;
+            float dx = agent->direction.x * dist;
+            float dy = agent->direction.y * dist;
 
-        // Prevent overrunning the target position.
-        float max_dx = agent->destination.x - agent->position.x;
-        float max_dy = agent->destination.y - agent->position.y;
+            // Prevent overrunning the target position.
+            float max_dx = agent->destination.x - agent->position.x;
+            float max_dy = agent->destination.y - agent->position.y;
 
-        if (fabsf(max_dx) < fabsf(dx)) {
-            dx = max_dx;
+            if (fabsf(max_dx) < fabsf(dx) || fabsf(max_dy) < fabsf(dy)) {
+                agent->position = agent->destination;
+
+                agent->speed = 0.f;
+                agent->destination.x = 0.f;
+                agent->destination.y = 0.f;
+            } else {
+                agent->position.x += dx;
+                agent->position.y += dy;
+            }
         }
-
-        if (fabsf(max_dy) < fabsf(dy)) {
-            dy = max_dy;
-        }
-
-        agent->position.x += dx;
-        agent->position.y += dy;
 
         float health_diff = delta * agent->health_per_sec;
         agent->health = clampf(agent->health + health_diff, 0.f, 1.f);
@@ -233,4 +235,33 @@ void GameSrv_WorldTick(GameSrv *srv)
 
     GameSrv_BroadcastWorldSimulationTick(srv, (uint32_t) delta_time);
     srv->last_world_tick = srv->current_frame_time;
+}
+
+void GameSrv_BroadcastMoveAgentToPoint(GameSrv *srv, GmAgent *agent)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_MOVE_AGENT_TO_POINT);
+    GameSrv_MoveAgentToPoint *msg = &buffer->move_agent_to_point;
+    msg->agent_id = agent->agent_id;
+    msg->dest.x = agent->destination.x;
+    msg->dest.y = agent->destination.y;
+    msg->plane = 0;
+    msg->current_plane = 0;
+
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+}
+
+int GameSrv_HandleMoveToCoord(GameSrv *srv, uint16_t player_id, GameSrv_MoveToCoord *msg)
+{
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgentByPlayerId(srv, player_id)) == NULL) {
+        log_error("Unknow player with player id %u", player_id);
+        return ERR_SERVER_ERROR;
+    }
+
+    agent->destination.x = msg->pos.x;
+    agent->destination.y = msg->pos.y;
+    agent->speed = agent->speed_base;
+
+    GameSrv_BroadcastMoveAgentToPoint(srv, agent);
+    return ERR_OK;
 }

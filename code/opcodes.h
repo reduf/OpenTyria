@@ -172,7 +172,7 @@
 #define GAME_SMSG_AGENT_UPDATE_DIRECTION                (0x0025) // 37
 #define GAME_SMSG_AGENT_UPDATE_SPEED_BASE               (0x0027) // 39
 #define GAME_SMSG_AGENT_STOP_MOVING                     (0x0028) // 40
-#define GAME_SMSG_AGENT_MOVE_TO_POINT                   (0x0029) // 41
+#define GAME_SMSG_MOVE_AGENT_TO_POINT                   (0x0029) // 41
 #define GAME_SMSG_AGENT_UPDATE_DESTINATION              (0x002A) // 42
 #define GAME_SMSG_AGENT_UPDATE_SPEED                    (0x002B) // 43
 #define GAME_SMSG_AGENT_UPDATE_POSITION                 (0x002C) // 44

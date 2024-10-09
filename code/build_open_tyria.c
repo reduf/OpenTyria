@@ -80,7 +80,12 @@
 #include "GmAgentProperties.h"
 #include "GmAttributes.h"
 
+#include "opcodes.h"
+#include "msgdefs.h"
+#include "GameMsg.h"
+
 #include "GmChar.h"
+#include "GmMapData.h"
 #include "GmChat.h"
 #include "GmFriend.h"
 #include "GmMap.h"
@@ -95,12 +100,9 @@
 
 #include "Db.h"
 
-#include "opcodes.h"
-#include "msgdefs.h"
 #include "msgpack.h"
 #include "proto.h"
 
-#include "GameMsg.h"
 #include "GameSrv.h"
 
 #include "AuthMsg.h"
@@ -119,6 +121,7 @@
 #include "GmDefaultArmors.c"
 #include "GmInventory.c"
 #include "GmItem.c"
+#include "GmMapData.c"
 #include "GmPlayer.c"
 #include "GmParty.c"
 #include "GmTitleConstData.c"

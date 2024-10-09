@@ -498,6 +498,20 @@ typedef struct GameSrv_UpdateAgentPostion {
     uint16_t plane;
 } GameSrv_UpdateAgentPostion;
 
+typedef struct GameSrv_MoveToCoord {
+    uint16_t header;
+    Vec2f    pos;
+    uint32_t plane;
+} GameSrv_MoveToCoord;
+
+typedef struct GameSrv_MoveAgentToPoint {
+    uint16_t header;
+    uint32_t agent_id;
+    Vec2f    dest;
+    uint16_t plane;
+    uint16_t current_plane;
+} GameSrv_MoveAgentToPoint;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -508,6 +522,7 @@ typedef union GameCliMsg {
     GameSrv_ChangeEquippedItemColor      change_equipped_item_color;
     GameSrv_CharCreationConfirm          char_creation_confirm;
     GameSrv_ChatMessage                  chat_message;
+    GameSrv_MoveToCoord                  move_to_coord;
 } GameCliMsg;
 
 typedef union GameSrvMsg {
@@ -571,5 +586,6 @@ typedef union GameSrvMsg {
     GameSrv_CreateEquipmentItem          create_equipment_item;
     GameSrv_UpdateWorldSimulationTick    world_simulation_tick;
     GameSrv_UpdateAgentPostion           update_agent_position;
+    GameSrv_MoveAgentToPoint             move_agent_to_point;
 } GameSrvMsg;
 #pragma pack(pop)
