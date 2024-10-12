@@ -981,9 +981,9 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
             return;
         }
 
-        player->primary_profession = player->character.primary_profession;
         if (player->character.settings.len <= sizeof(player->char_settings)) {
             memcpy(&player->char_settings, player->character.settings.buf, player->character.settings.len);
+            player->primary_profession = player->char_settings.appearance.primary_profession;
         } else {
             log_warn("Invalid character settings len %zu", player->character.settings.len);
         }
