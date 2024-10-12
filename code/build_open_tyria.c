@@ -57,7 +57,7 @@
 #include "int.h"
 
 #include "endian.h"
-#include "uuid.h"
+#include "GmUuid.h"
 #include "array.h"
 #include "slice.h"
 #include "errors.h"
@@ -74,6 +74,7 @@
 #include "GmDefs.h"
 #include "GmErrors.h"
 #include "GmIdTable.h"
+#include "GmColors.h"
 
 #include "GmMaps.h"
 #include "GmTitles.h"
@@ -117,6 +118,7 @@
 #include "Db.c"
 #include "GameSrv.c"
 #include "GmAgent.c"
+#include "GmChar.c"
 #include "GmChat.c"
 #include "GmDefaultArmors.c"
 #include "GmInventory.c"

@@ -29,6 +29,7 @@
     <ClCompile Include="..\code\GmTitleConstData.c" />
     <ClCompile Include="..\code\GmParty.c" />
     <ClCompile Include="..\code\GmChat.c" />
+    <ClCompile Include="..\code\GmChar.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\code\array.h" />
@@ -78,6 +79,7 @@
     <ClInclude Include="..\code\GmTitles.h" />
     <ClInclude Include="..\code\GmParty.h" />
     <ClInclude Include="..\code\GmChat.h" />
+    <ClInclude Include="..\code\GmColors.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />

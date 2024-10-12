@@ -122,9 +122,9 @@ int Connection_ReadVersion(AuthSrv *srv, Connection *conn)
             return ERR_WOULDBLOCK;
         }
 
-        struct uuid account_id;
+        GmUuid account_id;
         uuid_dec_le(&account_id, version.account_uuid);
-        struct uuid char_id;
+        GmUuid char_id;
         uuid_dec_le(&char_id, version.character_uuid);
 
         size_t idx;
@@ -363,7 +363,7 @@ IoObject *AuthSrv_GetObject(AuthSrv *srv, uintptr_t token)
     return &srv->objects[(size_t)idx].value;
 }
 
-ConnectedAccountInfo* AuthSrv_GetConnectedAccount(AuthSrv *srv, struct uuid account_id)
+ConnectedAccountInfo* AuthSrv_GetConnectedAccount(AuthSrv *srv, GmUuid account_id)
 {
     ptrdiff_t idx;
     if ((idx = stbds_hmgeti(srv->connected_accounts, account_id)) == -1) {
@@ -372,12 +372,12 @@ ConnectedAccountInfo* AuthSrv_GetConnectedAccount(AuthSrv *srv, struct uuid acco
     return &srv->connected_accounts[(size_t)idx];
 }
 
-void AuthSrv_DelConnectedAccount(AuthSrv *srv, struct uuid account_id)
+void AuthSrv_DelConnectedAccount(AuthSrv *srv, GmUuid account_id)
 {
     stbds_hmdel(srv->connected_accounts, account_id);
 }
 
-ConnectedAccountInfo* AuthSrv_AddConnectedAccount(AuthSrv *srv, struct uuid account_id)
+ConnectedAccountInfo* AuthSrv_AddConnectedAccount(AuthSrv *srv, GmUuid account_id)
 {
     ConnectedAccountInfo info = {0};
     info.key = account_id;
@@ -527,10 +527,10 @@ void AuthSrv_SendCharactersInfo(AuthConnection *conn, uint32_t req_id)
         STATIC_ASSERT(sizeof(msg->character_info.name) == sizeof(ch->charname.buf));
         memcpy_u16(msg->character_info.name, ch->charname.buf, ch->charname.len);
 
-        STATIC_ASSERT(sizeof(ch->settings.buf) <= sizeof(msg->character_info.extended));
-        assert(ch->settings.len <= sizeof(msg->character_info.extended));
-        msg->character_info.n_extended = (uint32_t) ch->settings.len;
-        memcpy(msg->character_info.extended, ch->settings.buf, ch->settings.len);
+        CharacterSettings settings = CharacterSettings_FromDbCharacter(ch);
+        STATIC_ASSERT(sizeof(settings) <= sizeof(msg->character_info.extended));
+        msg->character_info.n_extended = sizeof(settings);
+        memcpy(msg->character_info.extended, &settings, sizeof(settings));
         AuthConnection_SendMessage(conn, msg, sizeof(msg->character_info));
     }
 }
@@ -604,7 +604,7 @@ int AuthSrv_HandlePortalAccountLogin(AuthSrv *srv, AuthConnection *conn, AuthCli
     assert(cli_msg->header == AUTH_CMSG_PORTAL_ACCOUNT_LOGIN);
     AuthSrv_PortalAccountLogin *msg = &cli_msg->portal_account_login;
 
-    struct uuid session_id, user_id;
+    GmUuid session_id, user_id;
     uuid_dec_le(&user_id, msg->user_id);
     uuid_dec_le(&session_id, msg->session_id);
 
@@ -785,7 +785,7 @@ int AuthSrv_HandleRequestGameInstance(AuthSrv *srv, AuthConnection *conn, AuthCl
         return ERR_OK;
     }
 
-    struct uuid char_id = {0};
+    GmUuid char_id = {0};
     if (conn->selected_character_idx < conn->characters.len) {
         char_id = conn->characters.ptr[conn->selected_character_idx].char_id;
     }

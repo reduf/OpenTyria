@@ -86,45 +86,6 @@ typedef enum HelmStatus {
 #define HAIR_STYLE_MAX (1 << HAIR_STYLE_BITS) - 1
 #define LEVEL_MAX      (1 << LEVEL_BITS) - 1
 
-typedef enum DyeColor {
-    DyeColor_None = 0,
-    DyeColor_Blue = 2,
-    DyeColor_Green = 3,
-    DyeColor_Purple = 4,
-    DyeColor_Red = 5,
-    DyeColor_Yellow = 6,
-    DyeColor_Brown = 7,
-    DyeColor_Orange = 8,
-    DyeColor_Silver = 9,
-    DyeColor_Black = 10,
-    DyeColor_Gray = 11,
-    DyeColor_White = 12,
-    DyeColor_Pink = 13
-} DyeColor;
-
-int DyeColor_FromInt(int value, DyeColor *result)
-{
-    switch (value) {
-    case DyeColor_None:
-    case DyeColor_Blue:
-    case DyeColor_Green:
-    case DyeColor_Purple:
-    case DyeColor_Red:
-    case DyeColor_Yellow:
-    case DyeColor_Brown:
-    case DyeColor_Orange:
-    case DyeColor_Silver:
-    case DyeColor_Black:
-    case DyeColor_Gray:
-    case DyeColor_White:
-    case DyeColor_Pink:
-        *result = (DyeColor)value;
-        return ERR_OK;
-    default:
-        return ERR_UNSUCCESSFUL;
-    }
-}
-
 typedef struct Appearance {
     unsigned int sex                : 1;
     unsigned int height             : HEIGHT_BITS;
@@ -133,7 +94,7 @@ typedef struct Appearance {
     unsigned int face_style         : FACE_STYLE_BITS;
     unsigned int primary_profession : 4;
     unsigned int hair_style         : HAIR_STYLE_BITS;
-    unsigned int campaign           : 2; // 0=prof, 1=faction, 2=nightfall
+    unsigned int race               : 2; // 0=prof, 1=faction, 2=nightfall
 } Appearance;
 STATIC_ASSERT(sizeof(Appearance) == 4);
 
@@ -145,7 +106,7 @@ typedef struct CharacterSettings {
     uint16_t     last_outpost;
     uint32_t     last_time_played;  // not sure what is the value, but it changes everytime you play and playing with the same character on the same day almost always result to the same id.
     Appearance   appearance;
-    uint8_t      guild_hall_id[16];
+    GmUuid       last_guild_hall_id;
     uint16_t     campaign             : 4; // 0=pvp, 1=prod, 2=faction, 3=nightfall
     uint16_t     level                : LEVEL_BITS;
     uint16_t     is_pvp               : 1;
@@ -165,3 +126,5 @@ typedef struct CharacterSettings {
     } pieces[5]; // The number of pieces is defined by `number_of_pieces`.
 } CharacterSettings;
 #pragma pack(pop)
+
+CharacterSettings CharacterSettings_FromDbCharacter(DbCharacter *character);

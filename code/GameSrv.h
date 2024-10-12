@@ -13,8 +13,8 @@ typedef struct AdminMsg_TransferUser {
     uintptr_t   token;
     uint8_t     cipher_init_key[20];
     bool        reconnection;
-    struct uuid account_id;
-    struct uuid char_id;
+    GmUuid      account_id;
+    GmUuid      char_id;
 } AdminMsg_TransferUser;
 
 typedef union AdminMsg {
@@ -28,8 +28,8 @@ typedef array(AdminMsg) AdminMsgArray;
 
 typedef struct GameClient {
     uint32_t    player_token;
-    struct uuid account_id;
-    struct uuid char_id;
+    GmUuid      account_id;
+    GmUuid      char_id;
 } GameClient;
 typedef array(GameClient) GameClientArray;
 

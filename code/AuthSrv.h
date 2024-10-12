@@ -48,14 +48,14 @@ typedef struct AuthConnection {
     arc4_context     cipher_dec;
     AuthCliMsgArray  messages;
     AuthSrvMsg       srv_msg;
-    struct uuid      user_id;
-    struct uuid      session_id;
-    struct uuid      account_id;
+    GmUuid           user_id;
+    GmUuid           session_id;
+    GmUuid           account_id;
     size_t           n_username;
     uint16_t         username[32];
     size_t           n_pcname;
     uint16_t         pcname[32];
-    struct uuid      computer_hash;
+    GmUuid           computer_hash;
     uint32_t         server_salt;
     PlayerStatus     player_status;
     bool             connected;
@@ -91,8 +91,8 @@ typedef struct IoObjectMap {
 } IoObjectMap;
 
 typedef struct ConnectedAccountInfo {
-    struct uuid key; // account id
-    struct uuid char_id;
+    GmUuid      key; // account id
+    GmUuid      char_id;
     uint32_t    map_token;
     uintptr_t   auth_conn_token;
 } ConnectedAccountInfo;

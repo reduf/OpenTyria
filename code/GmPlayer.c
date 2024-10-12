@@ -3,8 +3,8 @@
 GmPlayer* GameSrv_CreatePlayer(
     GameSrv *srv,
     uintptr_t token,
-    struct uuid account_id,
-    struct uuid char_id)
+    GmUuid account_id,
+    GmUuid char_id)
 {
     uint32_t player_id = GmIdAllocate(&srv->free_players_slots, &srv->players.base, sizeof(srv->players.ptr[0]));
 
@@ -235,11 +235,21 @@ void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *
 
 void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
 {
+    Appearance appearance = {0};
+    appearance.sex = player->character.sex;
+    appearance.height = player->character.height;
+    appearance.skin_color = player->character.skin_color;
+    appearance.hair_color = player->character.hair_color;
+    appearance.face_style = player->character.face_style;
+    appearance.primary_profession = player->character.primary_profession;
+    appearance.hair_style = player->character.hair_style;
+    appearance.race = player->character.race;
+
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PLAYER_INFO);
     GameSrv_UpdatePlayerInfo *msg = &buffer->update_player_info;
     msg->player_id = player->player_id;
     msg->agent_id = player->agent_id;
-    memcpy(&msg->appearance, &player->char_settings.appearance, sizeof(msg->appearance));
+    memcpy(&msg->appearance, &appearance, sizeof(msg->appearance));
     msg->unk0 = 0;
     msg->unk1 = 0;
     msg->unk2 = 0;

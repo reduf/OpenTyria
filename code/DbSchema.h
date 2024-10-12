@@ -1,11 +1,11 @@
 #pragma once
 
 #define DbSessionColumnsDef \
-    X(struct uuid, user_id) \
-    X(struct uuid, session_id) \
+    X(GmUuid, user_id) \
+    X(GmUuid, session_id) \
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
-    X(struct uuid, account_id) \
+    X(GmUuid, account_id) \
 
 typedef struct DbSession {
     #define X(T, N) T N;
@@ -26,11 +26,11 @@ static const char *DbSessionColsName[] = {
 };
 
 #define DbAccountColumnsDef \
-    X(struct uuid, account_id) \
+    X(GmUuid, account_id) \
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
     X(bool, eula_accepted) \
-    X(struct uuid, current_char_id) \
+    X(GmUuid, current_char_id) \
     X(uint16_t, current_territory) \
     X(uint16_t, storage_gold) \
     X(uint32_t, balthazar_points_max) \
@@ -65,12 +65,24 @@ static const char *DbAccountColsName[] = {
 };
 
 #define DbCharacterColumnsDef \
-    X(struct uuid, char_id) \
+    X(GmUuid, char_id) \
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
-    X(struct uuid, account_id) \
+    X(GmUuid, account_id) \
     X(static_array(uint16_t, 20), charname) \
-    X(static_array(uint8_t, 64), settings) \
+    X(uint16_t, last_outpost) \
+    X(GmUuid, last_guild_hall_id) \
+    X(uint8_t, sex) \
+    X(uint8_t, height) \
+    X(uint8_t, skin_color) \
+    X(uint8_t, hair_color) \
+    X(uint8_t, face_style) \
+    X(uint8_t, hair_style) \
+    X(uint8_t, race) \
+    X(uint8_t, campaign) \
+    X(uint8_t, level) \
+    X(uint8_t, is_pvp) \
+    X(uint8_t, helm_status) \
     X(uint32_t, skill_points) \
     X(uint32_t, skill_points_total) \
     X(uint32_t, experience) \
@@ -93,6 +105,16 @@ static const char *DbAccountColsName[] = {
     X(uint32_t, skill6) \
     X(uint32_t, skill7) \
     X(uint32_t, skill8) \
+    X(uint16_t, file_id_body) \
+    X(uint16_t, file_id_legs) \
+    X(uint16_t, file_id_head) \
+    X(uint16_t, file_id_boots) \
+    X(uint16_t, file_id_gloves) \
+    X(uint16_t, colors_body) \
+    X(uint16_t, colors_legs) \
+    X(uint16_t, colors_head) \
+    X(uint16_t, colors_boots) \
+    X(uint16_t, colors_gloves) \
 
 typedef struct DbCharacter {
     #define X(T, N) T N;
@@ -116,8 +138,8 @@ static const char *DbCharacterColsName[] = {
 typedef array(DbCharacter) DbCharacterArray;
 
 #define DbBagColumnsDef \
-    X(struct uuid, account_id) \
-    X(struct uuid, char_id) \
+    X(GmUuid, account_id) \
+    X(GmUuid, char_id) \
     X(int64_t, created_at) \
     X(int64_t, updated_at) \
     X(uint8_t, bag_model_id) \
@@ -145,8 +167,8 @@ static const char *DbBagColsName[] = {
 typedef array(DbBag) DbBagArray;
 
 #define DbItemColumnsDef \
-    X(struct uuid, account_id) \
-    X(struct uuid, char_id) \
+    X(GmUuid, account_id) \
+    X(GmUuid, char_id) \
     X(uint8_t, bag_model_id) \
     X(uint16_t, slot) \
     X(int64_t, created_at) \

@@ -980,13 +980,6 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
             log_error("Could't load the character for this user from database");
             return;
         }
-
-        if (player->character.settings.len <= sizeof(player->char_settings)) {
-            memcpy(&player->char_settings, player->character.settings.buf, player->character.settings.len);
-            player->primary_profession = player->char_settings.appearance.primary_profession;
-        } else {
-            log_warn("Invalid character settings len %zu", player->character.settings.len);
-        }
     }
 
     size_t count;
@@ -1513,23 +1506,26 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     Appearance app;
     memcpy(&app, msg->config, 4);
 
-    CharacterSettings settings = {CHARACTER_SETTINGS_VERSION};
-    settings.last_outpost = MapId_KamadanJewelOfIstanOutpost;
-    settings.last_time_played = 0;
-    settings.appearance.sex = app.sex;
-    settings.appearance.height = app.height;
-    settings.appearance.skin_color = app.skin_color;
-    settings.appearance.hair_color = app.hair_color;
-    settings.appearance.face_style = app.face_style;
-    settings.appearance.primary_profession = app.primary_profession;
-    settings.appearance.hair_style = app.hair_style;
-    settings.appearance.campaign = app.campaign;
-    settings.campaign = player->char_creation_campaign;
-    settings.level = 1;
-    settings.is_pvp = player->char_creation_campaign == Campaign_None;
-    settings.secondary_profession = Profession_None;
-    settings.helm_status = HelmStatus_Show;
-    settings.number_of_pieces = 0;
+    random_get_bytes(&srv->random, &player->char_id, sizeof(player->char_id));
+
+    DbCharacter character = {0};
+    character.char_id = player->char_id;
+    character.account_id = player->account_id;
+    character.last_outpost = MapId_KamadanJewelOfIstanOutpost;
+    character.sex = cast_u8(app.sex);
+    character.height = cast_u8(app.height);
+    character.skin_color = cast_u8(app.skin_color);
+    character.hair_color = cast_u8(app.hair_color);
+    character.face_style = cast_u8(app.face_style);
+    character.hair_style = cast_u8(app.hair_style);
+    character.race = cast_u8(app.race);
+    character.campaign = player->char_creation_campaign;
+    character.level = 1;
+    character.is_pvp = player->char_creation_campaign == Campaign_None;
+    character.helm_status = HelmStatus_Show;
+    character.primary_profession = cast_u8(app.primary_profession);
+    // @Cleanup: Add the unlocked profession and unlocked map
+    character.unlocked_professions = 1 << app.primary_profession;
 
     GmBag *bag = &player->bags.equipped_items;
     assert(EquippedItemSlot_Count <= bag->slot_count);
@@ -1544,16 +1540,29 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
             continue;
         }
 
-        size_t pos = settings.number_of_pieces++;
-        settings.pieces[pos].file_id = item->file_id & 0xFFFF;
-        settings.pieces[pos].col1 = item->dye_colors & 0xF;
+        switch (idx) {
+        case EquippedItemSlot_Body:
+            character.file_id_body = item->file_id & 0xFFFF;
+            character.colors_body = item->dye_colors;
+            break;
+        case EquippedItemSlot_Legs:
+            character.file_id_legs = item->file_id & 0xFFFF;
+            character.colors_legs = item->dye_colors;
+            break;
+        case EquippedItemSlot_Head:
+            character.file_id_head = item->file_id & 0xFFFF;
+            character.colors_head = item->dye_colors;
+            break;
+        case EquippedItemSlot_Boots:
+            character.file_id_boots = item->file_id & 0xFFFF;
+            character.colors_boots = item->dye_colors;
+            break;
+        case EquippedItemSlot_Gloves:
+            character.file_id_gloves = item->file_id & 0xFFFF;
+            character.colors_gloves = item->dye_colors;
+            break;
+        }
     }
-
-    // @Cleanup: Add the unlocked profession and unlocked map
-    uint32_t unlocked_professions = 0;
-    unlocked_professions = 1 << app.primary_profession;
-
-    random_get_bytes(&srv->random, &player->char_id, sizeof(player->char_id));
 
     GameConnection *conn;
     if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
@@ -1563,11 +1572,9 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     GameSrvMsg *buffer;
     if ((err = Db_CreateCharacter(
             &srv->database,
-            player->account_id,
-            player->char_id,
-            msg->n_name, msg->name,
-            unlocked_professions,
-            &settings)) != 0
+            &character,
+            msg->n_name, msg->name)
+        ) != 0
     ) {
         log_error("Failed to insert character in database");
 
@@ -1590,6 +1597,7 @@ int GameSrv_HandleCharCreationConfirm(GameSrv *srv, size_t player_id, GameSrv_Ch
     result->n_name = msg->n_name;
     memcpy_u16(result->name, msg->name, msg->n_name);
     result->idk = 0x2211; // what is that?
+    CharacterSettings settings = CharacterSettings_FromDbCharacter(&player->character);
     STATIC_ASSERT(sizeof(settings) <= sizeof(result->settings));
     result->n_settings = sizeof(settings);
     memcpy(result->settings, &settings, sizeof(settings));

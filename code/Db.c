@@ -1,6 +1,49 @@
 #pragma once
 
-int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, struct uuid *result)
+#define DbInsertCharacterDef \
+    X(char_id) \
+    X(account_id) \
+    X(charname) \
+    X(last_outpost) \
+    X(last_guild_hall_id) \
+    X(sex) \
+    X(height) \
+    X(skin_color) \
+    X(hair_color) \
+    X(face_style) \
+    X(hair_style) \
+    X(race) \
+    X(campaign) \
+    X(level) \
+    X(is_pvp) \
+    X(helm_status) \
+    X(unlocked_professions) \
+    X(primary_profession) \
+    X(file_id_body) \
+    X(file_id_legs) \
+    X(file_id_head) \
+    X(file_id_boots) \
+    X(file_id_gloves) \
+    X(colors_body) \
+    X(colors_legs) \
+    X(colors_head) \
+    X(colors_boots) \
+    X(colors_gloves) \
+
+typedef enum DbInsertCharacterCols {
+    #define X(N) DbInsertCharacterCols_ ## N,
+    DbInsertCharacterDef
+    #undef X
+    DbInsertCharacterCols_Count,
+} DbInsertCharacterCols;
+
+static const char *DbInsertCharacterNames[] = {
+    #define X(N) #N,
+    DbInsertCharacterDef
+    #undef X
+};
+
+int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, GmUuid *result)
 {
     const char *text_value = (const char *)sqlite3_column_text(stmt, iCol);
     if (text_value == NULL || !uuid_parse(result, text_value, strlen(text_value))) {
@@ -10,7 +53,7 @@ int sqlite3_column_uuid(sqlite3_stmt *stmt, int iCol, struct uuid *result)
     }
 }
 
-int sqlite3_column_uuid_or(sqlite3_stmt *stmt, int iCol, struct uuid def, struct uuid *result)
+int sqlite3_column_uuid_or(sqlite3_stmt *stmt, int iCol, GmUuid def, GmUuid *result)
 {
     if (sqlite3_column_uuid(stmt, iCol, result) != 0) {
         *result = def;
@@ -142,7 +185,7 @@ int sqlite3_column_u8(sqlite3_stmt *stmt, int iCol, uint8_t *result)
     return ERR_OK;
 }
 
-int sqlite3_bind_uuid(sqlite3_stmt *stmt, int iCol, struct uuid uid)
+int sqlite3_bind_uuid(sqlite3_stmt *stmt, int iCol, GmUuid uid)
 {
     char buffer[UUID_STRING_LEN + 1];
     uuid_snprint(buffer, sizeof(buffer), &uid);
@@ -183,6 +226,27 @@ void append_fields(array_char_t *builder, const char *table, const char **fields
             appendf(builder, "%s.%s, ", table, fields[idx]);
         }
     }
+}
+
+void build_prepared_statement(array_char_t *builder, const char *table, const char **cols, size_t count)
+{
+    appendf(builder, "INSERT INTO %s (", table);
+    for (size_t idx = 0; idx < count; ++idx) {
+        if (idx == count - 1) {
+            appendf(builder, "%s", cols[idx]);
+        } else {
+            appendf(builder, "%s, ", cols[idx]);
+        }
+    }
+    appendf(builder, ") VALUES (");
+    for (size_t idx = 0; idx < count; ++idx) {
+        if (idx == count - 1) {
+            appendf(builder, "?");
+        } else {
+            appendf(builder, "?, ");
+        }
+    }
+    appendf(builder, ");");
 }
 
 #define return_close(ret, stmt) return close_stmt_and_ret(ret, stmt)
@@ -268,12 +332,13 @@ int Db_Open(Database *result, const char *path)
         goto exit_on_error;
     }
 
-    const char *sql = "INSERT INTO characters (char_id, account_id, charname, settings, unlocked_professions) VALUES (?, ?, ?, ?, ?);";
-    if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_insert_character, 0)) != SQLITE_OK) {
+    array_clear(&builder);
+    build_prepared_statement(&builder, "characters", DbInsertCharacterNames, ARRAY_SIZE(DbInsertCharacterNames));
+    if ((err = sqlite3_prepare_v2(conn, builder.ptr, (int)builder.len, &result->stmt_insert_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
 
-    sql = "DELETE FROM characters WHERE account_id = ? AND char_id = ?;";
+    const char *sql = "DELETE FROM characters WHERE account_id = ? AND char_id = ?;";
     if ((err = sqlite3_prepare_v2(conn, sql, -1, &result->stmt_delete_character, 0)) != SQLITE_OK) {
         goto exit_on_error;
     }
@@ -375,7 +440,19 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_i64(stmt, idx + DbCharacterCols_updated_at, &result->updated_at)) != 0) ||
         ((err = sqlite3_column_uuid(stmt, idx + DbCharacterCols_account_id, &result->account_id)) != 0) ||
         ((err = sqlite3_column_u16_array(stmt, idx + DbCharacterCols_charname, result->charname.buf, ARRAY_SIZE(result->charname.buf), &result->charname.len)) != 0) ||
-        ((err = sqlite3_column_u8_array(stmt, idx + DbCharacterCols_settings, result->settings.buf, ARRAY_SIZE(result->settings.buf), &result->settings.len)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_last_outpost, &result->last_outpost)) != 0) ||
+        ((err = sqlite3_column_uuid(stmt, idx + DbCharacterCols_last_guild_hall_id, &result->last_guild_hall_id)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_sex, &result->sex)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_height, &result->height)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_skin_color, &result->skin_color)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_hair_color, &result->hair_color)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_face_style, &result->face_style)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_hair_style, &result->hair_style)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_race, &result->race)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_campaign, &result->campaign)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_level, &result->level)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_is_pvp, &result->is_pvp)) != 0) ||
+        ((err = sqlite3_column_u8(stmt, idx + DbCharacterCols_helm_status, &result->helm_status)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points, &result->skill_points)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill_points_total, &result->skill_points_total)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_experience, &result->experience)) != 0) ||
@@ -398,6 +475,16 @@ int DbCharacter_from_stmt(sqlite3_stmt *stmt, int idx, DbCharacter *result)
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill6, &result->skill6)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill7, &result->skill7)) != 0) ||
         ((err = sqlite3_column_u32(stmt, idx + DbCharacterCols_skill8, &result->skill8)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_file_id_body, &result->file_id_body)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_file_id_legs, &result->file_id_legs)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_file_id_head, &result->file_id_head)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_file_id_boots, &result->file_id_boots)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_file_id_gloves, &result->file_id_gloves)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_colors_body, &result->colors_body)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_colors_legs, &result->colors_legs)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_colors_head, &result->colors_head)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_colors_boots, &result->colors_boots)) != 0) ||
+        ((err = sqlite3_column_u16(stmt, idx + DbCharacterCols_colors_gloves, &result->colors_gloves)) != 0) ||
         ((err != 0))
     ) {
         return ERR_SERVER_ERROR;
@@ -433,7 +520,7 @@ int DbAccount_from_stmt(sqlite3_stmt *stmt, int idx, DbAccount *result)
     return ERR_OK;
 }
 
-int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_id, DbSession *result)
+int Db_GetSession(Database *database, GmUuid user_id, GmUuid session_id, DbSession *result)
 {
     int err;
 
@@ -467,7 +554,7 @@ int Db_GetSession(Database *database, struct uuid user_id, struct uuid session_i
     }
 }
 
-int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
+int Db_GetAccount(Database *database, GmUuid account_id, DbAccount *result)
 {
     int err;
 
@@ -495,7 +582,7 @@ int Db_GetAccount(Database *database, struct uuid account_id, DbAccount *result)
     }
 }
 
-int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char_id, DbCharacter *result)
+int Db_GetCharacter(Database *database, GmUuid account_id, GmUuid char_id, DbCharacter *result)
 {
     int err;
 
@@ -528,8 +615,8 @@ int Db_GetCharacter(Database *database, struct uuid account_id, struct uuid char
 
 int Db_GetCharacterAndAccount(
     Database *database,
-    struct uuid account_id,
-    struct uuid char_id,
+    GmUuid account_id,
+    GmUuid char_id,
     DbAccount *account,
     DbCharacter *character)
 {
@@ -563,7 +650,7 @@ int Db_GetCharacterAndAccount(
     }
 }
 
-int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArray *results)
+int Db_GetCharacters(Database *database, GmUuid account_id, DbCharacterArray *results)
 {
     int err;
 
@@ -591,7 +678,7 @@ int Db_GetCharacters(Database *database, struct uuid account_id, DbCharacterArra
     return_close(ERR_OK, stmt);
 }
 
-int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid char_id, DbBag *results, size_t count, size_t *returned)
+int Db_CharacterBags(Database *database, GmUuid account_id, GmUuid char_id, DbBag *results, size_t count, size_t *returned)
 {
     int err;
     
@@ -637,20 +724,41 @@ int Db_CharacterBags(Database *database, struct uuid account_id, struct uuid cha
 
 int Db_CreateCharacter(
     Database *database,
-    struct uuid account_id,
-    struct uuid char_id,
-    size_t n_name, const uint16_t *name,
-    uint32_t unlocked_professions,
-    CharacterSettings *settings)
+    DbCharacter *character,
+    size_t n_name, const uint16_t *name)
 {
     int err;
 
     sqlite3_stmt *stmt = database->stmt_insert_character;
-    if ((err = sqlite3_bind_uuid(stmt, 1, char_id)) != SQLITE_OK ||
-        (err = sqlite3_bind_uuid(stmt, 2, account_id)) != SQLITE_OK ||
-        (err = sqlite3_bind_u16_array(stmt, 3, n_name, name)) != SQLITE_OK ||
-        (err = sqlite3_bind_u8_array(stmt, 4, sizeof(*settings), (const uint8_t *)settings)) != SQLITE_OK ||
-        (err = sqlite3_bind_u32(stmt, 5, unlocked_professions)) != SQLITE_OK
+    if ((err = sqlite3_bind_uuid(stmt, 1 + DbInsertCharacterCols_char_id, character->char_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 1 + DbInsertCharacterCols_account_id, character->account_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16_array(stmt, 1 + DbInsertCharacterCols_charname, n_name, name)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 1 + DbInsertCharacterCols_last_outpost, character->last_outpost)) != SQLITE_OK ||
+        (err = sqlite3_bind_uuid(stmt, 1 + DbInsertCharacterCols_last_guild_hall_id, character->last_guild_hall_id)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_sex, character->sex)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_height, character->height)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_skin_color, character->skin_color)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_hair_color, character->hair_color)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_face_style, character->face_style)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_hair_style, character->hair_style)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_race, character->race)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_campaign, character->campaign)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_level, character->level)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_is_pvp, character->is_pvp)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_helm_status, character->helm_status)) != SQLITE_OK ||
+        (err = sqlite3_bind_u32(stmt, 1 + DbInsertCharacterCols_unlocked_professions, character->unlocked_professions)) != SQLITE_OK ||
+        (err = sqlite3_bind_u8(stmt, 1 + DbInsertCharacterCols_primary_profession, character->primary_profession)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_file_id_body, character->file_id_body)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_file_id_legs, character->file_id_legs)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_file_id_head, character->file_id_head)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_file_id_boots, character->file_id_boots)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_file_id_gloves, character->file_id_gloves)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_colors_body, character->colors_body)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_colors_legs, character->colors_legs)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_colors_head, character->colors_head)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_colors_boots, character->colors_boots)) != SQLITE_OK ||
+        (err = sqlite3_bind_u16(stmt, 1 + DbInsertCharacterCols_colors_gloves, character->colors_gloves)) != SQLITE_OK ||
+        (err != SQLITE_OK)
     ) {
         log_error(
             "Failed to bind values to a statement, err: %d (%s)",
@@ -668,7 +776,7 @@ int Db_CreateCharacter(
     }
 }
 
-int Db_DeleteCharacter(Database *database, struct uuid account_id, struct uuid char_id)
+int Db_DeleteCharacter(Database *database, GmUuid account_id, GmUuid char_id)
 {
     int err;
 
@@ -800,7 +908,7 @@ int DbItem_from_stmt(sqlite3_stmt *stmt, int idx, DbItem *result)
     return ERR_OK;
 }
 
-int Db_GetItems(Database *database, struct uuid account_id, struct uuid char_id, DbItemArray *results)
+int Db_GetItems(Database *database, GmUuid account_id, GmUuid char_id, DbItemArray *results)
 {
     int err;
 

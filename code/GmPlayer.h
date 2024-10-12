@@ -22,11 +22,10 @@ typedef struct GmPlayer {
     uint16_t          player_id;
     uint32_t          agent_id;
     uintptr_t         conn_token;
-    struct uuid       account_id;
-    struct uuid       char_id;
+    GmUuid            account_id;
+    GmUuid            char_id;
     DbCharacter       character;
     DbAccount         account;
-    CharacterSettings char_settings;
     GmBagArray        bags;
     Campaign          char_creation_campaign;
     Profession        primary_profession;
@@ -37,8 +36,8 @@ typedef array(GmPlayer) GmPlayerArray;
 GmPlayer* GameSrv_CreatePlayer(
     GameSrv *srv,
     uintptr_t token,
-    struct uuid account_id,
-    struct uuid char_id);
+    GmUuid account_id,
+    GmUuid char_id);
 
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id);
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id);

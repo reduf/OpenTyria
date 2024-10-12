@@ -27,6 +27,23 @@ def main(args):
     smsg_addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
     cmsg_addr = scanner.find(b'\xC7\x47\x54\x01\x00\x00\x00\x1B\xC9\x81\xE1\x00\x80', -0xC5)
 
+    tmp = scanner.find(b'\x50\x6A\x0F\x6A\x00\xFF\x35', +7)
+    base_addr, = proc.read(tmp)
+    print(f'base_addr = 0x{base_addr:08X}')
+
+    def get_game_ctx():
+        tmp, = proc.read(base_addr)
+        return proc.read(tmp + 24)[0]
+
+    def get_agent_summary_info(agent_id):
+        ctx = get_game_ctx()
+        print(f'game ctx 0x{ctx:08X}')
+        agent_ctx, = proc.read(ctx + 8)
+        print(f'agent ctx 0x{agent_ctx:08X}')
+        buf, cap, len, param = proc.read(agent_ctx + 0x98, 'IIII')
+        print(f'buf = 0x{buf:08X}, cap = {cap}, len = {len}')
+        return proc.read(buf + (12 * agent_id) + 8)[0]
+
     running = True
     def signal_handler(sig, frame):
         global running
@@ -51,17 +68,47 @@ def main(args):
         else:
             name = "unknown"
 
-        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION', 'GAME_SMSG_AGENT_MOVE_TO_POINT', 'GAME_SMSG_AGENT_UPDATE_SPEED', 'GAME_SMSG_AGENT_UPDATE_ROTATION', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
+        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION_', 'GAME_SMSG_AGENT_MOVE_TO_POINT_', 'GAME_SMSG_AGENT_UPDATE_SPEED_', 'GAME_SMSG_AGENT_UPDATE_ROTATION_', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
             return
 
-        print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+
+        if name == 'GAME_SMSG_AGENT_UPDATE_DIRECTION':
+            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            agent_id, x, y, rotation = proc.read(packet + 4, 'IffI')
+            print(f'>> agent_id = {agent_id}, x = {x}, y = {y}, rotation = {rotation}')
+
+        if name == 'GAME_SMSG_AGENT_MOVE_TO_POINT':
+            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            agent_id, x, y, plane, unk0 = proc.read(packet + 4, 'IffII')
+            print(f'>> agent_id = {agent_id}, x = {x}, y = {y}, plane = {plane}, unk0 = {unk0}')
+
+        if name == 'GAME_SMSG_AGENT_UPDATE_SPEED':
+            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            agent_id, speed_modifier, unk0 = proc.read(packet + 4, 'IfI')
+            print(f'>> agent_id = {agent_id}, speed_modifier = {speed_modifier}, unk0 = {unk0}')
+
+        if name == 'GAME_SMSG_AGENT_UPDATE_ROTATION':
+            agent_id, rotation, unk0 = proc.read(packet + 4, 'III')
+            print(f'>> agent_id = {agent_id}, rotation = {rotation}, unk0 = {unk0}')
+
+        """
+        if name == 'GAME_SMSG_AGENT_MOVEMENT_TICK':
+            delta, = proc.read(packet + 4, 'I')
+            print(f'>> delta = {delta}')
+
         if name == 'GAME_SMSG_UPDATE_AGENT_INT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'III')
-            # print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
+            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
         if name == 'GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'IIf')
-            # print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
+            print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
+
+        if name == 'GAME_SMSG_AGENT_SET_PLAYER':
+            agent_id, unk0 = proc.read(packet + 4, 'II')
+            print(f'>> agent_id = {agent_id}, unk0 = {unk0}')
 
         if name == 'GAME_SMSG_AGENT_SPAWNED':
             data = proc.read(packet + 4, 'IIIIffIffIffIIIIIIIffffIIffI')
@@ -93,11 +140,44 @@ def main(args):
             h0059_x = data[25]
             h0059_y = data[26]
             h0061 = data[27]
-            # print(f'>> agent_id = {agent_id}, model_id = {model_id}, agent_type = {agent_type}, h000B = {h000B}, pos_x = {pos_x}, pos_y = {pos_y}, plane = {plane}, direction_x = {direction_x}, direction_y = {direction_y}, h001E = {h001E}, speed_base = {speed_base}, h0023 = {h0023}, h0027 = {h0027}, model_type = {model_type}, h002F = {h002F}, h0033 = {h0033}, h0037 = {h0037}, h003B = {h003B}, h003F = {h003F}, h0043_x = {h0043_x}, h0043_y = {h0043_y}, h004B_x = {h004B_x}, h004B_y = {h004B_y}, h0053 = {h0053}, h0055 = {h0055}, h0059_x = {h0059_x}, h0059_y = {h0059_y}, h0061 = {h0061}')
+            print(f'>> agent_id = {agent_id}, model_id = {model_id}, agent_type = {agent_type}, h000B = {h000B}, pos_x = {pos_x}, pos_y = {pos_y}, plane = {plane}, direction_x = {direction_x}, direction_y = {direction_y}, h001E = {h001E}, speed_base = {speed_base}, h0023 = {h0023}, h0027 = {h0027}, model_type = {model_type}, h002F = {h002F}, h0033 = {h0033}, h0037 = {h0037}, h003B = {h003B}, h003F = {h003F}, h0043_x = {h0043_x}, h0043_y = {h0043_y}, h004B_x = {h004B_x}, h004B_y = {h004B_y}, h0053 = {h0053}, h0055 = {h0055}, h0059_x = {h0059_x}, h0059_y = {h0059_y}, h0061 = {h0061}')
+
+            ptr = get_agent_summary_info(agent_id)
+            print(f'>>> summary info = {ptr}')
+
+        if name == 'GAME_SMSG_UPDATE_CURRENT_MAP' and False:
+            map_id, unk = proc.read(packet + 4, 'II')
+            print(f'>> map_id = {map_id}, unk = {unk}')
+
+        if name == 'GAME_SMSG_AGENT_SET_PLAYER' and False:
+            agent_id, unk0 = proc.read(packet + 4, 'II')
+            print(f'>> agent_id = {agent_id}, unk0 = {unk0}')
+
+        if name == 'GAME_SMSG_INSTANCE_LOADED' and False:
+            player_team_token = proc.read(packet + 4, 'I')
+            print(f'>> player_team_token = {player_team_token}')
+
+        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+            item_id, = proc.read(packet + 4)
+            model_id, = proc.read(packet + 0x2C)
+            print(f'>> item_id = {item_id}, model_id = 0x{model_id:X}')
+
+        if header == 349:
+            item_id, model_id, unk2, unk3, unk4, unk5, unk6, unk7, unk8 = proc.read(packet + 4, 'IIIIIIIII')
+            print(f'>> item_id = {item_id}, model_id = 0x{model_id:X}, unk2 = {unk2}, unk3 = {unk3}, unk4 = {unk4}, unk5 = {unk5}, unk6 = {unk6}, unk7 = {unk7}, unk8 = {unk8}')
+
+        if header == 109:
+            agent_id, *ids = proc.read(packet + 4, 'I9I')
+            print(f'>> agent_id = {agent_id}, ids = {ids}')
+
+        if header == 176:
+            unk0, unk1 = proc.read(packet + 4, 'II')
+            print(f'>> unk0 = {unk0}, unk1 = {unk1}')
+        """
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)
-        # dbg.add_hook(cmsg_addr, on_send_packet)
+        dbg.add_hook(cmsg_addr, on_send_packet)
         print(f'Start debugging process {proc.name}, {proc.id}')
         while running:
             dbg.poll(32)
