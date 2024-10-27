@@ -59,6 +59,10 @@ def main(args):
         # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f'SendPacket: {header}, 0x{header:X}, {name}')
 
+        if header == 69:
+            x, y, unk = proc.read(packet + 4, 'ffI')
+            print(f'x = {x}, y = {y}, unk = {unk}')
+
     @Hook.rawcall
     def on_recv_packet(ctx):
         packet, = proc.read(ctx.Esp, 'I')
@@ -68,24 +72,24 @@ def main(args):
         else:
             name = "unknown"
 
-        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION_', 'GAME_SMSG_AGENT_MOVE_TO_POINT_', 'GAME_SMSG_AGENT_UPDATE_SPEED_', 'GAME_SMSG_AGENT_UPDATE_ROTATION_', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
+        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION', 'GAME_SMSG_AGENT_MOVE_TO_POINT', 'GAME_SMSG_AGENT_UPDATE_SPEED', 'GAME_SMSG_AGENT_UPDATE_ROTATION', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
             return
 
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+        print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
 
         if name == 'GAME_SMSG_AGENT_UPDATE_DIRECTION':
-            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
             agent_id, x, y, rotation = proc.read(packet + 4, 'IffI')
             print(f'>> agent_id = {agent_id}, x = {x}, y = {y}, rotation = {rotation}')
 
         if name == 'GAME_SMSG_AGENT_MOVE_TO_POINT':
-            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
             agent_id, x, y, plane, unk0 = proc.read(packet + 4, 'IffII')
             print(f'>> agent_id = {agent_id}, x = {x}, y = {y}, plane = {plane}, unk0 = {unk0}')
 
         if name == 'GAME_SMSG_AGENT_UPDATE_SPEED':
-            print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+            # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
             agent_id, speed_modifier, unk0 = proc.read(packet + 4, 'IfI')
             print(f'>> agent_id = {agent_id}, speed_modifier = {speed_modifier}, unk0 = {unk0}')
 
@@ -93,7 +97,6 @@ def main(args):
             agent_id, rotation, unk0 = proc.read(packet + 4, 'III')
             print(f'>> agent_id = {agent_id}, rotation = {rotation}, unk0 = {unk0}')
 
-        """
         if name == 'GAME_SMSG_AGENT_MOVEMENT_TICK':
             delta, = proc.read(packet + 4, 'I')
             print(f'>> delta = {delta}')
@@ -102,6 +105,7 @@ def main(args):
             prop_id, agent_id, value = proc.read(packet + 4, 'III')
             print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
+        """
         if name == 'GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'IIf')
             print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
