@@ -17,6 +17,7 @@ typedef struct GmAgent {
     uint16_t  plane;
     Vec2f     direction;
     Vec2f     destination;
+    float     rotation;
     uint32_t  model_id;
     uint32_t  load_time;
     uint32_t  health_max;
@@ -49,6 +50,9 @@ void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent);
 void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags);
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent);
 void GameSrv_BroadcastAgentPosition(GameSrv *srv, GmAgent *agent);
+void GameSrv_BroadcastWorldSimulationTick(GameSrv *srv, uint32_t delta_ms);
+void GameSrv_BroadcastAgentStopMoving(GameSrv *srv, uint32_t agent_id);
 void GameSrv_WorldTick(GameSrv *srv);
 
 int GameSrv_HandleMoveToCoord(GameSrv *srv, uint16_t player_id, GameSrv_MoveToCoord *msg);
+int GameSrv_HandleCancelMovement(GameSrv *srv, uint16_t player_id);

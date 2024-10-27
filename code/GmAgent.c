@@ -150,6 +150,7 @@ void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, G
 
     uint32_t *items = bags->equipped_items.items;
     msg->agent_id = agent->agent_id;
+    // @Cleanup: We really only want to show the weapon in an explorable zone.
     msg->weapon_item_id = items[EquippedItemSlot_Weapon];
     msg->offhand_item_id = items[EquippedItemSlot_OffHand];
     msg->body_item_id = items[EquippedItemSlot_Body];
@@ -192,9 +193,22 @@ void GameSrv_BroadcastWorldSimulationTick(GameSrv *srv, uint32_t delta_ms)
     GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
 }
 
+void GameSrv_BroadcastAgentStopMoving(GameSrv *srv, uint32_t agent_id)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_STOP_MOVING);
+    GameSrv_AgentStopMoving *msg = &buffer->agent_stop_moving;
+    msg->agent_id = agent_id;
+    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+}
+
 void GameSrv_WorldTick(GameSrv *srv)
 {
-    int64_t delta_time = max_i64(0, srv->current_frame_time - srv->last_world_tick);
+    assert(srv->last_world_tick <= srv->current_frame_time);
+    if (srv->current_frame_time <= srv->last_world_tick) {
+        return;
+    }
+
+    int64_t delta_time = srv->current_frame_time - srv->last_world_tick;
     float delta = (float)delta_time / 1000.f;
 
     GmAgentArray agents = srv->agents;
@@ -262,6 +276,31 @@ int GameSrv_HandleMoveToCoord(GameSrv *srv, uint16_t player_id, GameSrv_MoveToCo
     agent->destination.y = msg->pos.y;
     agent->speed = agent->speed_base;
 
+    float dx = agent->destination.x - agent->position.x;
+    float dy = agent->destination.y - agent->position.y;
+    float norm = sqrtf(dx * dx + dy * dy);
+
+    agent->direction.x = dx / norm;
+    agent->direction.y = dy / norm;
+    agent->rotation = atan2f(agent->direction.y, agent->direction.x);
+
     GameSrv_BroadcastMoveAgentToPoint(srv, agent);
+    return ERR_OK;
+}
+
+int GameSrv_HandleCancelMovement(GameSrv *srv, uint16_t player_id)
+{
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgentByPlayerId(srv, player_id)) == NULL) {
+        log_error("Unknow player with player id %u", player_id);
+        return ERR_SERVER_ERROR;
+    }
+
+    agent->destination.x = agent->position.x;
+    agent->destination.y = agent->position.y;
+    agent->speed = 0.f;
+
+    GameSrv_WorldTick(srv);
+    GameSrv_BroadcastAgentStopMoving(srv, agent->agent_id);
     return ERR_OK;
 }

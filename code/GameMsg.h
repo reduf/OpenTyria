@@ -512,6 +512,18 @@ typedef struct GameSrv_MoveAgentToPoint {
     uint16_t current_plane;
 } GameSrv_MoveAgentToPoint;
 
+typedef struct GameSrv_UpdateAgentRotation {
+    uint16_t header;
+    uint32_t agent_id;
+    uint32_t sin;
+    uint32_t cos;
+} GameSrv_UpdateAgentRotation;
+
+typedef struct GameSrv_AgentStopMoving {
+    uint16_t header;
+    uint32_t agent_id;
+} GameSrv_AgentStopMoving;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -587,5 +599,7 @@ typedef union GameSrvMsg {
     GameSrv_UpdateWorldSimulationTick    world_simulation_tick;
     GameSrv_UpdateAgentPostion           update_agent_position;
     GameSrv_MoveAgentToPoint             move_agent_to_point;
+    GameSrv_AgentStopMoving              agent_stop_moving;
+    GameSrv_UpdateAgentRotation          update_agent_rotation;
 } GameSrvMsg;
 #pragma pack(pop)
