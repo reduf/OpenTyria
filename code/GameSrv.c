@@ -980,6 +980,11 @@ void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
             log_error("Could't load the character for this user from database");
             return;
         }
+
+        if ((err = Profession_FromInt(player->character.primary_profession, &player->primary_profession)) != 0) {
+            log_error("Invalid profession value %u received from database", player->character.primary_profession);
+            player->primary_profession = Profession_None;
+        }
     }
 
     size_t count;
