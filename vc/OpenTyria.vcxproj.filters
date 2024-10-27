@@ -80,6 +80,7 @@
     <ClInclude Include="..\code\GmParty.h" />
     <ClInclude Include="..\code\GmChat.h" />
     <ClInclude Include="..\code\GmColors.h" />
+    <ClInclude Include="..\code\GmMath.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\code\msgdefs.info" />

@@ -75,6 +75,7 @@
 #include "GmErrors.h"
 #include "GmIdTable.h"
 #include "GmColors.h"
+#include "GmMath.h"
 
 #include "GmMaps.h"
 #include "GmTitles.h"

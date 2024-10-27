@@ -524,6 +524,12 @@ typedef struct GameSrv_AgentStopMoving {
     uint32_t agent_id;
 } GameSrv_AgentStopMoving;
 
+typedef struct GameSrv_LastPosBeforeMoveCanceled {
+    uint16_t header;
+    Vec2f    pos;
+    uint32_t plane;
+} GameSrv_LastPosBeforeMoveCanceled;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -535,6 +541,7 @@ typedef union GameCliMsg {
     GameSrv_CharCreationConfirm          char_creation_confirm;
     GameSrv_ChatMessage                  chat_message;
     GameSrv_MoveToCoord                  move_to_coord;
+    GameSrv_LastPosBeforeMoveCanceled    last_pos_before_move_canceled;
 } GameCliMsg;
 
 typedef union GameSrvMsg {

@@ -1,5 +1,8 @@
 #pragma once
 
+// This is way too nice, but we are not implemented a real server anyway...
+#define MAXIMUM_ALLOWED_CORRECTION 100.f
+
 GmAgent* GameSrv_CreateAgent(GameSrv *srv)
 {
     uint32_t agent_id = GmIdAllocate(&srv->free_agents_slots, &srv->agents.base, sizeof(srv->agents.ptr[0]));
@@ -302,5 +305,24 @@ int GameSrv_HandleCancelMovement(GameSrv *srv, uint16_t player_id)
 
     GameSrv_WorldTick(srv);
     GameSrv_BroadcastAgentStopMoving(srv, agent->agent_id);
+    return ERR_OK;
+}
+
+int GameSrv_HandleLastPosOnMoveCanceled(GameSrv *srv, uint16_t player_id, GameSrv_LastPosBeforeMoveCanceled *msg)
+{
+    GmAgent *agent;
+    if ((agent = GameSrv_GetAgentByPlayerId(srv, player_id)) == NULL) {
+        log_error("Unknow player with player id %u", player_id);
+        return ERR_SERVER_ERROR;
+    }
+
+    if (MAXIMUM_ALLOWED_CORRECTION < Vec2f_Dist2(agent->position, msg->pos)) {
+        log_warn("Player %u tried to correct the position by more than allowed", player_id);
+        return ERR_OK;
+    }
+
+    agent->position.x = msg->pos.x;
+    agent->position.y = msg->pos.y;
+    agent->plane = (uint16_t) msg->plane;
     return ERR_OK;
 }

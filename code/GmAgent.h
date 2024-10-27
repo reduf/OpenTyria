@@ -56,3 +56,4 @@ void GameSrv_WorldTick(GameSrv *srv);
 
 int GameSrv_HandleMoveToCoord(GameSrv *srv, uint16_t player_id, GameSrv_MoveToCoord *msg);
 int GameSrv_HandleCancelMovement(GameSrv *srv, uint16_t player_id);
+int GameSrv_HandleLastPosOnMoveCanceled(GameSrv *srv, uint16_t player_id, GameSrv_LastPosBeforeMoveCanceled *msg);

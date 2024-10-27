@@ -1680,6 +1680,9 @@ int GameSrv_ProcessPlayerMessage(GameSrv *srv, uint16_t player_id, GameCliMsg *m
     case GAME_CMSG_CANCEL_MOVEMENT:
         err = GameSrv_HandleCancelMovement(srv, player_id);
         break;
+    case GAME_CMSG_LAST_POS_BEFORE_MOVE_CANCELED:
+        err = GameSrv_HandleLastPosOnMoveCanceled(srv, player_id, &msg->last_pos_before_move_canceled);
+        break;
     default:
         log_warn(
             "Unhandled GameSrv packet with header %" PRIu16 " (0x%" PRIX16 ")",

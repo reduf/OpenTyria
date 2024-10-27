@@ -89,6 +89,7 @@
 #define GAME_CMSG_ROTATE_PLAYER                         (GAME_CMSG_MASK | 0x003E) // 62
 #define GAME_CMSG_CHANGE_SECOND_PROFESSION              (GAME_CMSG_MASK | 0x003F) // 63
 #define GAME_CMSG_USE_SKILL                             (GAME_CMSG_MASK | 0x0044) // 68
+#define GAME_CMSG_LAST_POS_BEFORE_MOVE_CANCELED         (GAME_CMSG_MASK | 0x0045) // 69
 #define GAME_CMSG_TRADE_INITIATE                        (GAME_CMSG_MASK | 0x0047) // 71
 #define GAME_CMSG_BUY_MATERIALS                         (GAME_CMSG_MASK | 0x0048) // 72
 #define GAME_CMSG_REQUEST_QUOTE                         (GAME_CMSG_MASK | 0x004A) // 74
