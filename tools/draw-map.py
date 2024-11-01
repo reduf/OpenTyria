@@ -1,5 +1,6 @@
 import arcade
 import struct
+import math
 
 from dataclasses import dataclass
 from process import *
@@ -137,10 +138,10 @@ class Window(arcade.Window):
                 colors = (trap.color, trap.color, trap.color, trap.color, trap.color, trap.color)
                 points = ((xbl, yb), (xtr, yt), (xtl, yt), (xbl, yb), (xtr, yt), (xbr, yb))
                 elems.append(arcade.create_triangles_filled_with_colors(points, colors))
-                elems.append(arcade.create_ellipse_filled(xbl, yb, 3, 3, arcade.color.BLUE))
-                elems.append(arcade.create_ellipse_filled(xtr, yt, 3, 3, arcade.color.BLUE))
-                elems.append(arcade.create_ellipse_filled(xtl, yt, 3, 3, arcade.color.BLUE))
-                elems.append(arcade.create_ellipse_filled(xbr, yb, 3, 3, arcade.color.BLUE))
+                # elems.append(arcade.create_ellipse_filled(xbl, yb, 3, 3, arcade.color.BLUE))
+                # elems.append(arcade.create_ellipse_filled(xtr, yt, 3, 3, arcade.color.BLUE))
+                # elems.append(arcade.create_ellipse_filled(xtl, yt, 3, 3, arcade.color.BLUE))
+                # elems.append(arcade.create_ellipse_filled(xbr, yb, 3, 3, arcade.color.BLUE))
 
         for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
             for jdx, (x1, y1, x2, y2) in enumerate(x_nodes):
@@ -159,13 +160,13 @@ class Window(arcade.Window):
 
     def on_draw(self):
         x, y, plane = self.game.get_agent_pos(self.game.get_agent_id_by_player_id())
+        # x, y = self.game.get_camera_pos()
         x, y = self.world_coord_to_window_coord(x, y)
 
         arcade.start_render()
         self.clear()
         self.camera.use()
 
-        # self.update_camera()
         self.elems.draw()
 
         arcade.draw_circle_filled(x, y, 8, arcade.color.GREEN)
@@ -265,7 +266,9 @@ if __name__ == '__main__':
         x_node_bytes, = proc.read(x_node_ptr, f'{x_node_count * 32}s')
         for jdx in range(x_node_count):
             x1, y1, x2, y2 = struct.unpack_from('<ffff', x_node_bytes, (jdx * 32) + 8)
-            x_nodes.append((x1, y1, x1 + x2, y1 + y2))
+            left, right = struct.unpack_from('<II', x_node_bytes, (jdx * 32) + 0x18)
+            norm = math.sqrt(x2 * x2 + y2 * y2) / 100
+            x_nodes.append((x1, y1, x1 + x2/norm, y1 + y2/norm))
 
         y_nodes = []
         y_node_count, y_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x2C)

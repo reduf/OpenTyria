@@ -19,6 +19,9 @@ class pygw(object):
         tmp = self.scanner.find(b'\xFF\x50\x10\x47\x83\xC6\x04\x3B\xFB\x75\xE1', +0xD)
         self.agent_ptr, = proc.read(tmp)
 
+        tmp = self.scanner.find(b'\x56\x89\x47\x08\x6A\x01\xD9\x1B\xE8', -0x37)
+        self.camera_ptr, = proc.read(tmp)
+
     def get_game_ctx(self):
         tmp, = self.proc.read(self.ctx)
         return self.proc.read(tmp + 24)[0]
@@ -68,3 +71,6 @@ class pygw(object):
         tmp, = self.proc.read(tmp + 0x74)
         tmp, = self.proc.read(tmp)
         return Array(*self.proc.read(tmp + 0x18, 'IIII'))
+
+    def get_camera_pos(self):
+        return self.proc.read(self.camera_ptr + 0x78, 'ff')
