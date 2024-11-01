@@ -122,8 +122,6 @@ class Window(arcade.Window):
         return (x, y)
 
     def draw_map(self):
-        # arcade.start_render()
-
         for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
             for trap in traps:
                 xtl = (trap.xtl + self.offset_x) * self.ratio_w
@@ -151,8 +149,6 @@ class Window(arcade.Window):
                     x = (x + self.offset_x) * self.ratio_w
                     y = (y + self.offset_y) * self.ratio_h
                     arcade.draw_circle_filled(x, y, 3, arcade.color.YELLOW)
-
-        # arcade.finish_render()
 
     def on_draw(self):
         x, y, plane = self.game.get_agent_pos(self.game.get_agent_id_by_player_id())
@@ -266,20 +262,7 @@ if __name__ == '__main__':
 
         planes.append((zplane, traps, x_nodes, y_nodes))
 
-    # print(f'min_x = {min_x}, max_x = {max_x}, min_y = {min_y}, max_y = {max_y}')
     window = Window(game, planes)
-
-    """
-    print(player_pos)
-    x, y, plane = player_pos
-    x = (x + offset_x) * ratio_w
-    y = (y + offset_y) * ratio_h
-    arcade.draw_circle_filled(x, y, 8, arcade.color.BYZANTINE)
-
-    origin_x = offset_x * ratio_w
-    origin_y = offset_y * ratio_h
-    arcade.draw_circle_filled(origin_x, origin_y, 8, arcade.color.GREEN)
-    """
 
     # Keep the window up until someone closes it.
     arcade.run()
