@@ -36,20 +36,21 @@ class Window(arcade.Window):
 
     def __init__(self, game, planes):
         super().__init__(Window.WIDTH, Window.HEIGHT, title="Walkable mesh")
-        arcade.set_background_color(arcade.color.WHITE)
+
         self.game = game
         self.planes = planes
         self.selected_trap_id = -1
 
+        arcade.set_background_color(arcade.color.WHITE)
+
+    def setup(self):
         self.detect_bounds()
         self.set_default_colors()
         self.create_lookup_dict()
+        self.build_draw_list()
 
-    def recalculate(self):
-        self.offset_x = self.center[0] - self.min_x
-        self.offset_y = self.center[1] - self.min_y
-        self.ratio_w  = (Window.WIDTH / (self.max_x - self.min_x) * self.zoom)
-        self.ratio_h  = (Window.HEIGHT / (self.max_y - self.min_y) * self.zoom)
+        self.camera = arcade.Camera(self.width, self.height)
+        self.camera.scale = 2.0
 
     def detect_bounds(self):
         self.min_x = float('inf')
@@ -64,9 +65,10 @@ class Window(arcade.Window):
                 self.min_y = min(self.min_y, trap.yb)
                 self.max_y = max(self.max_y, trap.yt)
 
-        self.zoom = 1
-        self.center = (0, 0)
-        self.recalculate()
+        self.offset_x = -self.min_x
+        self.offset_y = -self.min_y
+        self.ratio_w  = Window.WIDTH / (self.max_x - self.min_x)
+        self.ratio_h  = Window.HEIGHT / (self.max_y - self.min_y)
 
     def set_default_colors(self):
         for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
@@ -121,7 +123,8 @@ class Window(arcade.Window):
         y = (y + self.offset_y) * self.ratio_h
         return (x, y)
 
-    def draw_map(self):
+    def build_draw_list(self):
+        elems = arcade.ShapeElementList()
         for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
             for trap in traps:
                 xtl = (trap.xtl + self.offset_x) * self.ratio_w
@@ -131,24 +134,28 @@ class Window(arcade.Window):
                 yt  = (trap.yt + self.offset_y) * self.ratio_h
                 yb  = (trap.yb + self.offset_y) * self.ratio_h
 
-                arcade.draw_triangle_filled(xbl, yb, xtr, yt, xtl, yt, trap.color)
-                arcade.draw_triangle_filled(xbl, yb, xtr, yt, xbr, yb, trap.color)
-                arcade.draw_circle_filled(xbl, yb, 3, arcade.color.BLUE)
-                arcade.draw_circle_filled(xtr, yt, 3, arcade.color.BLUE)
-                arcade.draw_circle_filled(xtl, yt, 3, arcade.color.BLUE)
-                arcade.draw_circle_filled(xbr, yb, 3, arcade.color.BLUE)
+                colors = (trap.color, trap.color, trap.color, trap.color, trap.color, trap.color)
+                points = ((xbl, yb), (xtr, yt), (xtl, yt), (xbl, yb), (xtr, yt), (xbr, yb))
+                elems.append(arcade.create_triangles_filled_with_colors(points, colors))
+                elems.append(arcade.create_ellipse_filled(xbl, yb, 3, 3, arcade.color.BLUE))
+                elems.append(arcade.create_ellipse_filled(xtr, yt, 3, 3, arcade.color.BLUE))
+                elems.append(arcade.create_ellipse_filled(xtl, yt, 3, 3, arcade.color.BLUE))
+                elems.append(arcade.create_ellipse_filled(xbr, yb, 3, 3, arcade.color.BLUE))
 
-            if False:
-                for x, y in x_nodes:
-                    x = (x + self.offset_x) * self.ratio_w
-                    y = (y + self.offset_y) * self.ratio_h
-                    arcade.draw_circle_filled(x, y, 3, arcade.color.GREEN)
+        for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
+            for jdx, (x1, y1, x2, y2) in enumerate(x_nodes):
+                x1 = (x1 + self.offset_x) * self.ratio_w
+                y1 = (y1 + self.offset_y) * self.ratio_h
+                x2 = (x2 + self.offset_x) * self.ratio_w
+                y2 = (y2 + self.offset_y) * self.ratio_h
+                elems.append(arcade.create_line(x1, y1, x2, y2, arcade.color.GREEN, 2))
 
-            if False:
-                for x, y in y_nodes:
-                    x = (x + self.offset_x) * self.ratio_w
-                    y = (y + self.offset_y) * self.ratio_h
-                    arcade.draw_circle_filled(x, y, 3, arcade.color.YELLOW)
+            for x, y in y_nodes:
+                x = (x + self.offset_x) * self.ratio_w
+                y = (y + self.offset_y) * self.ratio_h
+                elems.append(arcade.create_ellipse_filled(x, y, 3, 3, arcade.color.RED))
+
+        self.elems = elems
 
     def on_draw(self):
         x, y, plane = self.game.get_agent_pos(self.game.get_agent_id_by_player_id())
@@ -156,7 +163,11 @@ class Window(arcade.Window):
 
         arcade.start_render()
         self.clear()
-        self.draw_map()
+        self.camera.use()
+
+        # self.update_camera()
+        self.elems.draw()
+
         arcade.draw_circle_filled(x, y, 8, arcade.color.GREEN)
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -169,21 +180,24 @@ class Window(arcade.Window):
                 for trap_id in old_trap.adjacents:
                     self.lookup[trap_id].reset_default_color()
             trap.color = arcade.color.BLACK
-            print(len(trap.adjacents))
             for trap_id in trap.adjacents:
                 self.lookup[trap_id].color = arcade.color.RED
             self.selected_trap_id = trap.trap_id
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        x, y = self.center
-        x += dx / self.ratio_w
-        y += dy / self.ratio_h
-        self.center = x, y
-        self.recalculate()
+        pos_x, pos_y = self.camera.position
+        self.camera.move((pos_x - dx, pos_y - dy))
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        self.zoom -= (scroll_y * 0.5)
-        self.recalculate()
+        SCROLL_SPEED = 0.2
+        self.camera.scale = max(0.1, min(10, self.camera.scale - (scroll_y * SCROLL_SPEED)))
+
+    def on_key_press(self, key, modifiers):
+        # Zoom in
+        if key == arcade.key.UP:
+            self.camera.scale += 1
+        elif key == arcade.key.DOWN:
+            self.camera.scale -= 1
 
 def build_visibility_graph(traps):
     def area(a, b, c):
@@ -250,19 +264,34 @@ if __name__ == '__main__':
         x_node_count, x_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x24)
         x_node_bytes, = proc.read(x_node_ptr, f'{x_node_count * 32}s')
         for jdx in range(x_node_count):
-            pos = struct.unpack_from('<ff', x_node_bytes, (jdx * 32) + 8)
-            x_nodes.append(pos)
+            x1, y1, x2, y2 = struct.unpack_from('<ffff', x_node_bytes, (jdx * 32) + 8)
+            x_nodes.append((x1, y1, x1 + x2, y1 + y2))
 
         y_nodes = []
         y_node_count, y_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x2C)
         y_node_bytes, = proc.read(y_node_ptr, f'{y_node_count * 24}s')
         for jdx in range(y_node_count):
-            pos = struct.unpack_from('<ff', y_node_bytes, (jdx * 24) + 8)
-            y_nodes.append(pos)
+            x, y, left, right = struct.unpack_from('<ffII', y_node_bytes, (jdx * 24) + 8)
+            y_nodes.append((x, y))
+
+        portal_count, portal_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x3C)
+        portals_size = portal_count * 0x14
+        portals_bytes, = proc.read(portal_ptr, f'{portals_size}s')
+        for jdx in range(portal_count):
+            left_layer_id, right_layer_id, other = struct.unpack_from('<HHI', portals_bytes, jdx * 0x14)
+            # print(f'left_layer_id = {left_layer_id}, right_layer_id = {right_layer_id}, other = {other:X}')
+            # tc, tp = struct.unpack_from('<II', portals_bytes, (jdx * 0x14) + 0xC)
+            # ptrs = proc.read(tp, f'{tc}I')
+            # for ptr in ptrs:
+            #     trap_id, = proc.read(ptr)
+            #     xtl, xtr, yt, xbl, xbr, yb = proc.read(ptr + 0x18, 'ffffff')
+            #     trap = Trapezoid(trap_id, xtl, xtr, yt, xbl, xbr, yb)
+            #     traps.append(trap)
 
         planes.append((zplane, traps, x_nodes, y_nodes))
 
     window = Window(game, planes)
+    window.setup()
 
     # Keep the window up until someone closes it.
     arcade.run()
