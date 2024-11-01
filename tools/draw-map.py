@@ -1,33 +1,229 @@
 import arcade
 import struct
 
+from dataclasses import dataclass
 from process import *
 from pygw import *
 
-COLORS = [
-    (0xe6, 0x19, 0x4b),
-    (0x3c, 0xb4, 0x4b),
-    (0xff, 0xe1, 0x19),
-    (0x43, 0x63, 0xd8),
-    (0xf5, 0x82, 0x31),
-    (0x91, 0x1e, 0xb4),
-    (0x46, 0xf0, 0xf0),
-    (0xf0, 0x32, 0xe6),
-    (0xbc, 0xf6, 0x0c),
-    (0xfa, 0xbe, 0xbe),
-    (0x00, 0x80, 0x80),
-    (0xe6, 0xbe, 0xff),
-    (0x9a, 0x63, 0x24),
-    (0xff, 0xfa, 0xc8),
-    (0x80, 0x00, 0x00),
-    (0xaa, 0xff, 0xc3),
-    (0x80, 0x80, 0x00),
-    (0xff, 0xd8, 0xb1),
-    (0x00, 0x00, 0x75),
-    (0x80, 0x80, 0x80),
-    (0xff, 0xff, 0xff),
-    (0x00, 0x00, 0x00),
-]
+class Trapezoid:
+    @staticmethod
+    def get_trapezoid_area(xtl, xtr, yt, xbl, xbr, yb):
+        base_bot = abs(xbl - xbr)
+        base_top = abs(xtl - xtr)
+        height  = abs(yt - yb)
+        return ((base_bot + base_top) * height) / 2
+
+    def __init__(self, trap_id, xtl, xtr, yt, xbl, xbr, yb):
+        self.trap_id = trap_id
+        self.xtl = xtl
+        self.xtr = xtr
+        self.yt = yt
+        self.xbl = xbl
+        self.xbr = xbr
+        self.yb = yb
+        self.area = self.get_trapezoid_area(xtl, xtr, yt, xbl, xbr, yb)
+        self.adjacents = []
+
+    def reset_default_color(self):
+        self.color = self.default_color
+
+class Window(arcade.Window):
+    WIDTH = 1280
+    HEIGHT = 720
+
+    COLOR1 = (0x46, 0x99, 0x90)
+    COLOR2 = (0x91, 0x1e, 0xb4)
+
+    def __init__(self, game, planes):
+        super().__init__(Window.WIDTH, Window.HEIGHT, title="Walkable mesh")
+        arcade.set_background_color(arcade.color.WHITE)
+        self.game = game
+        self.planes = planes
+        self.selected_trap_id = -1
+
+        self.detect_bounds()
+        self.set_default_colors()
+        self.create_lookup_dict()
+
+    def recalculate(self):
+        self.offset_x = self.center[0] - self.min_x
+        self.offset_y = self.center[1] - self.min_y
+        self.ratio_w  = (Window.WIDTH / (self.max_x - self.min_x) * self.zoom)
+        self.ratio_h  = (Window.HEIGHT / (self.max_y - self.min_y) * self.zoom)
+
+    def detect_bounds(self):
+        self.min_x = float('inf')
+        self.min_y = float('inf')
+        self.max_x = float('-inf')
+        self.max_y = float('-inf')
+
+        for zplane, traps, x_nodes, y_nodes in self.planes:
+            for trap in traps:
+                self.min_x = min(self.min_x, trap.xtl, trap.xbl)
+                self.max_x = max(self.max_x, trap.xtr, trap.xbr)
+                self.min_y = min(self.min_y, trap.yb)
+                self.max_y = max(self.max_y, trap.yt)
+
+        self.zoom = 1
+        self.center = (0, 0)
+        self.recalculate()
+
+    def set_default_colors(self):
+        for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
+            if idx == 0:
+                default_color = self.COLOR1
+            else:
+                default_color = self.COLOR2
+            for trap in traps:
+                trap.color = default_color
+                trap.default_color = default_color
+
+    def create_lookup_dict(self):
+        self.lookup = {}
+        for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
+            for trap in traps:
+                self.lookup[trap.trap_id] = trap
+
+    @staticmethod
+    def get_triangle_area_from_points(ax, ay, bx, by, cx, cy):
+        square_area = ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)
+        return abs(square_area) / 2
+
+    @staticmethod
+    def get_triangle_are_from_base_height(xl, xy, y1, y2):
+        base = abs(xl - xy)
+        height = abs(y1 - y2)
+        return (base * height) / 2
+
+    @staticmethod
+    def is_in_trapezoid(trap, x, y):
+        at = Window.get_triangle_are_from_base_height(trap.xtl, trap.xtr, trap.yt, y)
+        ab = Window.get_triangle_are_from_base_height(trap.xbl, trap.xbr, trap.yb, y)
+        al = Window.get_triangle_area_from_points(x, y, trap.xtl, trap.yt, trap.xbl, trap.yb)
+        ar = Window.get_triangle_area_from_points(x, y, trap.xtr, trap.yt, trap.xbr, trap.yb)
+        return (at + ab + al + ar) <= trap.area
+
+    def find_trapezoid_by_coord(self, x, y):
+        for plane, traps, x_nodes, y_nodes in reversed(self.planes):
+            for trap in traps:
+                if y < trap.yb or trap.yt < y:
+                    continue
+                if self.is_in_trapezoid(trap, x, y):
+                    return trap
+
+    def window_coord_to_world_coord(self, x, y):
+        x = (x / self.ratio_w) - self.offset_x
+        y = (y / self.ratio_h) - self.offset_y
+        return x, y
+
+    def world_coord_to_window_coord(self, x, y):
+        x = (x + self.offset_x) * self.ratio_w
+        y = (y + self.offset_y) * self.ratio_h
+        return (x, y)
+
+    def draw_map(self):
+        # arcade.start_render()
+
+        for idx, (plane, traps, x_nodes, y_nodes) in enumerate(self.planes):
+            for trap in traps:
+                xtl = (trap.xtl + self.offset_x) * self.ratio_w
+                xtr = (trap.xtr + self.offset_x) * self.ratio_w
+                xbl = (trap.xbl + self.offset_x) * self.ratio_w
+                xbr = (trap.xbr + self.offset_x) * self.ratio_w
+                yt  = (trap.yt + self.offset_y) * self.ratio_h
+                yb  = (trap.yb + self.offset_y) * self.ratio_h
+
+                arcade.draw_triangle_filled(xbl, yb, xtr, yt, xtl, yt, trap.color)
+                arcade.draw_triangle_filled(xbl, yb, xtr, yt, xbr, yb, trap.color)
+                arcade.draw_circle_filled(xbl, yb, 3, arcade.color.BLUE)
+                arcade.draw_circle_filled(xtr, yt, 3, arcade.color.BLUE)
+                arcade.draw_circle_filled(xtl, yt, 3, arcade.color.BLUE)
+                arcade.draw_circle_filled(xbr, yb, 3, arcade.color.BLUE)
+
+            if False:
+                for x, y in x_nodes:
+                    x = (x + self.offset_x) * self.ratio_w
+                    y = (y + self.offset_y) * self.ratio_h
+                    arcade.draw_circle_filled(x, y, 3, arcade.color.GREEN)
+
+            if False:
+                for x, y in y_nodes:
+                    x = (x + self.offset_x) * self.ratio_w
+                    y = (y + self.offset_y) * self.ratio_h
+                    arcade.draw_circle_filled(x, y, 3, arcade.color.YELLOW)
+
+        # arcade.finish_render()
+
+    def on_draw(self):
+        x, y, plane = self.game.get_agent_pos(self.game.get_agent_id_by_player_id())
+        x, y = self.world_coord_to_window_coord(x, y)
+
+        arcade.start_render()
+        self.clear()
+        self.draw_map()
+        arcade.draw_circle_filled(x, y, 8, arcade.color.GREEN)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        x, y = self.window_coord_to_world_coord(x, y)
+        trap = self.find_trapezoid_by_coord(x, y)
+        if trap != None:
+            if self.selected_trap_id in self.lookup:
+                old_trap = self.lookup[self.selected_trap_id]
+                old_trap.reset_default_color()
+                for trap_id in old_trap.adjacents:
+                    self.lookup[trap_id].reset_default_color()
+            trap.color = arcade.color.BLACK
+            print(len(trap.adjacents))
+            for trap_id in trap.adjacents:
+                self.lookup[trap_id].color = arcade.color.RED
+            self.selected_trap_id = trap.trap_id
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        x, y = self.center
+        x += dx / self.ratio_w
+        y += dy / self.ratio_h
+        self.center = x, y
+        self.recalculate()
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        self.zoom -= (scroll_y * 0.5)
+        self.recalculate()
+
+def build_visibility_graph(traps):
+    def area(a, b, c):
+        ax, ay = a
+        bx, by = b
+        cx, cy = c
+        return (bx - ax) * (cy - ay) * (cx - ax) * (by - ay)
+
+    def is_crossed_by(trap, p1, p2):
+        xtl, xtr, yt, xbl, xbr, yb = trap
+        left = (xtl, yt), (xbl, yb)
+        right = (xtr, yt), (xbr, yb)
+
+    def is_in_line_of_sight(p1, p2):
+        for trap in traps:
+            if is_crossed_by(trap, p1, p2):
+                return False
+        return True
+
+    points = []
+    for xtl, xtr, yt, xbl, xbr, yb in traps:
+        points.append((xbl, yb))
+        points.append((xtr, yt))
+        points.append((xtl, yt))
+        points.append((xbr, yb))
+
+    graph = {}
+    for idx, p1 in enumerate(points):
+        links = []
+        for jdx, p2 in enumerate(points):
+            if idx == jdx:
+                continue
+            if is_in_line_of_sight(p1, p2):
+                links.append(p2)
+        graph[p1] = links
+    return graph
 
 if __name__ == '__main__':
     proc, = GetProcesses('Gw.exe')
@@ -38,11 +234,6 @@ if __name__ == '__main__':
     bytes = pathing_maps.len * SIZE
     data, = proc.read(pathing_maps.buf, f'{bytes}s')
 
-    min_x = float('inf')
-    min_y = float('inf')
-    max_x = float('-inf')
-    max_y = float('-inf')
-
     planes = []
     for idx in range(pathing_maps.len):
         zplane, = struct.unpack_from('<I', data, (idx * SIZE) + 0)
@@ -50,44 +241,45 @@ if __name__ == '__main__':
         traps_bytes, = proc.read(trap_ptr, f'{trap_len * 48}s')
         traps = []
         for jdx in range(trap_len):
+            trap_id, *adjacents = struct.unpack_from('<IIIII', traps_bytes, jdx * 48)
             xtl, xtr, yt, xbl, xbr, yb = struct.unpack_from('<ffffff', traps_bytes, jdx * 48 + 0x18)
-            traps.append((xtl, xtr, yt, xbl, xbr, yb))
-            min_x = min(min_x, xtl, xbl)
-            max_x = max(max_x, xtr, xbr)
-            min_y = min(min_y, yb)
-            max_y = max(max_y, yt)
-        planes.append((zplane, traps))
+
+            trap = Trapezoid(trap_id, xtl, xtr, yt, xbl, xbr, yb)
+            for adjacent in adjacents:
+                if adjacent != 0:
+                    trap.adjacents.append(proc.read(adjacent)[0])
+            traps.append(trap)
+
+        x_nodes = []
+        x_node_count, x_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x24)
+        x_node_bytes, = proc.read(x_node_ptr, f'{x_node_count * 32}s')
+        for jdx in range(x_node_count):
+            pos = struct.unpack_from('<ff', x_node_bytes, (jdx * 32) + 8)
+            x_nodes.append(pos)
+
+        y_nodes = []
+        y_node_count, y_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x2C)
+        y_node_bytes, = proc.read(y_node_ptr, f'{y_node_count * 24}s')
+        for jdx in range(y_node_count):
+            pos = struct.unpack_from('<ff', y_node_bytes, (jdx * 24) + 8)
+            y_nodes.append(pos)
+
+        planes.append((zplane, traps, x_nodes, y_nodes))
 
     # print(f'min_x = {min_x}, max_x = {max_x}, min_y = {min_y}, max_y = {max_y}')
+    window = Window(game, planes)
 
-    WIDTH = 1280
-    HEIGHT = 920
+    """
+    print(player_pos)
+    x, y, plane = player_pos
+    x = (x + offset_x) * ratio_w
+    y = (y + offset_y) * ratio_h
+    arcade.draw_circle_filled(x, y, 8, arcade.color.BYZANTINE)
 
-    offset_x = -min_x
-    offset_y = -min_y
-    ratio_w  = WIDTH / (max_x - min_x)
-    ratio_h  = HEIGHT / (max_y - min_y)
-
-    arcade.open_window(WIDTH, HEIGHT, "Walkable mesh")
-    arcade.set_background_color(arcade.color.WHITE)
-    arcade.start_render()
-
-    for idx, (plane, traps) in enumerate(planes):
-        for xtl, xtr, yt, xbl, xbr, yb in traps:
-            xtl = (xtl + offset_x) * ratio_w
-            xtr = (xtr + offset_x) * ratio_w
-            xbl = (xbl + offset_x) * ratio_w
-            xbr = (xbr + offset_x) * ratio_w
-            yt  = (yt + offset_y) * ratio_h
-            yb  = (yb + offset_y) * ratio_h
-
-            # print(f'xtl = {xtl}, xtr = {xtr}, yt = {yt}, xbl = {xbl}, xbr = {xbr}, yb = {yb}')
-            color = COLORS[min(idx, len(COLORS) - 1)]
-            arcade.draw_triangle_filled(xbl, yb, xtl, yt, xtr, yt, color)
-            arcade.draw_triangle_filled(xbr, yb, xtr, yt, xbl, yb, color)
-
-    # Finish the render.
-    arcade.finish_render()
+    origin_x = offset_x * ratio_w
+    origin_y = offset_y * ratio_h
+    arcade.draw_circle_filled(origin_x, origin_y, 8, arcade.color.GREEN)
+    """
 
     # Keep the window up until someone closes it.
     arcade.run()
