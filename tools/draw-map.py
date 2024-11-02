@@ -51,7 +51,6 @@ class Window(arcade.Window):
         self.build_draw_list()
 
         self.camera = arcade.Camera(self.width, self.height)
-        self.camera.scale = 2.0
 
     def detect_bounds(self):
         self.min_x = float('inf')
@@ -186,6 +185,8 @@ class Window(arcade.Window):
             self.selected_trap_id = trap.trap_id
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        dx *= self.camera.scale
+        dy *= self.camera.scale
         pos_x, pos_y = self.camera.position
         self.camera.move((pos_x - dx, pos_y - dy))
 
