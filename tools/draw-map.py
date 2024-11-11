@@ -273,8 +273,7 @@ if __name__ == '__main__':
         for jdx in range(x_node_count):
             x1, y1, x2, y2 = struct.unpack_from('<ffff', x_node_bytes, (jdx * 32) + 8)
             left, right = struct.unpack_from('<II', x_node_bytes, (jdx * 32) + 0x18)
-            norm = math.sqrt(x2 * x2 + y2 * y2) / 100
-            x_nodes.append((x1, y1, x1 + x2/norm, y1 + y2/norm))
+            x_nodes.append((x1, y1, x1 + x2, y1 + y2))
 
         y_nodes = []
         y_node_count, y_node_ptr = struct.unpack_from('<II', data, (idx * SIZE) + 0x2C)
