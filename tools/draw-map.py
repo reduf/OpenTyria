@@ -168,21 +168,33 @@ class Window(arcade.Window):
 
         self.elems.draw()
 
+        if self.selected_trap_id in self.lookup:
+            trap = self.lookup[self.selected_trap_id]
+            xtl = (trap.xtl + self.offset_x) * self.ratio_w
+            xtr = (trap.xtr + self.offset_x) * self.ratio_w
+            xbl = (trap.xbl + self.offset_x) * self.ratio_w
+            xbr = (trap.xbr + self.offset_x) * self.ratio_w
+            yt  = (trap.yt + self.offset_y) * self.ratio_h
+            yb  = (trap.yb + self.offset_y) * self.ratio_h
+
+            arcade.draw_triangle_filled(xbl, yb, xtr, yt, xtl, yt, arcade.color.BLACK)
+            arcade.draw_triangle_filled(xbl, yb, xtr, yt, xbr, yb, arcade.color.BLACK)
+
+        arcade.draw_circle_filled(0, 0, 2, arcade.color.GREEN)
         arcade.draw_circle_filled(x, y, 8, arcade.color.GREEN)
 
     def on_mouse_press(self, x, y, button, modifiers):
+        scale = self.camera.scale
+        dx, dy = self.camera.position
+        x = (self.width / 2) * (1 - scale) + (x * scale) + dx
+        y = (self.height / 2) * (1 - scale) + (y * scale) + dy
+
         x, y = self.window_coord_to_world_coord(x, y)
         trap = self.find_trapezoid_by_coord(x, y)
         if trap != None:
-            if self.selected_trap_id in self.lookup:
-                old_trap = self.lookup[self.selected_trap_id]
-                old_trap.reset_default_color()
-                for trap_id in old_trap.adjacents:
-                    self.lookup[trap_id].reset_default_color()
-            trap.color = arcade.color.BLACK
-            for trap_id in trap.adjacents:
-                self.lookup[trap_id].color = arcade.color.RED
             self.selected_trap_id = trap.trap_id
+        else:
+            self.selected_trap_id = -1
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         dx *= self.camera.scale
@@ -193,13 +205,6 @@ class Window(arcade.Window):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         SCROLL_SPEED = 0.2
         self.camera.scale = max(0.1, min(10, self.camera.scale - (scroll_y * SCROLL_SPEED)))
-
-    def on_key_press(self, key, modifiers):
-        # Zoom in
-        if key == arcade.key.UP:
-            self.camera.scale += 1
-        elif key == arcade.key.DOWN:
-            self.camera.scale -= 1
 
 def build_visibility_graph(traps):
     def area(a, b, c):
