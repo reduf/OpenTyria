@@ -1168,9 +1168,6 @@ void AuthSrv_ProcessAuthConnectionEvent(AuthSrv *srv, AuthConnection *conn, Even
         case AUTH_CMSG_PORTAL_ACCOUNT_LOGIN:
             err = AuthSrv_HandlePortalAccountLogin(srv, conn, msg);
             break;
-        case AUTH_CMSG_SEND_HARDWARE_INFO:
-            log_info("AUTH_CMSG_SEND_HARDWARE_INFO");
-            break;
         case AUTH_CMSG_ASK_SERVER_RESPONSE:
             log_info("AUTH_CMSG_ASK_SERVER_RESPONSE");
             err = AuthSrv_HandleAskServerResponse(conn, msg);

@@ -59,12 +59,12 @@ def main(args):
     key_file_pos = gw_pe.get_offset_from_rva(keys_rva) + 4
 
     print('[+] Searching for the GwLoginClient skip...')
-    found = text_sec_data.find(b'\xEB\x05\xBF\x01\x00\x00\x00\x53\x56\xE8')
+    found = text_sec_data.find(b'\x03\xF2\x8D\x04\x3E\x3B\xC1\x76')
     if found < 0:
         print("Couldn't find the jmp to patch to avoid overriding GwLoginClient.dll in text section");
         sys.exit(1)
 
-    jmp_rva = found + text_section.VirtualAddress + 0x17
+    jmp_rva = found + text_section.VirtualAddress + 0x103
     print('[+] jmp_rva is:', hex(jmp_rva))
     jmp_file_pos = gw_pe.get_offset_from_rva(jmp_rva)
 
