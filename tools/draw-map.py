@@ -153,7 +153,7 @@ class Window(arcade.Window):
             for x, y in y_nodes:
                 x = (x + self.offset_x) * self.ratio_w
                 y = (y + self.offset_y) * self.ratio_h
-                elems.append(arcade.create_ellipse_filled(x, y, 3, 3, arcade.color.RED))
+                elems.append(arcade.create_ellipse_filled(x, y, 1, 1, arcade.color.RED))
 
         self.elems = elems
 
