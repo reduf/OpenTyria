@@ -72,11 +72,11 @@ def main(args):
         else:
             name = "unknown"
 
-        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION', 'GAME_SMSG_AGENT_MOVE_TO_POINT', 'GAME_SMSG_AGENT_UPDATE_SPEED', 'GAME_SMSG_AGENT_UPDATE_ROTATION', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT'):
+        if name in ('GAME_SMSG_AGENT_MOVEMENT_TICK', 'GAME_SMSG_AGENT_UPDATE_DIRECTION', 'GAME_SMSG_AGENT_MOVE_TO_POINT', 'GAME_SMSG_AGENT_UPDATE_SPEED', 'GAME_SMSG_AGENT_UPDATE_ROTATION', 'GAME_SMSG_AGENT_ATTR_UPDATE_INT', 'GAME_SMSG_WORLD_SIMULATION_TICK'):
             return
 
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
+        # now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        print(f'RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
 
         if name == 'GAME_SMSG_AGENT_UPDATE_DIRECTION':
             # print(f'{now} RecvPacket ({ctx.Esi:X}): {header}, 0x{header:X}, {name}')
@@ -160,12 +160,40 @@ def main(args):
         if name == 'GAME_SMSG_INSTANCE_LOADED' and False:
             player_team_token = proc.read(packet + 4, 'I')
             print(f'>> player_team_token = {player_team_token}')
+        """
 
         if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
-            item_id, = proc.read(packet + 4)
-            model_id, = proc.read(packet + 0x2C)
-            print(f'>> item_id = {item_id}, model_id = 0x{model_id:X}')
+            item_id, file_id, item_type, dye_tint, dye_colors, materials, unk1, flags, value, model_id, quantity = proc.read(packet + 4, 'IIIIIIIIIII')
+            print(f'>> item_id = {item_id}, file_id = 0x{file_id:X}, item_type = {item_type}, dye_tint = {dye_tint}, dye_colors = {dye_colors}, materials = {materials}, unk1 = {unk1}, flags = 0x{flags:X}, value = {value}, model_id = {model_id}, quantity = {quantity}')
 
+        if name == 'GAME_SMSG_INVENTORY_CREATE_BAG':
+            stream_id, bag_type, bag_model_id, bag_id, slot_count, assoc_item_id = proc.read(packet + 4, 'IIIIII')
+            bag_type = bag_types[bag_type]
+            bag_model_id = bag_model_ids[bag_model_id]
+            print(f'>> stream_id = {stream_id}, bag_type = {bag_type}, bag_model_id = {bag_model_id}, bag_id = {bag_id}, slot_count = {slot_count}, assoc_item_id = {assoc_item_id}')
+
+        if name == 'GAME_SMSG_ITEM_SET_PROFESSION':
+            item_id, profession = proc.read(packet + 4, 'II')
+            profession = professions[profession]
+            print(f'>> item_id = {item_id}, profession = {profession}')
+
+        if name == 'GAME_SMSG_ITEM_MOVED_TO_LOCATION':
+            stream_id, item_id, bag_id, slot = proc.read(packet + 4, 'IIII')
+            print(f'>> stream_id = {stream_id}, item_id = {item_id}, bag_id = {bag_id}, slot = {slot}')
+
+        if name == 'GAME_SMSG_ITEM_CHANGE_LOCATION':
+            stream_id, item_id, bag_id, slot = proc.read(packet + 4, 'IIII')
+            print(f'>> stream_id = {stream_id}, item_id = {item_id}, bag_id = {bag_id}, slot = {slot}')
+
+        if name == 'GAME_SMSG_ACCOUNT_FEATURE':
+            feature_id, param1, param2 = proc.read(packet + 4, 'III')
+            print(f'>> feature_id = {feature_id}, param1 = {param1}, param2 = {param2}')
+
+        if name == 'GAME_SMSG_PLAYER_UPDATE_PROFESSION':
+            agent_id, primary_profession, secondary_profession, is_pvp = proc.read(packet + 4, 'IIII')
+            print(f'>> agent_id = {agent_id}, primary_profession = {primary_profession}, secondary_profession = {secondary_profession}, is_pvp = {is_pvp}')
+
+        """
         if header == 349:
             item_id, model_id, unk2, unk3, unk4, unk5, unk6, unk7, unk8 = proc.read(packet + 4, 'IIIIIIIII')
             print(f'>> item_id = {item_id}, model_id = 0x{model_id:X}, unk2 = {unk2}, unk3 = {unk3}, unk4 = {unk4}, unk5 = {unk5}, unk6 = {unk6}, unk7 = {unk7}, unk8 = {unk8}')
