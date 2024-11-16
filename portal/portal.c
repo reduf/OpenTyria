@@ -85,6 +85,17 @@ DllExport void PortalLogin(const wchar_t *email, const wchar_t *password, const 
         uint32_t h0004;
     } Message;
 
+    if (wcscmp(email, L"user1@example.com") == 0) {
+        s_parse_uuid(&g_UserId, "fa520ee2-4419-4eb4-ae49-6e9abe6ef24f");
+        s_parse_uuid(&g_SessionId, "d8b9bf5d-90b1-4cbd-9b76-88da7be763b6");
+    } else if (wcscmp(email, L"user2@example.com") == 0) {
+        s_parse_uuid(&g_UserId, "5fb222bc-9d19-4308-ac3e-3c62685bc6ae");
+        s_parse_uuid(&g_SessionId, "224aee30-d8a5-4f18-ad8e-b5fcbf121c4e");
+    } else if (wcscmp(email, L"user3@example.com") == 0) {
+        s_parse_uuid(&g_UserId, "9957c79c-b93c-4b60-9d84-9f38a1f62be3");
+        s_parse_uuid(&g_SessionId, "ccdb4b8d-1c88-48c0-bda0-0a5e8d87f4da");
+    }
+
     Message msg = {
         .error = 0,
         .h0004 = 0,

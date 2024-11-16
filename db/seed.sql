@@ -4,6 +4,8 @@ CREATE TABLE users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     account_id VARCHAR(36) NOT NULL,
+    email      VARCHAR NOT NULL,
+    password   VARCHAR NOT NULL,
 
     PRIMARY KEY (user_id)
 );
@@ -166,6 +168,11 @@ CREATE TABLE titles (
 
     PRIMARY KEY (account_id, char_id, title_id)
 );
+
+INSERT INTO users (user_id, account_id, email, password) VALUES
+ ("fa520ee2-4419-4eb4-ae49-6e9abe6ef24f", "58ec1cf3-2059-424b-8443-768244e401e9", "user1@example.com", "abc"),
+ ("5fb222bc-9d19-4308-ac3e-3c62685bc6ae", "a65d1882-f4f5-4067-b6b6-8c99671bb6b6", "user2@example.com", "abc"),
+ ("9957c79c-b93c-4b60-9d84-9f38a1f62be3", "864094a4-e0e4-40bd-a89d-051ad7c063aa", "user3@example.com", "abc");
 
 INSERT INTO sessions (user_id, session_id, account_id) VALUES
  ("fa520ee2-4419-4eb4-ae49-6e9abe6ef24f", "d8b9bf5d-90b1-4cbd-9b76-88da7be763b6", "58ec1cf3-2059-424b-8443-768244e401e9"),
