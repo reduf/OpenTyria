@@ -112,7 +112,7 @@ void GameSrv_SendPlayerProfession(GameSrv *srv, GameConnection *conn, GmPlayer *
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_PLAYER_UPDATE_PROFESSION);
     GameSrv_UpdateProfession *msg = &buffer->update_profession;
     msg->agent_id = player->agent_id;
-    msg->primary_profession = player->character.primary_profession;
+    msg->primary_profession = player->primary_profession;
     msg->is_pvp = false; // @Cleanup: use the character settings to fill this value
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
