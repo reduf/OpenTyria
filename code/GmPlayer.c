@@ -210,17 +210,37 @@ void GameSrv_SendUnlockedMaps(GameSrv *srv, GameConnection *conn, GmPlayer *play
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+void GameSrv_SendUpdatePvpUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player)
 {
     DbCharacter *ch = &player->character;
 
-    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UNLOCKED_SKILLS);
-    GameSrv_UnlockedSkills *msg = &buffer->unlocked_skills;
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PVP_UNLOCKED_SKILLS);
+    GameSrv_UpdatePvpUnlockedSkills *msg = &buffer->update_pvp_unlocked_skills;
 
     STATIC_ASSERT(sizeof(msg->unlocked_skills_buf) <= sizeof(ch->unlocked_skills.buf));
-    copy_u32_safe_or_abort(msg->unlocked_skills_buf, sizeof(msg->unlocked_skills_buf), ch->unlocked_skills.buf, ch->unlocked_skills.len);
+    copy_u32_safe_or_abort(
+        msg->unlocked_skills_buf,
+        sizeof(msg->unlocked_skills_buf),
+        ch->unlocked_skills.buf,
+        ch->unlocked_skills.len);
     msg->unlocked_skills_len = (uint32_t) ch->unlocked_skills.len;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
 
+void GameSrv_SendUpdatePveUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+{
+    DbCharacter *ch = &player->character;
+
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PVE_UNLOCKED_SKILLS);
+    GameSrv_UpdatePveUnlockedSkills *msg = &buffer->update_pve_unlocked_skills;
+
+    STATIC_ASSERT(sizeof(msg->unlocked_skills_buf) <= sizeof(ch->unlocked_skills.buf));
+    copy_u32_safe_or_abort(
+        msg->unlocked_skills_buf,
+        sizeof(msg->unlocked_skills_buf),
+        ch->unlocked_skills.buf,
+        ch->unlocked_skills.len);
+    msg->unlocked_skills_len = (uint32_t) ch->unlocked_skills.len;
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 

@@ -52,6 +52,7 @@ void GameSrv_SendSkillbarUpdate(GameSrv *srv, GameConnection *conn, GmPlayer *pl
 void GameSrv_SendSkillsAndAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerHealthEnergy(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUnlockedMaps(GameSrv *srv, GameConnection *conn, GmPlayer *player);
-void GameSrv_SendUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+void GameSrv_SendUpdatePvpUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+void GameSrv_SendUpdatePveUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player);

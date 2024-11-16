@@ -137,11 +137,17 @@ typedef struct GameSrv_InventoryCreateBag {
     uint32_t assoc_item_id;
 } GameSrv_InventoryCreateBag;
 
-typedef struct GameSrv_UnlockedSkills {
+typedef struct GameSrv_UpdatePvpUnlockedSkills {
     uint16_t header;
     uint32_t unlocked_skills_len;
     uint32_t unlocked_skills_buf[128];
-} GameSrv_UnlockedSkills;
+} GameSrv_UpdatePvpUnlockedSkills;
+
+typedef struct GameSrv_UpdatePveUnlockedSkills {
+    uint16_t header;
+    uint32_t unlocked_skills_len;
+    uint32_t unlocked_skills_buf[128];
+} GameSrv_UpdatePveUnlockedSkills;
 
 typedef struct GameSrv_UnlockedPvpHeroes {
     uint16_t header;
@@ -560,7 +566,8 @@ typedef union GameSrvMsg {
     GameSrv_UnlockedProfession           unlocked_profession;
     GameSrv_UpdateActiveWeapon           update_active_weapon_set;
     GameSrv_InventoryCreateBag           inventory_create_bag;
-    GameSrv_UnlockedSkills               unlocked_skills;
+    GameSrv_UpdatePvpUnlockedSkills      update_pvp_unlocked_skills;
+    GameSrv_UpdatePveUnlockedSkills      update_pve_unlocked_skills;
     GameSrv_UnlockedPvpHeroes            unlocked_pvp_heroes;
     GameSrv_PvpItemAddUnlock             pvp_item_add_unlock;
     GameSrv_AccountFeature               account_feature;

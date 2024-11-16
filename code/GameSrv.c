@@ -1278,7 +1278,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
 
     agent->load_time = srv->current_instance_time;
 
-    GameSrv_SendUnlockedSkills(srv, conn, player);
+    GameSrv_SendUpdatePvpUnlockedSkills(srv, conn, player);
     GameSrv_SendUnlockedPvpHeroes(srv, conn);
     GameSrv_SendPvpItems(srv, conn);
     GameSrv_SendAccountFeatures(srv, conn);
@@ -1385,7 +1385,7 @@ int GameSrv_HandleCharCreationRequestArmors(GameSrv *srv, size_t player_id)
         return ERR_OK;
     }
 
-    GameSrv_SendUnlockedSkills(srv, conn, player);
+    GameSrv_SendUpdatePvpUnlockedSkills(srv, conn, player);
     GameSrv_SendUnlockedPvpHeroes(srv, conn);
     GameSrv_SendPvpItems(srv, conn);
     GameSrv_SendAccountFeatures(srv, conn);
@@ -1486,6 +1486,7 @@ int GameSrv_HandleCharCreationChangeProf(GameSrv *srv, size_t player_id, GameSrv
         return ERR_OK;
     }
 
+    GameSrv_SendUpdatePveUnlockedSkills(srv, conn, player);
     GameSrv_SendPlayerProfession(srv, conn, player);
     GameSrv_SendBagItems(srv, conn, &player->bags.equipped_items);
     return ERR_OK;
