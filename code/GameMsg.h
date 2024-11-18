@@ -525,6 +525,12 @@ typedef struct GameSrv_UpdateAgentRotation {
     uint32_t cos;
 } GameSrv_UpdateAgentRotation;
 
+typedef struct GameSrv_AgentDisplayCape {
+    uint16_t header;
+    uint32_t agent_id;
+    uint8_t  status;
+} GameSrv_AgentDisplayCape;
+
 typedef struct GameSrv_AgentStopMoving {
     uint16_t header;
     uint32_t agent_id;
@@ -615,5 +621,6 @@ typedef union GameSrvMsg {
     GameSrv_MoveAgentToPoint             move_agent_to_point;
     GameSrv_AgentStopMoving              agent_stop_moving;
     GameSrv_UpdateAgentRotation          update_agent_rotation;
+    GameSrv_AgentDisplayCape             agent_display_cape;
 } GameSrvMsg;
 #pragma pack(pop)

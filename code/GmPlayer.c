@@ -253,7 +253,7 @@ void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
+GameSrvMsg* GameSrv_BuildUpdatePlayerInfo(GameSrv *srv, GmPlayer *player, size_t *size)
 {
     Appearance appearance = {0};
     appearance.sex = player->character.sex;
@@ -276,5 +276,20 @@ void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
     STATIC_ASSERT(sizeof(player->character.charname.buf) <= sizeof(msg->name_buf));
     msg->name_len = (uint16_t) player->character.charname.len;
     memcpy_u16(msg->name_buf, player->character.charname.buf, msg->name_len);
-    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+    *size = sizeof(*msg);
+    return buffer;
+}
+
+void GameSrv_SendUpdatePlayerInfo(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdatePlayerInfo(srv, player, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdatePlayerInfo(srv, player, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
 }

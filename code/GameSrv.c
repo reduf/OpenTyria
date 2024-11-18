@@ -1293,19 +1293,22 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     // GameSrv_SendPlayerTitles
     GameSrv_SendPlayerAttributes(srv, conn, player);
     GameSrv_SendAgentLoadTime(srv, conn, agent);
-    // GAME_SMSG_AGENT_DISPLAY_CAPE
     GameSrv_BroadcastUpdatePlayerInfo(srv, player);
     // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
     // 176
     GameSrv_SendPlayerParty(srv, conn, agent->party_id);
     GameSrv_SendPlayerProfession(srv, conn, player);
     // GAME_SMSG_TITLE_RANK_DISPLAY
+
+    GameSrv_SendWorldAgents(srv, conn, agent);
     GameSrv_BroadcastCreateAgent(srv, agent);
     GameSrv_SendAgentHealthEnergy(srv, conn, agent);
     GameSrv_BroadcastAgentLevel(srv, agent);
     GameSrv_BroadcastAgentInitialEffects(srv, agent);
     GameSrv_BroadcastUpdateAgentVisualEquipment(srv, agent, &player->bags);
+    GameSrv_BroadcastAgentDisplayCape(srv, agent);
     GameSrv_SendUpdatePlayerAgent(srv, conn, agent);
+
     GameSrv_SendInstanceLoadFinish(srv, conn);
 
     return ERR_OK;

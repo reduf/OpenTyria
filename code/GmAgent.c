@@ -3,6 +3,11 @@
 // This is way too nice, but we are not implemented a real server anyway...
 #define MAXIMUM_ALLOWED_CORRECTION 100.f
 
+bool GameSrv_AgentBaseClassIsPlayer(GmAgent *agent)
+{
+    return (agent->model_id & CHAR_CLASS_BASE_MASK) == CHAR_CLASS_PLAYER_BASE;
+}
+
 GmAgent* GameSrv_CreateAgent(GameSrv *srv)
 {
     uint32_t agent_id = GmIdAllocate(&srv->free_agents_slots, &srv->agents.base, sizeof(srv->agents.ptr[0]));
@@ -90,14 +95,29 @@ void GameSrv_SendAgentHealthEnergy(GameSrv *srv, GameConnection *conn, GmAgent *
     }
 }
 
-void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent)
+GameSrvMsg* GameSrv_BuildAgentLevelMsg(GameSrv *srv, GmAgent *agent, size_t *size)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_AGENT_INT_PROPERTY);
     GameSrv_UpdateAgentIntProperty *msg = &buffer->update_agent_int_property;
     msg->agent_id = agent->agent_id;
     msg->prop_id = AgentProperty_PublicLevel;
     msg->value = agent->level;
-    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+    *size = sizeof(*msg);
+    return buffer;
+}
+
+void GameSrv_SendAgentLevel(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentLevelMsg(srv, agent, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastAgentLevel(GameSrv *srv, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentLevelMsg(srv, agent, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
 }
 
 void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agent)
@@ -108,7 +128,7 @@ void GameSrv_SendAgentLoadTime(GameSrv *srv, GameConnection *conn, GmAgent *agen
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
+GameSrvMsg* GameSrv_BuildCreateAgentMsg(GameSrv *srv, GmAgent *agent, size_t *size)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_AGENT);
     GameSrv_CreateAgentMsg *msg = &buffer->create_agent;
@@ -129,42 +149,87 @@ void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
     msg->h004B.y = HUGE_VALF;
     msg->h0059.x = HUGE_VALF;
     msg->h0059.y = HUGE_VALF;
-    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+    *size = sizeof(*msg);
+    return buffer;
 }
 
-void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent)
+void GameSrv_SendCreateAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildCreateAgentMsg(srv, agent, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastCreateAgent(GameSrv *srv, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildCreateAgentMsg(srv, agent, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}
+
+GameSrvMsg* GameSrv_BuildAgentInitialEffectsMsg(GameSrv *srv, GmAgent *agent, size_t *size)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_INITIAL_EFFECTS);
     GameSrv_InitialAgentEffects *msg = &buffer->initial_agent_effects;
     msg->agent_id = agent->agent_id;
     msg->effects = agent->effects;
-    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+    *size = sizeof(*msg);
+    return buffer;
 }
 
-void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags)
+void GameSrv_SendAgentInitialEffects(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentInitialEffectsMsg(srv, agent, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastAgentInitialEffects(GameSrv *srv, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentInitialEffectsMsg(srv, agent, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}
+
+GameSrvMsg* GameSrv_BuildUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags, size_t *size)
 {
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_AGENT_VISUAL_EQUIPMENT);
     GameSrv_UpdateAgentVisualEquipment *msg = &buffer->update_agent_visual_equipment;
 
-    if (EquippedItemSlot_Count < bags->equipped_items.slot_count) {
+    msg->agent_id = agent->agent_id;
+    if (bags->equipped_items.slot_count <= EquippedItemSlot_Count) {
+        uint32_t *items = bags->equipped_items.items;
+
+        // @Cleanup: We really only want to show the weapon in an explorable zone.
+        msg->weapon_item_id = items[EquippedItemSlot_Weapon];
+        msg->offhand_item_id = items[EquippedItemSlot_OffHand];
+        msg->body_item_id = items[EquippedItemSlot_Body];
+        msg->boots_item_id = items[EquippedItemSlot_Legs];
+        msg->legs_item_id = items[EquippedItemSlot_Head];
+        msg->gloves_item_id = items[EquippedItemSlot_Boots];
+        msg->head_item_id = items[EquippedItemSlot_Gloves];
+        msg->costume_head_item_id = items[EquippedItemSlot_CostumeBody];
+        msg->costume_body_item_id = items[EquippedItemSlot_CostumeHead];
+    } else {
         log_error("Expected %u item in equipped item bag, but found %u", EquippedItemSlot_Count, bags->equipped_items.slot_count);
-        return;
     }
 
-    uint32_t *items = bags->equipped_items.items;
-    msg->agent_id = agent->agent_id;
-    // @Cleanup: We really only want to show the weapon in an explorable zone.
-    msg->weapon_item_id = items[EquippedItemSlot_Weapon];
-    msg->offhand_item_id = items[EquippedItemSlot_OffHand];
-    msg->body_item_id = items[EquippedItemSlot_Body];
-    msg->boots_item_id = items[EquippedItemSlot_Legs];
-    msg->legs_item_id = items[EquippedItemSlot_Head];
-    msg->gloves_item_id = items[EquippedItemSlot_Boots];
-    msg->head_item_id = items[EquippedItemSlot_Gloves];
-    msg->costume_head_item_id = items[EquippedItemSlot_CostumeBody];
-    msg->costume_body_item_id = items[EquippedItemSlot_CostumeHead];
+    *size = sizeof(*msg);
+    return buffer;
+}
 
-    GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+void GameSrv_SendUpdateAgentVisualEquipment(GameSrv *srv, GameConnection *conn, GmAgent *agent, GmBagArray *bags)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdateAgentVisualEquipment(srv, agent, bags, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastUpdateAgentVisualEquipment(GameSrv *srv, GmAgent *agent, GmBagArray *bags)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdateAgentVisualEquipment(srv, agent, bags, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
 }
 
 void GameSrv_SendUpdatePlayerAgent(GameSrv *srv, GameConnection *conn, GmAgent *agent)
@@ -202,6 +267,58 @@ void GameSrv_BroadcastAgentStopMoving(GameSrv *srv, uint32_t agent_id)
     GameSrv_AgentStopMoving *msg = &buffer->agent_stop_moving;
     msg->agent_id = agent_id;
     GameSrv_BroadcastMessage(srv, buffer, sizeof(*msg));
+}
+
+GameSrvMsg* GameSrv_BuildAgentDisplayCapeMsg(GameSrv *srv, GmAgent *agent, size_t *size)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_AGENT_DISPLAY_CAPE);
+    GameSrv_AgentDisplayCape *msg = &buffer->agent_display_cape;
+    msg->agent_id = agent->agent_id;
+    msg->status = 1; // @TODO: find this enum
+    *size = sizeof(*msg);
+    return buffer;
+}
+
+void GameSrv_SendAgentDisplayCape(GameSrv *srv, GameConnection *conn, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentDisplayCapeMsg(srv, agent, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastAgentDisplayCape(GameSrv *srv, GmAgent *agent)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAgentDisplayCapeMsg(srv, agent, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}
+
+void GameSrv_SendWorldAgents(GameSrv *srv, GameConnection *conn, GmAgent *player_agent)
+{
+    for (size_t idx = 0; idx < srv->agents.len; ++idx) {
+        GmAgent *agent = &srv->agents.ptr[idx];
+        if (agent->agent_id == 0 || agent->agent_id == player_agent->agent_id) {
+            continue;
+        }
+
+        GmPlayer *player = NULL;
+        if (GameSrv_AgentBaseClassIsPlayer(agent)) {
+            if ((player = GameSrv_GetPlayer(srv, agent->model_id & ~CHAR_CLASS_BASE_MASK)) != NULL) {
+                GameSrv_SendUpdatePlayerInfo(srv, conn, player);
+            } else {
+                log_error("Couldn't find player %u for agent %u");
+            }
+        }
+
+
+        GameSrv_SendCreateAgent(srv, conn, agent);
+        GameSrv_SendAgentLevel(srv, conn, agent);
+        GameSrv_SendAgentInitialEffects(srv, conn, agent);
+        if (player != NULL) {
+            GameSrv_SendUpdateAgentVisualEquipment(srv, conn, agent, &player->bags);
+        }
+        GameSrv_SendAgentDisplayCape(srv, conn, agent);
+    }
 }
 
 void GameSrv_WorldTick(GameSrv *srv)

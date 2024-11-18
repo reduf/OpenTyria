@@ -55,4 +55,6 @@ void GameSrv_SendUnlockedMaps(GameSrv *srv, GameConnection *conn, GmPlayer *play
 void GameSrv_SendUpdatePvpUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendUpdatePveUnlockedSkills(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+GameSrvMsg* GameSrv_BuildUpdatePlayerInfo(GameSrv *srv, GmPlayer *player, size_t *size);
+void GameSrv_SendUpdatePlayerInfo(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player);
