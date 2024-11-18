@@ -105,14 +105,14 @@ def main(args):
             prop_id, agent_id, value = proc.read(packet + 4, 'III')
             print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
 
+        if name == 'GAME_SMSG_UPDATE_PLAYER_AGENT':
+            agent_id, unk0 = proc.read(packet + 4, 'II')
+            print(f'>> agent_id = {agent_id}, unk0 = {unk0}') 
+
         """
         if name == 'GAME_SMSG_UPDATE_AGENT_FLOAT_PROPERTY':
             prop_id, agent_id, value = proc.read(packet + 4, 'IIf')
             print(f'>> prop_id = {prop_id}, agent_id = {agent_id}, value = {value}')
-
-        if name == 'GAME_SMSG_AGENT_SET_PLAYER':
-            agent_id, unk0 = proc.read(packet + 4, 'II')
-            print(f'>> agent_id = {agent_id}, unk0 = {unk0}')
 
         if name == 'GAME_SMSG_AGENT_SPAWNED':
             data = proc.read(packet + 4, 'IIIIffIffIffIIIIIIIffffIIffI')
@@ -162,9 +162,13 @@ def main(args):
             print(f'>> player_team_token = {player_team_token}')
         """
 
-        if name == 'GAME_SMSG_ITEM_GENERAL_INFO':
+        if name == 'GAME_SMSG_CREATE_NAMED_ITEM':
             item_id, file_id, item_type, dye_tint, dye_colors, materials, unk1, flags, value, model_id, quantity = proc.read(packet + 4, 'IIIIIIIIIII')
             print(f'>> item_id = {item_id}, file_id = 0x{file_id:X}, item_type = {item_type}, dye_tint = {dye_tint}, dye_colors = {dye_colors}, materials = {materials}, unk1 = {unk1}, flags = 0x{flags:X}, value = {value}, model_id = {model_id}, quantity = {quantity}')
+
+        if name == 'GAME_SMSG_CREATE_UNNAMED_ITEM':
+            item_id, file_id, item_type, dye_tint, dye_colors, unk5, unk6, flags, unk8 = proc.read(packet + 4, 'IIIIIIIII')
+            print(f'>> item_id = {item_id}, file_id = 0x{file_id:X}, item_type = {item_type}, dye_tint = {dye_tint}, dye_colors = {dye_colors}, unk5 = {unk5}, unk6 = {unk6}, flags = 0x{flags:X}, unk8 = {unk8}')
 
         if name == 'GAME_SMSG_INVENTORY_CREATE_BAG':
             stream_id, bag_type, bag_model_id, bag_id, slot_count, assoc_item_id = proc.read(packet + 4, 'IIIIII')
@@ -193,11 +197,11 @@ def main(args):
             agent_id, primary_profession, secondary_profession, is_pvp = proc.read(packet + 4, 'IIII')
             print(f'>> agent_id = {agent_id}, primary_profession = {primary_profession}, secondary_profession = {secondary_profession}, is_pvp = {is_pvp}')
 
-        """
-        if header == 349:
-            item_id, model_id, unk2, unk3, unk4, unk5, unk6, unk7, unk8 = proc.read(packet + 4, 'IIIIIIIII')
-            print(f'>> item_id = {item_id}, model_id = 0x{model_id:X}, unk2 = {unk2}, unk3 = {unk3}, unk4 = {unk4}, unk5 = {unk5}, unk6 = {unk6}, unk7 = {unk7}, unk8 = {unk8}')
+        if name == 'GAME_SMSG_UPDATE_AGENT_VISUAL_EQUIPMENT':
+            agent_id, weapon_item_id, offhand_item_id, body_item_id, boots_item_id, legs_item_id, gloves_item_id, head_item_id, costume_head_item_id, costume_body_item_id = proc.read(packet + 4, 'IIIIIIIIII')
+            print(f'>> agent_id = {agent_id}, weapon_item_id = {weapon_item_id}, offhand_item_id = {offhand_item_id}, body_item_id = {body_item_id}, boots_item_id = {boots_item_id}, legs_item_id = {legs_item_id}, gloves_item_id = {gloves_item_id}, head_item_id = {head_item_id}, costume_head_item_id = {costume_head_item_id}, costume_body_item_id = {costume_body_item_id}')
 
+        """
         if header == 109:
             agent_id, *ids = proc.read(packet + 4, 'I9I')
             print(f'>> agent_id = {agent_id}, ids = {ids}')

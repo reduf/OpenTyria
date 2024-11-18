@@ -325,7 +325,8 @@
 #define GAME_SMSG_GOLD_STORAGE_REMOVE                   (0x014F) // 335
 #define GAME_SMSG_TOME_SHOW_SKILLS                      (0x0153) // 339
 #define GAME_SMSG_ITEM_SET_PROFESSION                   (0x0159) // 345
-#define GAME_SMSG_ITEM_GENERAL_INFO                     (0x0160) // 352
+#define GAME_SMSG_CREATE_UNNAMED_ITEM                   (0x015D) // 349
+#define GAME_SMSG_CREATE_NAMED_ITEM                     (0x0160) // 352
 #define GAME_SMSG_ITEM_REUSE_ID                         (0x0161) // 353
 #define GAME_SMSG_ITEM_SALVAGE_SESSION_START            (0x0162) // 354
 #define GAME_SMSG_ITEM_SALVAGE_SESSION_CANCEL           (0x0163) // 355

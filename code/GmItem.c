@@ -55,10 +55,10 @@ void GameSrv_SendItemStreamCreate(GameSrv *srv, GameConnection *conn)
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
-void GameSrv_SendItemGeneralInfo(GameSrv *srv, GameConnection *conn, GmItem *item)
+void GameSrv_SendCreateNamedItem(GameSrv *srv, GameConnection *conn, GmItem *item)
 {
-    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_GENERAL_INFO);
-    GameSrv_ItemGeneralInfo *msg = &buffer->item_general_info;
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_NAMED_ITEM);
+    GameSrv_CreateNamedItem *msg = &buffer->create_named_item;
     msg->item_id = item->item_id;
     msg->file_id = item->file_id;
     msg->item_type = item->item_type;
@@ -79,6 +79,22 @@ void GameSrv_SendItemGeneralInfo(GameSrv *srv, GameConnection *conn, GmItem *ite
     GameConnection_SendMessage(conn, buffer, sizeof(*msg));
 }
 
+void GameSrv_SendCreateUnamedItem(GameSrv *srv, GameConnection *conn, GmItem *item)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CREATE_UNNAMED_ITEM);
+    GameSrv_CreateUnamedItem *msg = &buffer->create_unnamed_item;
+    msg->item_id = item->item_id;
+    msg->file_id = item->file_id;
+    msg->item_type = item->item_type;
+    msg->dye_tint = item->dye_tint;
+    msg->dye_colors = item->dye_colors;
+    msg->materials = item->materials;
+    msg->unk1 = item->unk1;
+    msg->flags = item->flags;
+    msg->value = item->value;
+    GameConnection_SendMessage(conn, buffer, sizeof(*msg));
+}
+
 void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id)
 {
     GmItem *item;
@@ -87,7 +103,57 @@ void GameSrv_SendItemById(GameSrv *srv, GameConnection *conn, uint32_t item_id)
         return;
     }
 
-    GameSrv_SendItemGeneralInfo(srv, conn, item);
+    GameSrv_SendCreateNamedItem(srv, conn, item);
     // @TODO: send customization and other stuff
 }
 
+void GameSrv_SendItemsInBag(GameSrv *srv, GameConnection *conn, GmBag *bag)
+{
+    for (uint8_t idx = 0; idx < bag->slot_count; ++idx) {
+        uint32_t item_id = bag->items[idx];
+        if (item_id == 0) {
+            continue;
+        }
+
+        GmItem *item;
+        if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
+            log_error("Item %u doesn't exist", item_id);
+            continue;
+        }
+
+        GameSrv_SendCreateUnamedItem(srv, conn, item);
+    }
+}
+
+void GameSrv_BroadcastPlayerEquippedItems(GameSrv *srv, GmPlayer *player)
+{
+    size_t count = 0;
+    GmItem *equipped_items[EquippedItemSlot_Count];
+
+    GmBag *bag = &player->bags.equipped_items;
+    for (uint8_t idx = 0; idx < bag->slot_count; ++idx) {
+        uint32_t item_id = bag->items[idx];
+        if (item_id == 0) {
+            continue;
+        }
+
+        GmItem *item;
+        if ((item = GameSrv_GetItemById(srv, item_id)) == NULL) {
+            log_error("Item %u doesn't exist", item_id);
+        }
+
+        equipped_items[count++] = item;
+    }
+
+    size_t n_connections = stbds_hmlen(srv->connections);
+    for (size_t idx = 0; idx < n_connections; ++idx) {
+        GameConnection *conn = &srv->connections[idx].value;
+        if (conn->token == player->conn_token) {
+            continue;
+        }
+
+        for (size_t item_idx = 0; item_idx < count; ++item_idx) {
+            GameSrv_SendCreateUnamedItem(srv, conn, equipped_items[item_idx]);
+        }
+    }
+}

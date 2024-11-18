@@ -232,7 +232,7 @@ typedef struct GameSrv_UpdatePlayerFactions {
     uint32_t total_earned_skill_points;
 } GameSrv_UpdatePlayerFactions;
 
-typedef struct GameSrv_ItemGeneralInfo {
+typedef struct GameSrv_CreateNamedItem {
     uint16_t header;
     uint32_t item_id;
     uint32_t file_id;
@@ -249,7 +249,20 @@ typedef struct GameSrv_ItemGeneralInfo {
     uint16_t name[64];
     uint32_t n_modifiers;
     uint32_t modifiers[64];
-} GameSrv_ItemGeneralInfo;
+} GameSrv_CreateNamedItem;
+
+typedef struct GameSrv_CreateUnamedItem {
+    uint16_t header;
+    uint32_t item_id;
+    uint32_t file_id;
+    uint8_t  item_type;
+    uint8_t  dye_tint;
+    uint16_t dye_colors;
+    uint16_t materials;
+    uint8_t  unk1;
+    uint32_t flags; // interaction
+    uint32_t value;
+} GameSrv_CreateUnamedItem;
 
 typedef struct GameSrv_ItemRemove {
     uint16_t header;
@@ -585,7 +598,8 @@ typedef union GameSrvMsg {
     GameSrv_UpdateAgentIntProperty       update_agent_int_property;
     GameSrv_UpdateAgentFloatProperty     update_agent_float_property;
     GameSrv_UpdatePlayerFactions         update_player_factions;
-    GameSrv_ItemGeneralInfo              item_general_info;
+    GameSrv_CreateNamedItem              create_named_item;
+    GameSrv_CreateUnamedItem             create_unnamed_item;
     GameSrv_ItemRemove                   item_remove;
     GameSrv_ItemSetProfession            item_set_profession;
     GameSrv_ItemMoveToLocation           item_move_to_location;

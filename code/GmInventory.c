@@ -121,7 +121,7 @@ void GameSrv_SendBagItems(GameSrv *srv, GameConnection *conn, GmBag *bag)
             continue;
         }
 
-        GameSrv_SendItemGeneralInfo(srv, conn, item);
+        GameSrv_SendCreateNamedItem(srv, conn, item);
 
         if (item->profession != Profession_None) {
             GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ITEM_SET_PROFESSION);

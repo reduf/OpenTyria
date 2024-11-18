@@ -315,6 +315,7 @@ void GameSrv_SendWorldAgents(GameSrv *srv, GameConnection *conn, GmAgent *player
         GameSrv_SendAgentLevel(srv, conn, agent);
         GameSrv_SendAgentInitialEffects(srv, conn, agent);
         if (player != NULL) {
+            GameSrv_SendItemsInBag(srv, conn, &player->bags.equipped_items);
             GameSrv_SendUpdateAgentVisualEquipment(srv, conn, agent, &player->bags);
         }
         GameSrv_SendAgentDisplayCape(srv, conn, agent);

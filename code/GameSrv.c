@@ -1305,6 +1305,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendAgentHealthEnergy(srv, conn, agent);
     GameSrv_BroadcastAgentLevel(srv, agent);
     GameSrv_BroadcastAgentInitialEffects(srv, agent);
+    GameSrv_BroadcastPlayerEquippedItems(srv, player);
     GameSrv_BroadcastUpdateAgentVisualEquipment(srv, agent, &player->bags);
     GameSrv_BroadcastAgentDisplayCape(srv, agent);
     GameSrv_SendUpdatePlayerAgent(srv, conn, agent);
