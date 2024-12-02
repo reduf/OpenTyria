@@ -43,14 +43,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\code\AuthDb.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Tests|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\code\AuthSrv.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -249,12 +241,10 @@
   <ItemGroup>
     <ClInclude Include="..\code\arc4.h" />
     <ClInclude Include="..\code\array.h" />
-    <ClInclude Include="..\code\AuthDb.h" />
     <ClInclude Include="..\code\AuthMsg.h" />
     <ClInclude Include="..\code\AuthSrv.h" />
     <ClInclude Include="..\code\Db.h" />
     <ClInclude Include="..\code\DbSchema.h" />
-    <ClInclude Include="..\code\deque.h" />
     <ClInclude Include="..\code\endian.h" />
     <ClInclude Include="..\code\errors.h" />
     <ClInclude Include="..\code\GameMsg.h" />
@@ -295,7 +285,6 @@
     <ClInclude Include="..\code\stb_sprintf.h" />
     <ClInclude Include="..\code\stream.h" />
     <ClInclude Include="..\code\sys.h" />
-    <ClInclude Include="..\code\uuid.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="mbedtls.vcxproj">
