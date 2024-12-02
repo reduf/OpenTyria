@@ -25,7 +25,7 @@ def main(args):
     proc, = GetProcesses(args.proc)
     scanner = ProcessScanner(proc)
     smsg_addr = scanner.find(b'\x50\x8B\x41\x08\xFF\xD0\x83\xC4\x08', 4)
-    cmsg_addr = scanner.find(b'\xC7\x47\x54\x01\x00\x00\x00\x1B\xC9\x81\xE1\x00\x80', -0xC5)
+    cmsg_addr = scanner.find(b'\xF7\xD8\xC7\x47\x54\x01\x00\x00\x00\x1B\xC0\x25', -0xBF)
 
     tmp = scanner.find(b'\x50\x6A\x0F\x6A\x00\xFF\x35', +7)
     base_addr, = proc.read(tmp)
