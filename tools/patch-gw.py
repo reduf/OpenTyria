@@ -68,21 +68,15 @@ def main(args):
     print('[+] jmp_rva is:', hex(jmp_rva))
     jmp_file_pos = gw_pe.get_offset_from_rva(jmp_rva)
 
-    print('[+] Searching for mutex name')
-    for section in gw_pe.sections:
-        if b'.rdata' in section.Name:
-            rdata_section = section
-    if not rdata_section:
-        print(f"Couldn't find the '.rdata' section in executable '{input_path}'")
+    print('[+] Searching for mutex patch')
+    found = text_sec_data.find(b'\x8B\xF8\x85\xFF\x74\x11\xFF\xD6\x3D\xB7')
+    if found < 0:
+        print("Couldn't find the code to patch `CreateMutexA`")
         sys.exit(1)
 
-    rdata_section_data = rdata_section.get_data()
-    mutex_name_file_pos = rdata_section_data.find(b'AN-Mutex-Window')
-    if mutex_name_file_pos < 0:
-        print("Couldn't find the mutex name in .rdata")
-        sys.exit(1)
-    mutex_name_file_pos += rdata_section.PointerToRawData
-    print(f'[+] mutex_name_file_pos is 0x{mutex_name_file_pos:X}')
+    mutex_patch_rva = found + text_section.VirtualAddress + 0x8
+    print('[+] mutex patch rva is:', hex(mutex_patch_rva))
+    mutex_patch_file_pos = gw_pe.get_offset_from_rva(mutex_patch_rva)
 
     gw_pe.close()
 
@@ -90,13 +84,16 @@ def main(args):
     with open(input_path, 'rb') as f:
         data = f.read()
 
-    data_mut = list(data)
-    data_mut[key_file_pos:key_file_pos+4]      = prim_root.to_bytes(4, byteorder='little')
-    data_mut[key_file_pos+4:key_file_pos+68]   = prime_mod.to_bytes(64, byteorder='little')
-    data_mut[key_file_pos+68:key_file_pos+132] = public_key.to_bytes(64, byteorder='little')
+    def patch(data, offset, replace):
+        data[offset:offset+len(replace)] = replace
+        return data
 
-    data_mut[jmp_file_pos:jmp_file_pos+1]      = b'\x31'
-    data_mut[mutex_name_file_pos:mutex_name_file_pos+len(b'AN-Futex')] = b'AN-Futex'
+    data_mut = list(data)
+    data_mut = patch(data_mut, key_file_pos, prim_root.to_bytes(4, byteorder='little'))
+    data_mut = patch(data_mut, key_file_pos + 4, prime_mod.to_bytes(64, byteorder='little'))
+    data_mut = patch(data_mut, key_file_pos + 68, public_key.to_bytes(64, byteorder='little'))
+    data_mut = patch(data_mut, jmp_file_pos, b'\x31')
+    data_mut = patch(data_mut, mutex_patch_file_pos, b'\x31\xC0\x90\x90\x90\x0F\x84')
 
     data = bytes(data_mut)
     with open(out_path, 'wb') as f:
