@@ -31,7 +31,6 @@ typedef struct GmAgent {
     float     speed;
     uint32_t  level;
     uint32_t  effects;
-    uint16_t  party_id;
     uint32_t  player_team_token;
 } GmAgent;
 typedef array(GmAgent) GmAgentArray;

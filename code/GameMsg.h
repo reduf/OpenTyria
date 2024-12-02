@@ -555,6 +555,12 @@ typedef struct GameSrv_LastPosBeforeMoveCanceled {
     uint32_t plane;
 } GameSrv_LastPosBeforeMoveCanceled;
 
+typedef struct GameSrv_UpdatePlayerPartySize {
+    uint16_t header;
+    uint16_t player_id;
+    uint8_t  party_size;
+} GameSrv_UpdatePlayerPartySize;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -636,5 +642,6 @@ typedef union GameSrvMsg {
     GameSrv_AgentStopMoving              agent_stop_moving;
     GameSrv_UpdateAgentRotation          update_agent_rotation;
     GameSrv_AgentDisplayCape             agent_display_cape;
+    GameSrv_UpdatePlayerPartySize        update_player_party_size;
 } GameSrvMsg;
 #pragma pack(pop)

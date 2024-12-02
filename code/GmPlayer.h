@@ -30,6 +30,7 @@ typedef struct GmPlayer {
     Campaign          char_creation_campaign;
     Profession        primary_profession;
     uint32_t          player_team_token;
+    uint16_t          party_id;
 } GmPlayer;
 typedef array(GmPlayer) GmPlayerArray;
 
@@ -58,3 +59,6 @@ void GameSrv_SendPlayerAttributes(GameSrv *srv, GameConnection *conn, GmPlayer *
 GameSrvMsg* GameSrv_BuildUpdatePlayerInfo(GameSrv *srv, GmPlayer *player, size_t *size);
 void GameSrv_SendUpdatePlayerInfo(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player);
+GameSrvMsg* GameSrv_BuildUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player, size_t *size);
+void GameSrv_SendUpdatePlayerPartySize(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+void GameSrv_BroadcastUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player);

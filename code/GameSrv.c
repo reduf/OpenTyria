@@ -945,15 +945,9 @@ void GameSrv_CreatePlayerAgent(GameSrv *srv, GmPlayer *player)
 
 void GameSrv_CreatePlayerParty(GameSrv *srv, GmPlayer *player)
 {
-    GmAgent *agent;
-    if ((agent = GameSrv_GetAgent(srv, player->agent_id)) == NULL) {
-        log_error("Player agent doesn't exist");
-        return;
-    }
-
     GmParty *party = GameSrv_CreateParty(srv);
     GmParty_AddPlayer(party, player->agent_id, player->player_id);
-    agent->party_id = party->party_id;
+    player->party_id = party->party_id;
 }
 
 void GameSrv_LoadPlayerFromDatabase(GameSrv *srv, GmPlayer *player)
@@ -1296,7 +1290,7 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_BroadcastUpdatePlayerInfo(srv, player);
     // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
     // 176
-    GameSrv_SendPlayerParty(srv, conn, agent->party_id);
+    GameSrv_SendPlayerParty(srv, conn, player->party_id);
     GameSrv_SendPlayerProfession(srv, conn, player);
     // GAME_SMSG_TITLE_RANK_DISPLAY
 

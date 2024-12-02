@@ -293,3 +293,29 @@ void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
     GameSrvMsg *buffer = GameSrv_BuildUpdatePlayerInfo(srv, player, &size);
     GameSrv_BroadcastMessage(srv, buffer, size);
 }
+
+GameSrvMsg* GameSrv_BuildUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player, size_t *size)
+{
+    UNREFERENCED_PARAMETER(player);
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PLAYER_PARTY_SIZE);
+    GameSrv_UpdatePlayerPartySize *msg = &buffer->update_player_party_size;
+    msg->party_size = 4;
+    *size = sizeof(*msg);
+    return buffer;
+}
+
+void GameSrv_SendUpdatePlayerPartySize(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdatePlayerPartySize(srv, player, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildUpdatePlayerPartySize(srv, player, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}
+
+

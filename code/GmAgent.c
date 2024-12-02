@@ -305,6 +305,7 @@ void GameSrv_SendWorldAgents(GameSrv *srv, GameConnection *conn, GmAgent *player
         if (GameSrv_AgentBaseClassIsPlayer(agent)) {
             if ((player = GameSrv_GetPlayer(srv, agent->model_id & ~CHAR_CLASS_BASE_MASK)) != NULL) {
                 GameSrv_SendUpdatePlayerInfo(srv, conn, player);
+                GameSrv_SendUpdatePlayerPartySize(srv, conn, player);
             } else {
                 log_error("Couldn't find player %u for agent %u");
             }

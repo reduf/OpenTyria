@@ -201,15 +201,13 @@ def main(args):
             agent_id, weapon_item_id, offhand_item_id, body_item_id, boots_item_id, legs_item_id, gloves_item_id, head_item_id, costume_head_item_id, costume_body_item_id = proc.read(packet + 4, 'IIIIIIIIII')
             print(f'>> agent_id = {agent_id}, weapon_item_id = {weapon_item_id}, offhand_item_id = {offhand_item_id}, body_item_id = {body_item_id}, boots_item_id = {boots_item_id}, legs_item_id = {legs_item_id}, gloves_item_id = {gloves_item_id}, head_item_id = {head_item_id}, costume_head_item_id = {costume_head_item_id}, costume_body_item_id = {costume_body_item_id}')
 
-        """
-        if header == 109:
-            agent_id, *ids = proc.read(packet + 4, 'I9I')
-            print(f'>> agent_id = {agent_id}, ids = {ids}')
+        if name == 'GAME_SMSG_UPDATE_AGENT_PARTYSIZE':
+            player_id, party_size = proc.read(packet + 4, 'II')
+            print(f'>> player_id = {player_id}, party_size = {party_size}')
 
         if header == 176:
-            unk0, unk1 = proc.read(packet + 4, 'II')
-            print(f'>> unk0 = {unk0}, unk1 = {unk1}')
-        """
+            a, b = proc.read(packet + 4, 'II')
+            print(f'>> a = {a}, b = {b}')
 
     with ProcessDebugger(proc) as dbg:
         dbg.add_hook(smsg_addr, on_recv_packet)
