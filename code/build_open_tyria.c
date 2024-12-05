@@ -96,6 +96,7 @@
 #include "GmAgent.h"
 #include "GmItem.h"
 #include "GmParty.h"
+#include "GmText.h"
 
 #include "GmTitleConstData.h"
 #include "GmDefaultArmors.h"
@@ -128,6 +129,7 @@
 #include "GmPlayer.c"
 #include "GmParty.c"
 #include "GmTitleConstData.c"
+#include "GmText.c"
 #include "int.c"
 #include "logs.c"
 #include "msgdefs.c"

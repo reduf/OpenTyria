@@ -561,6 +561,43 @@ typedef struct GameSrv_UpdatePlayerPartySize {
     uint8_t  party_size;
 } GameSrv_UpdatePlayerPartySize;
 
+#define CHAT_MESSAGE_FRAGMENT_MAX_LENGTH 122
+typedef struct GameSrv_ChatMessageCore {
+    uint16_t header;
+    uint32_t msg_len;
+    uint16_t msg_buf[CHAT_MESSAGE_FRAGMENT_MAX_LENGTH];
+} GameSrv_ChatMessageCore;
+
+typedef struct GameSrv_ChatMessageLocal {
+    uint16_t header;
+    uint16_t player_id_of_sender;
+    uint8_t  channel;
+} GameSrv_ChatMessageLocal;
+
+typedef struct GameSrv_ChatMessageGlobal {
+    uint16_t header;
+    uint8_t  channel;
+    uint32_t sender_len;
+    uint16_t sender_buf[32];
+    uint32_t tag_len;
+    uint16_t tag_buf[6];
+} GameSrv_ChatMessageGlobal;
+
+typedef struct GameSrv_ChatMessageWhisper {
+    uint16_t header;
+    uint32_t unk0;
+    uint32_t sender_len;
+    uint16_t sender_buf[20];
+    uint32_t msg_len;
+    uint16_t msg_buf[256];
+} GameSrv_ChatMessageWhisper;
+
+typedef struct GameSrv_ChatMessageServer {
+    uint16_t header;
+    uint16_t some_id;
+    uint8_t  channel;
+} GameSrv_ChatMessageServer;
+
 typedef union GameCliMsg {
     uint16_t                             header;
     uint8_t                              buffer[MSG_MAX_BUFFER_SIZE];
@@ -643,5 +680,10 @@ typedef union GameSrvMsg {
     GameSrv_UpdateAgentRotation          update_agent_rotation;
     GameSrv_AgentDisplayCape             agent_display_cape;
     GameSrv_UpdatePlayerPartySize        update_player_party_size;
+    GameSrv_ChatMessageCore              chat_message_core;
+    GameSrv_ChatMessageLocal             chat_message_local;
+    GameSrv_ChatMessageGlobal            chat_message_global;
+    GameSrv_ChatMessageWhisper           chat_message_whisper;
+    GameSrv_ChatMessageServer            chat_message_server;
 } GameSrvMsg;
 #pragma pack(pop)

@@ -91,6 +91,7 @@ typedef struct GameSrv {
     mbedtls_chacha20_context random;
     GameSrvMsg               srv_msg;
     int64_t                  last_world_tick;
+    array_uint16_t           encTextBuilder;
 } GameSrv;
 typedef array(GameSrv *) GameSrvArray;
 

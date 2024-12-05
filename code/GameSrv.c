@@ -76,6 +76,7 @@ void GameSrv_Free(GameSrv *srv)
     array_free(&srv->free_items_slots);
     array_free(&srv->agents);
     array_free(&srv->free_agents_slots);
+    array_free(&srv->encTextBuilder);
     Db_Close(&srv->database);
 }
 
