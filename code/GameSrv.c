@@ -1756,7 +1756,7 @@ void GameSrv_Update(GameSrv *srv)
         }
 
         int flags = IOCPF_READ;
-        if (conn->writable) {
+        if (!conn->writable) {
             flags |= IOCPF_WRITE;
         }
 

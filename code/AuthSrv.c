@@ -1307,7 +1307,7 @@ void AuthSrv_Update(AuthSrv *srv)
             }
             break;
         case IoObjectType_Connection:
-            if (obj->connection.writable) {
+            if (!obj->connection.writable) {
                 flags |= IOCPF_WRITE;
             }
             if ((err = iocp_reregister(&srv->iocp, &obj->connection.source, flags)) != 0) {
@@ -1315,7 +1315,7 @@ void AuthSrv_Update(AuthSrv *srv)
             }
             break;
         case IoObjectType_AuthConnection:
-            if (obj->auth_connection.writable) {
+            if (!obj->auth_connection.writable) {
                 flags |= IOCPF_WRITE;
             }
             if ((err = iocp_reregister(&srv->iocp, &obj->auth_connection.source, flags)) != 0) {
