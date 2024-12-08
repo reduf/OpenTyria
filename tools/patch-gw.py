@@ -78,6 +78,21 @@ def main(args):
     print('[+] mutex patch rva is:', hex(mutex_patch_rva))
     mutex_patch_file_pos = gw_pe.get_offset_from_rva(mutex_patch_rva)
 
+    print('[+] Searching for mutex name')
+    for section in gw_pe.sections:
+        if b'.rdata' in section.Name:
+            rdata_section = section
+    if not rdata_section:
+        print(f"Couldn't find the '.rdata' section in executable '{input_path}'")
+
+    rdata_section_data = rdata_section.get_data()
+    mutex_name_file_pos = rdata_section_data.find(b'AN-Mutex-Window')
+    if mutex_name_file_pos < 0:
+        print("Couldn't find the mutex name in .rdata")
+        sys.exit(1)
+    mutex_name_file_pos += rdata_section.PointerToRawData
+    print(f'[+] mutex_name_file_pos is 0x{mutex_name_file_pos:X}')
+
     gw_pe.close()
 
     print('[+] Patching executable...')
@@ -94,6 +109,7 @@ def main(args):
     data_mut = patch(data_mut, key_file_pos + 68, public_key.to_bytes(64, byteorder='little'))
     data_mut = patch(data_mut, jmp_file_pos, b'\x31')
     data_mut = patch(data_mut, mutex_patch_file_pos, b'\x31\xC0\x90\x90\x90\x0F\x84')
+    data_mut = patch(data_mut, mutex_name_file_pos, b'AN-Futex')
 
     data = bytes(data_mut)
     with open(out_path, 'wb') as f:
