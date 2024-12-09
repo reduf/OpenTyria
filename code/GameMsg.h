@@ -561,6 +561,12 @@ typedef struct GameSrv_UpdatePlayerPartySize {
     uint8_t  party_size;
 } GameSrv_UpdatePlayerPartySize;
 
+typedef struct GameSrv_AddPlayerToPlayerParty {
+    uint16_t header;
+    uint16_t player_id;
+    uint16_t party_leader_player_id;
+} GameSrv_AddPlayerToPlayerParty;
+
 #define CHAT_MESSAGE_FRAGMENT_MAX_LENGTH 122
 typedef struct GameSrv_ChatMessageCore {
     uint16_t header;
@@ -680,6 +686,7 @@ typedef union GameSrvMsg {
     GameSrv_UpdateAgentRotation          update_agent_rotation;
     GameSrv_AgentDisplayCape             agent_display_cape;
     GameSrv_UpdatePlayerPartySize        update_player_party_size;
+    GameSrv_AddPlayerToPlayerParty       add_player_to_player_party;
     GameSrv_ChatMessageCore              chat_message_core;
     GameSrv_ChatMessageLocal             chat_message_local;
     GameSrv_ChatMessageGlobal            chat_message_global;

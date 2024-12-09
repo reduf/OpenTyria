@@ -62,3 +62,6 @@ void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player);
 GameSrvMsg* GameSrv_BuildUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player, size_t *size);
 void GameSrv_SendUpdatePlayerPartySize(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_BroadcastUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player);
+GameSrvMsg* GameSrv_BuildAddPlayerToPlayerParty(GameSrv *srv, GmPlayer *player, size_t *size);
+void GameSrv_SendAddPlayerToPlayerParty(GameSrv *srv, GameConnection *conn, GmPlayer *player);
+void GameSrv_BroadcastAddPlayerToPlayerParty(GameSrv *srv, GmPlayer *player);

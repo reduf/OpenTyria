@@ -1289,8 +1289,6 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerAttributes(srv, conn, player);
     GameSrv_SendAgentLoadTime(srv, conn, agent);
     GameSrv_BroadcastUpdatePlayerInfo(srv, player);
-    // GAME_SMSG_UPDATE_AGENT_PARTYSIZE
-    // 176
     GameSrv_SendPlayerParty(srv, conn, player->party_id);
     GameSrv_SendPlayerProfession(srv, conn, player);
     // GAME_SMSG_TITLE_RANK_DISPLAY

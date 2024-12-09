@@ -296,10 +296,10 @@ void GameSrv_BroadcastUpdatePlayerInfo(GameSrv *srv, GmPlayer *player)
 
 GameSrvMsg* GameSrv_BuildUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player, size_t *size)
 {
-    UNREFERENCED_PARAMETER(player);
     GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_UPDATE_PLAYER_PARTY_SIZE);
     GameSrv_UpdatePlayerPartySize *msg = &buffer->update_player_party_size;
-    msg->party_size = 4;
+    msg->player_id = player->player_id;
+    msg->party_size = 1;
     *size = sizeof(*msg);
     return buffer;
 }
@@ -318,4 +318,28 @@ void GameSrv_BroadcastUpdatePlayerPartySize(GameSrv *srv, GmPlayer *player)
     GameSrv_BroadcastMessage(srv, buffer, size);
 }
 
+GameSrvMsg* GameSrv_BuildAddPlayerToPlayerParty(GameSrv *srv, GmPlayer *player, size_t *size)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_ADD_PLAYER_TO_PLAYER_PARTY);
+    GameSrv_AddPlayerToPlayerParty *msg = &buffer->add_player_to_player_party;
+    // @Cleanup:
+    // When a player isn't in any party, we add this player to it's own party.
+    msg->player_id = player->player_id;
+    msg->party_leader_player_id = player->player_id;
+    *size = sizeof(*msg);
+    return buffer;
+}
 
+void GameSrv_SendAddPlayerToPlayerParty(GameSrv *srv, GameConnection *conn, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAddPlayerToPlayerParty(srv, player, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastAddPlayerToPlayerParty(GameSrv *srv, GmPlayer *player)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildAddPlayerToPlayerParty(srv, player, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}

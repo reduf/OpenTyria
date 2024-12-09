@@ -244,6 +244,7 @@
 #define GAME_SMSG_AGENT_CREATE_NPC                      (0x00A9) // 169
 #define GAME_SMSG_UPDATE_AGENT_MODEL                    (0x00AD) // 173
 #define GAME_SMSG_UPDATE_PLAYER_PARTY_SIZE              (0x00AF) // 175
+#define GAME_SMSG_ADD_PLAYER_TO_PLAYER_PARTY            (0x00B0) // 176
 #define GAME_SMSG_PLAYER_UNLOCKED_PROFESSION            (0x00B5) // 181
 #define GAME_SMSG_PLAYER_UPDATE_PROFESSION              (0x00B6) // 182
 #define GAME_SMSG_MISSION_INFOBOX_ADD                   (0x00B8) // 184
