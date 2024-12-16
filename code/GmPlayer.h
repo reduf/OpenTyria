@@ -42,6 +42,7 @@ GmPlayer* GameSrv_CreatePlayer(
 
 void GameSrv_RemovePlayer(GameSrv *srv, size_t player_id);
 GmPlayer* GameSrv_GetPlayer(GameSrv *srv, size_t player_id);
+
 void GameSrv_SendHardModeUnlocked(GameSrv *srv, GameConnection *conn);
 void GameSrv_SendPlayerMaxFactions(GameSrv *srv, GameConnection *conn, GmPlayer *player);
 void GameSrv_SendPlayerFactions(GameSrv *srv, GameConnection *conn, GmPlayer *player);

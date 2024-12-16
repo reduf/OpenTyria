@@ -19,4 +19,16 @@ typedef enum Channel {
     Channel_Count,
 } Channel;
 
+GameSrvMsg* GameSrv_BuildChatMessageCoreMsg(GameSrv *srv, slice_uint16_t data, size_t *size);
+void GameSrv_SendChatMessageCore(GameSrv *srv, GameConnection *conn, slice_uint16_t data);
+void GameSrv_BroadcastChatMessageCore(GameSrv *srv, slice_uint16_t data);
+GameSrvMsg* GameSrv_BuildChatMessageLocalMsg(GameSrv *srv, uint16_t player_id_of_sender, Channel channel, size_t *size);
+void GameSrv_SendChatMessageLocal(GameSrv *srv, GameConnection *conn, uint16_t player_id_of_sender, Channel channel);
+void GameSrv_BroadcastChatMessageLocal(GameSrv *srv, uint16_t player_id_of_sender, Channel channel);
+GameSrvMsg* GameSrv_BuildChatMessageServerMsg(GameSrv *srv, Channel channel, size_t *size);
+void GameSrv_SendChatMessageServer(GameSrv *srv, GameConnection *conn, Channel channel);
+void GameSrv_BroadcastChatMessageServer(GameSrv *srv, Channel channel);
+void GameSrv_SendInvalidCommand(GameSrv *srv, uint16_t player_id);
+int GameSrv_HandleChatCommand(GameSrv *srv, uint16_t player_id, slice_uint16_t msg);
+int GameSrv_HandleLocalMessage(GameSrv *srv, uint16_t player_id, Channel channel, slice_uint16_t msg);
 int GameSrv_HandleChatMessage(GameSrv *srv, uint16_t player_id, GameSrv_ChatMessage *msg);

@@ -90,6 +90,59 @@ void GameSrv_BroadcastChatMessageLocal(GameSrv *srv, uint16_t player_id_of_sende
     GameSrv_BroadcastMessage(srv, buffer, size);
 }
 
+GameSrvMsg* GameSrv_BuildChatMessageServerMsg(GameSrv *srv, Channel channel, size_t *size)
+{
+    GameSrvMsg *buffer = GameSrv_BuildMsg(srv, GAME_SMSG_CHAT_MESSAGE_SERVER);
+    GameSrv_ChatMessageServer *msg = &buffer->chat_message_server;
+    msg->channel = channel;
+    *size = sizeof(*msg);
+    return buffer;
+}
+
+void GameSrv_SendChatMessageServer(GameSrv *srv, GameConnection *conn, Channel channel)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildChatMessageServerMsg(srv, channel, &size);
+    GameConnection_SendMessage(conn, buffer, size);
+}
+
+void GameSrv_BroadcastChatMessageServer(GameSrv *srv, Channel channel)
+{
+    size_t size;
+    GameSrvMsg *buffer = GameSrv_BuildChatMessageServerMsg(srv, channel, &size);
+    GameSrv_BroadcastMessage(srv, buffer, size);
+}
+
+void GameSrv_SendInvalidCommand(GameSrv *srv, uint16_t player_id)
+{
+    GmPlayer *player;
+    if ((player = GameSrv_GetPlayer(srv, player_id)) == NULL) {
+        log_error("Failed to get player struct");
+        return;
+    }
+
+    GameConnection *conn;
+    if ((conn = GameSrv_GetConnection(srv, player->conn_token)) == NULL) {
+        log_error("Failed to get player connection");
+        return;
+    }
+
+    slice_uint16_t msg;
+    msg.ptr = L"Unknown command";
+    msg.len = (sizeof(L"Unknown command") - 1) / 2;
+
+    array_uint16_t *builder = &srv->encTextBuilder;
+    array_clear(builder);
+    GmText_BuildLiteral(builder, msg);
+    msg.ptr = builder->ptr;
+    msg.len = builder->len;
+
+    GameSrv_BroadcastChatMessageCore(srv, msg);
+    GameSrv_SendChatMessageServer(srv, conn, Channel_Global);
+
+    array_clear(builder);
+}
+
 int GameSrv_HandleChatCommand(GameSrv *srv, uint16_t player_id, slice_uint16_t msg)
 {
     if (slice_u16_equals_ascii_lit(msg, "stuck", sizeof("stuck") - 1)) {
@@ -99,6 +152,8 @@ int GameSrv_HandleChatCommand(GameSrv *srv, uint16_t player_id, slice_uint16_t m
         } else {
             log_error("Player id %u doesn't have an agent", player_id);
         }
+    } else {
+        GameSrv_SendInvalidCommand(srv, player_id);
     }
 
     return ERR_OK;
