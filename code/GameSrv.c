@@ -1289,7 +1289,6 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_SendPlayerAttributes(srv, conn, player);
     GameSrv_SendAgentLoadTime(srv, conn, agent);
     GameSrv_BroadcastUpdatePlayerInfo(srv, player);
-    GameSrv_SendPlayerParty(srv, conn, player->party_id);
     GameSrv_SendPlayerProfession(srv, conn, player);
     // GAME_SMSG_TITLE_RANK_DISPLAY
 
@@ -1302,6 +1301,8 @@ int GameSrv_HandleInstanceLoadRequestPlayers(GameSrv *srv, size_t player_id, Gam
     GameSrv_BroadcastUpdateAgentVisualEquipment(srv, agent, &player->bags);
     GameSrv_BroadcastAgentDisplayCape(srv, agent);
     GameSrv_SendUpdatePlayerAgent(srv, conn, agent);
+    GameSrv_SendPlayerParty(srv, conn, player->party_id);
+    GameSrv_SendUpdatePlayerParty(srv, conn, player->party_id);
 
     GameSrv_SendInstanceLoadFinish(srv, conn);
 

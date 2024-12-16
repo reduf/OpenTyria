@@ -478,6 +478,12 @@ typedef struct GameSrv_PartyMemberStreamEnd {
     uint16_t party_id;
 } GameSrv_PartyMemberStreamEnd;
 
+typedef struct GameSrv_UpdatePlayerParty {
+    uint16_t header;
+    uint16_t party_id;
+    uint8_t  unknown;
+} GameSrv_UpdatePlayerParty;
+
 typedef struct GameSrv_CreateEquipmentItem {
     uint16_t header;
     uint32_t item_id;
@@ -677,6 +683,7 @@ typedef union GameSrvMsg {
     GameSrv_AddPartyHero                 add_party_hero;
     GameSrv_RemovePartyHero              remove_party_hero;
     GameSrv_PartyMemberStreamEnd         party_member_stream_end;
+    GameSrv_UpdatePlayerParty            update_player_party;
     GameSrv_UpdateAgentVisualEquipment   update_agent_visual_equipment;
     GameSrv_CreateEquipmentItem          create_equipment_item;
     GameSrv_UpdateWorldSimulationTick    world_simulation_tick;

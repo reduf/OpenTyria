@@ -356,6 +356,7 @@
 #define GAME_SMSG_TRANSFER_GAME_SERVER_INFO             (0x01A4) // 420
 #define GAME_SMSG_READY_FOR_MAP_SPAWN                   (0x01AA) // 426
 #define GAME_SMSG_DOA_COMPLETE_ZONE                     (0x01AE) // 430
+#define GAME_SMSG_UDPATE_PLAYER_PARTY                   (0x01B1) // 433
 #define GAME_SMSG_INSTANCE_TRAVEL_TIMER                 (0x01BA) // 442
 #define GAME_SMSG_INSTANCE_CANT_ENTER                   (0x01BB) // 443
 #define GAME_SMSG_PARTY_SET_DIFFICULTY                  (0x01BD) // 445

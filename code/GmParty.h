@@ -49,4 +49,5 @@ void GameSrv_SendCreateParty(GameSrv *srv, GameConnection *conn, uint16_t party_
 void GameSrv_SendAddPartyPlayer(GameSrv *srv, GameConnection *conn, uint16_t party_id, GmPartyPlayer *player);
 void GameSrv_SendAddPartyHero(GameSrv *srv, GameConnection *conn, uint16_t party_id, GmPartyHero *hero);
 void GameSrv_SendPartyMemberStreamEnd(GameSrv *srv, GameConnection *conn, uint16_t party_id);
+void GameSrv_SendUpdatePlayerParty(GameSrv *srv, GameConnection *conn, uint16_t party_id);
 void GameSrv_SendPlayerParty(GameSrv *srv, GameConnection *conn, uint16_t party_id);
