@@ -16,11 +16,11 @@ class pygw(object):
         tmp = self.scanner.find(b'\x50\x6A\x0F\x6A\x00\xFF\x35', +7)
         self.ctx, = proc.read(tmp)
 
-        tmp = self.scanner.find(b'\xFF\x50\x10\x47\x83\xC6\x04\x3B\xFB\x75\xE1', +0xD)
+        tmp = self.scanner.find(b'\x8b\x0c\x90\x85\xc9\x74\x19', -0x4)
         self.agent_ptr, = proc.read(tmp)
 
-        # tmp = self.scanner.find(b'\x56\x89\x47\x08\x6A\x01\xD9\x1B\xE8', -0x37)
-        # self.camera_ptr, = proc.read(tmp)
+        tmp = self.scanner.find(b'\xD9\x45\x08\xFF\x75\x10\xFF\x75\x0C\x51\xB9', +0xB)
+        self.camera_ptr, = proc.read(tmp)
 
     def get_game_ctx(self):
         tmp, = self.proc.read(self.ctx)
